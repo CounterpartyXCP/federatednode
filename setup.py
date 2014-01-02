@@ -118,13 +118,13 @@ def install_dependencies(paths):
         logging.info("UBUNTU LINUX: Installing Required Packages...")
         runcmd("sudo apt-get -y update")
         runcmd("sudo apt-get -y install software-properties-common python-software-properties git-core wget cx-freeze \
-        python3 python3-setuptools python3-dev python3-pip build-essential python3-sphinx")
+        python3 python3-setuptools python3-dev python3-pip build-essential python3-sphinx python-virtualenv")
 
         #install sqlite utilities (not technically required as python's sqlite3 module is self-contained, but nice to have)
         runcmd("sudo apt-get -y install sqlite sqlite3 libsqlite3-dev libleveldb-dev")
         
         #now that pip is installed, install necessary deps outside of the virtualenv (e.g. for this script)
-        runcmd("sudo pip install appdirs==1.2.0")
+        runcmd("sudo pip3 install appdirs==1.2.0")
     elif os.name == 'nt':
         logging.info("WINDOWS: Installing Required Packages...")
         if not os.path.exists(os.path.join(paths['sys_python_path'], "Scripts", "easy_install.exe")):
@@ -167,6 +167,9 @@ def create_virtualenv(paths):
     runcmd("%s install -r %s" % (paths['pip_path'], os.path.join(paths['dist_path'], "reqs.txt")))
 
 def setup_startup(paths, run_as_user):
+    if os.name == "posix":
+        runcmd("sudo ln -sf %s/run.py /usr/local/bin/counterpartyd" % paths['base_path'])
+
     while True:
         start_choice = input("Start counterpartyd automatically on system startup? (y/n): ")
         if start_choice.lower() not in ('y', 'n'):
@@ -192,9 +195,6 @@ def setup_startup(paths, run_as_user):
         scut.TargetPath = '"c:/Python33/python.exe"'
         scut.Arguments = os.path.join(paths['base_path'], 'run.py')
         scut.Save()        
-    else: 
-        assert os.name == "posix"
-        runcmd("sudo ln -sf %s/run.py /usr/local/bin/counterpartyd" % paths['base_path'])
               
         logging.info("Setting up init scripts...")
         assert run_as_user
