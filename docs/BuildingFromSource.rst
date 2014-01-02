@@ -1,10 +1,15 @@
 Building & Running from Source
 ================================
 
+.. note::
+
+    Please make sure you've followed the instructions in :doc:`SettingUpBitcoind` before moving through this section.
+
 This section provides information about how to install and run ``counterpartyd`` from source, using this
 ``counterpartyd`` build system (as an alternative to setting it up manually). This method is suitable for
 Linux users, as well as Windows users that want to develop/enhance ``counterpartyd`` (or just don't want to
 use the binary installer).
+
 
 On Windows
 -----------
