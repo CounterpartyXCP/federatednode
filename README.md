@@ -1,4 +1,4 @@
-counterpartyd_build
-===================
+The counterpartyd Build System (counterpartyd_build)
+=====================================================
 
-Counterpartyd Build System
+See documentation at <http://counterpartyd-build.readthedocs.org/>.
