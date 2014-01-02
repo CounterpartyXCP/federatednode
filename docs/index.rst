@@ -1,9 +1,9 @@
-Counterparty
-========================================
+counterpartyd Build System (counterpartyd_build)
+==================================================
 
-``counterpartyd_build`` is the automated build system for `counterpartyd <https://github.com/PhantomPhreak/counterpartyd>`__.
-This is an alternative method from manual ``counterpartyd`` installation and running, which may be especially helpful
-in the following circumstances:
+`counterpartyd_build <https://github.com/xnova/counterpartyd_build>`__ is the automated build system for
+`counterpartyd <https://github.com/PhantomPhreak/counterpartyd>`__. This is an alternative method from
+manual ``counterpartyd`` installation and running, which may be especially helpful in the following circumstances:
 
 - You are a Windows user, or a Linux user that isn't super experienced with the command line interface.
 - You want to deploy ``counterpartyd`` in a production environment, and have it run automatically on system startup
@@ -15,7 +15,7 @@ This build system can can be used for the following tasks at this time:
 - Automated creation of a Windows binary installer to allow for "point-and-click" installation of
   ``counterpartyd`` on Windows (as a packaged ``counterpartyd.exe`` binary)
 
-Future plans for the build system (*pull requests for these features would be greatly appreaciated*):
+Future plans for the build system (*pull requests for these features would be greatly appreciated*):
 
 - Add support for Linux distributions beyond Ubuntu Linux
 - Add support for Mac OS X automated setup from source

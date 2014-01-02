@@ -164,5 +164,5 @@ which will detect changes to the file and update if necessary.
 Next Steps
 -----------
 
-Once ``counterpartyd`` is installed and running, you can start exploring the API via the API documentation
-off of the `main counterpartyd repository <https://github.com/PhantomPhreak/counterpartyd>`__.  
+Once ``counterpartyd`` is installed and running, you can start running ``counterpartyd`` commands directly,
+or explore the (soon to exist) built-in API via the documentation at the `main counterpartyd repository <https://github.com/PhantomPhreak/counterpartyd>`__.  

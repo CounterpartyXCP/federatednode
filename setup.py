@@ -22,7 +22,6 @@ except ImportError:
 PYTHON_VER = "3.3"
 DEFAULT_CONFIG = "[Default]%srpc-connect=localhost%srpc-port=18832%srpc-user=rpc%srpc-password=rpcpw1234" % (
     os.linesep, os.linesep, os.linesep, os.linesep)
-run_as_user = None    
 
 def usage():
     print("SYNTAX: %s [-h] [--build]" % sys.argv[0])
@@ -108,6 +107,13 @@ def install_dependencies(paths):
         #now that pip is installed, install necessary deps outside of the virtualenv (e.g. for this script)
         runcmd("%s install appdirs==1.2.0" % (os.path.join(paths['python_path'], "Scripts", "pip.exe")))
 
+def checkout_counterpartyd(paths):
+    logging.info("Checking out counterpartyd from git...")
+    counterpartyd_path = os.path.join(paths['dist_path'], "counterpartyd")
+    if os.path.exists(counterpartyd_path):
+        shutil.rmtree(counterpartyd_path)
+    runcmd("git clone https://github.com/PhantomPhreak/counterpartyd \"%s\"" % counterpartyd_path)
+
 def create_virtualenv(paths):
     if paths['virtualenv_path'] is None or not os.path.exists(paths['virtualenv_path']):
         logging.debug("ERROR: virtualenv missing (%s)" % (paths['virtualenv_path'],))
@@ -127,7 +133,7 @@ def create_virtualenv(paths):
     #install packages from manifest via pip
     runcmd("%s install -r %s" % (paths['pip_path'], os.path.join(paths['dist_path'], "reqs.txt")))
 
-def setup_startup(paths):
+def setup_startup(paths, run_as_user):
     while True:
         start_choice = input("Start counterpartyd automatically on system startup? (y/n): ")
         if start_choice.lower() not in ('y', 'n'):
@@ -162,10 +168,11 @@ def setup_startup(paths):
         runcmd("sudo cp -a %s/dist/linux/init/counterpartyd.conf.template /etc/init/counterpartyd.conf")
         runcmd("sudo sed -r -i -e \"s/!RUN_AS_USER!/%s/g\" /etc/init/counterpartyd.conf" % run_as_user)
 
-def create_default_config(paths):
+def create_default_config(paths, run_as_user):
     import appdirs #installed earlier
     cfg_path = os.path.join(
-        appdirs.user_data_dir(appauthor='Counterparty', appname='counterpartyd', roaming=True) if os.name == "nt" else "/var/lib/counterpartyd",
+        appdirs.user_data_dir(appauthor='Counterparty', appname='counterpartyd', roaming=True) \
+            if os.name == "nt" else ("%s/.config/counterpartyd" % os.path.expanduser("~%s" % run_as_user)), 
         "counterpartyd.conf")
     cfg_dir = os.path.dirname(cfg_path)
     
@@ -179,8 +186,8 @@ def create_default_config(paths):
     
     #set proper file mode
     if os.name != "nt": 
-        uid = pwd.getpwnam(COUNTERPARTY_USER).pw_uid
-        gid = grp.getgrnam(COUNTERPARTY_USER).gr_gid    
+        uid = pwd.getpwnam(run_as_user).pw_uid
+        gid = grp.getgrnam(run_as_user).gr_gid    
         os.chown(cfg_path, uid, gid)
         os.chmod(cfg_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP) #660
     else:
@@ -242,12 +249,17 @@ def do_build(paths):
     logging.info("FINAL installer created as %s" % installer_dest)
 
 def main():
-    global run_as_user
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s|%(levelname)s: %(message)s')
     
     do_prerun_checks()
-    run_as_user = os.environ["SUDO_USER"]
+
+    run_as_user = None
+    if os.name != "nt":
+        run_as_user = os.environ["SUDO_USER"]
+        assert run_as_user
+    
     paths = get_paths()
+    checkout_counterpartyd(paths)
 
     #parse any command line objects
     build = False
@@ -272,11 +284,11 @@ def main():
         logging.info("Installing Counterparty from source for user '%s'..." % run_as_user)
         install_dependencies(paths)
         create_virtualenv(paths)
-        setup_startup(paths)
+        setup_startup(paths, run_as_user)
     
     logging.info("%s DONE. (It's time to kick ass, and chew bubblegum... and I'm all outta gum.)" % ("BUILD" if build else "SETUP"))
     if not build:
-        create_default_config(paths)
+        create_default_config(paths, run_as_user)
 
 
 if __name__ == "__main__":

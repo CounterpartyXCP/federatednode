@@ -18,7 +18,7 @@ Prerequisites
    everything below. The only exception would be if you want to create a 32-bit installer for Counterpartyd.
    In that case, go with the 32-bit versions of all of the dependencies below.
 
-Minimally required to build Counterpartyd from source is the following:
+Minimally required to build ``counterpartyd`` from source is the following:
 
 - Python 3.3.x -- grab the `32-bit version <http://www.python.org/ftp/python/3.3.3/python-3.3.3.msi>`__
   or `64-bit version <http://www.python.org/ftp/python/3.3.3/python-3.3.3.amd64.msi>`__.
@@ -45,12 +45,13 @@ Type ``<Windows Key>-R`` to open the run dialog, and enter "cmd.exe" to launch a
 In the command window, type the following commands::
 
     cd C:\
-    git clone https://github.com/PhantomPhreak/Counterparty.git
-    cd Counterparty
+    git clone https://github.com/xnova/counterpartyd_build
+    cd counterpartyd_build
     C:\Python33\python.exe setup.py
      
-The above steps will check out Counterparty to ``C:\Counterparty``, and run the Counterparty ``setup.py`` script, which
-will create a virtual environment with the required dependencies.
+The above steps will check out the build scripts to ``C:\counterpartyd_build``, and run the ``setup.py`` script, which
+will check out the newest version of ``counterpartyd`` itself from git, create a virtual environment with the
+required dependencies, and do other necessary tasks to integrate it into the system.
 
 If you chose to start ``counterpartyd`` at startup automatically, the setup script will also create a shortcut
 to ``counterpartyd`` in your Startup group. 
@@ -63,13 +64,13 @@ Running from Source
 
 After installing, open a command window and run ``counterpartyd`` in the foreground via::
 
-    cd C:\Counterparty
+    cd C:\counterpartyd_build
     run.py
 
 
 Or, if you have multiple versions of python on your computer and want to make sure you use the right one::
     
-    cd C:\Counterparty
+    cd C:\counterpartyd_build
     C:\Python33\python.exe run.py
 
 In another command window, you can then run any of counterparty’s other functions, like::
@@ -80,7 +81,7 @@ In another command window, you can then run any of counterparty’s other functi
 
 To run the counterparty testsuite::
 
-    cd C:\Counterparty
+    cd C:\counterpartyd_build
     run.py tests 
 
 
@@ -90,10 +91,10 @@ Building your own Installer
 Complete the instructions under **Running from Source** above.
 Then, execute the following commands to build from source::
 
-    cd C:\Counterparty
+    cd C:\counterpartyd_build
     C:\Python33\python.exe setup.py -b
     
-If successful, you will be provided the location of the resulting installer for Counterparty.
+If successful, you will be provided the location of the resulting installer for ``counterpartyd``.
 
 
 On Linux
@@ -110,16 +111,16 @@ Support for other distributions is a future task.
 Installing
 ~~~~~~~~~~~
 
-**As the user you want to run ``counterpartyd`` as**, launch a terminal window, and type the following::
+**As the user you want to run** ``counterpartyd`` **as**, launch a terminal window, and type the following::
 
     sudo apt-get -y update
     sudo apt-get -y install git-core
-    git clone https://github.com/PhantomPhreak/Counterparty.git ~/Counterparty
-    sudo ~/Counterparty/setup.py
+    git clone https://github.com/xnova/counterpartyd_build ~/counterpartyd_build
+    sudo ~/counterpartyd_build/setup.py
 
-The ``setup.py`` script will install necessary dependencies, create the python environment for ``counterpartyd``,
-create a dedicated ``counterpartyd`` system user (which will run it, by default), and install an upstart script
-that will automatically start ``counterpartyd`` on startup.
+The ``setup.py`` script will install necessary dependencies, check out the newest version of ``counterpartyd``
+itself from git, create the python environment for ``counterpartyd``, and install an upstart script that
+will automatically start ``counterpartyd`` on startup.
 
 
 Creating a default config
