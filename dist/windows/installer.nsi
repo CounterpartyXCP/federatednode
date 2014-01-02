@@ -163,7 +163,7 @@ SectionEnd
 Section "Start Menu Shortcuts"
   CreateDirectory "$SMPROGRAMS\counterpartyd"
   CreateShortCut "$SMPROGRAMS\counterpartyd\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
-  CreateShortCut "$SMPROGRAMS\counterpartyd\counterpartyd.lnk" "$INSTDIR\counterpartyd.exe" "--logdir=-" "$INSTDIR\counterpartyd.exe" 0
+  CreateShortCut "$SMPROGRAMS\counterpartyd\counterpartyd.lnk" "$INSTDIR\counterpartyd.exe" "--log-file=-" "$INSTDIR\counterpartyd.exe" 0
 SectionEnd
 
 ;--------------------------------
