@@ -26,10 +26,14 @@ DEFAULT_CONFIG = "[Default]%srpc-connect=localhost%srpc-port=18832%srpc-user=rpc
 def _rmtree(path):
     """We use this function instead of the built-in shutil.rmtree because it unsets the windoze read-only/archive bit
     before trying a delete (and if we don't do this, we can have problems)"""
+    
+    if os.name != 'nt':
+        return shutil.rmtree(path) #this works fine on non-windows
+
+    #this code only for windows    
     def rmgeneric(path, __func__):
-        if os.name == 'nt':
-            import win32api, win32con
-            win32api.SetFileAttributes(path, win32con.FILE_ATTRIBUTE_NORMAL)
+        import win32api, win32con
+        win32api.SetFileAttributes(path, win32con.FILE_ATTRIBUTE_NORMAL)
         
         try:
             __func__(path)
