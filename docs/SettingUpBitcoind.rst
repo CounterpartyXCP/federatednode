@@ -3,10 +3,11 @@ Setting up bitcoind
 
 .. warning::
 
-    *Counterparty* is currently operating only on the Bitcoin ``testnet``
+    *Counterparty* is currently primarily operating on the Bitcoin ``testnet``
     blockchain, because it requires the use of a feature of the Bitcoin protocol
     that is not yet enabled in the official client (namely ``OP_RETURN`` outputs).
-    Please **run ``bitcoind`` with ``-testnet=1``**, when using it with Counterparty, for the time being.
+    Unless you are setting up counterpartyd to burn coins (i.e. invest), please be mindful that
+    your ``bitcoind`` configuration uses ``testnet=1``, when using it with Counterparty, for the time being.
 
 ``counterpartyd`` communicates with the Bitcoin reference client (``bitcoind``). Normally, you'll run ``bitcoind``
 on the same computer as your instance of ``counterpartyd`` runs on. However, you can also use a ``bitcoind``

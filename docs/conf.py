@@ -40,7 +40,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Counterparty'
+project = u'counterpartyd_build'
 copyright = u'2013, Counterparty Team'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -183,7 +183,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'Counterparty.tex', u'Counterparty Documentation',
+  ('index', 'Counterparty.tex', u'counterpartyd_build Documentation',
    u'Counterparty Team', 'manual'),
 ]
 
@@ -213,7 +213,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'counterparty', u'Counterparty Documentation',
+    ('index', 'counterpartyd_build', u'Counterparty Documentation',
      [u'Counterparty Team'], 1)
 ]
 
@@ -227,8 +227,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'Counterparty', u'Counterparty Documentation',
-   u'Counterparty Team', 'Counterparty', 'One line description of project.',
+  ('index', 'counterpartyd_build', u'Counterparty Documentation',
+   u'Counterparty Team', 'counterpartyd_build', 'One line description of project.',
    'Miscellaneous'),
 ]
 

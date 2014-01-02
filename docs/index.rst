@@ -1,7 +1,7 @@
 counterpartyd Build System (counterpartyd_build)
 ==================================================
 
-counterpartyd_build <https://github.com/xnova/counterpartyd_build>`__ is the automated build system for
+`counterpartyd_build <https://github.com/xnova/counterpartyd_build>`__ is the automated build system for
 `counterpartyd <https://github.com/PhantomPhreak/counterpartyd>`__. This is an alternative method from
 `manual counterpartyd installation and running <https://github.com/PhantomPhreak/counterpartyd/blob/master/README.md>`__,
 which includes a point-and-click Windows installer (as well as being able to generate the installer automatically
@@ -9,9 +9,10 @@ from source), as well as a source code build script that takes care of all setup
 
 **Using the build system, you have the following options:**
 
-- If you are a **Windows user**, you can either :doc:`use the installer package <UsingTheInstaller>`, or 
-:doc:`build from source <BuildingFromSource>`
-- If you are an **Ubuntu Linux user**, you can use the build system to automate your install/setup  :doc:`build from source <BuildingFromSource>`
+- If you are a **Windows user**, you can either :doc:`use the installer package <UsingTheInstaller>`, or
+  :doc:`build from source <BuildingFromSource>`
+- If you are an **Ubuntu Linux user**, you can :doc:`use the build system to automate your
+  install/setup from source <BuildingFromSource>`
 - If you are **neither**, at this point you will need to follow `the manual installation instructions <https://github.com/PhantomPhreak/counterpartyd/blob/master/README.md>`__.
 
 
