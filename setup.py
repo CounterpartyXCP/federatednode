@@ -165,29 +165,33 @@ def setup_startup(paths, run_as_user):
               
         logging.info("Setting up init scripts...")
         assert run_as_user
-        runcmd("sudo cp -a %s/dist/linux/init/counterpartyd.conf.template /etc/init/counterpartyd.conf")
+        runcmd("sudo cp -a %s/linux/init/counterpartyd.conf.template /etc/init/counterpartyd.conf" % paths['dist_path'])
         runcmd("sudo sed -r -i -e \"s/!RUN_AS_USER!/%s/g\" /etc/init/counterpartyd.conf" % run_as_user)
 
-def create_default_config(paths, run_as_user):
+def create_default_datadir_and_config(paths, run_as_user):
     import appdirs #installed earlier
     cfg_path = os.path.join(
         appdirs.user_data_dir(appauthor='Counterparty', appname='counterpartyd', roaming=True) \
             if os.name == "nt" else ("%s/.config/counterpartyd" % os.path.expanduser("~%s" % run_as_user)), 
         "counterpartyd.conf")
-    cfg_dir = os.path.dirname(cfg_path)
+    data_dir = os.path.dirname(cfg_path)
     
-    if not os.path.exists(cfg_dir):
-        os.makedirs(cfg_dir)
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
     
     #create a default config file
     cfg = open(cfg_path, 'w')
     cfg.write(DEFAULT_CONFIG)
     cfg.close()
     
-    #set proper file mode
     if os.name != "nt": 
         uid = pwd.getpwnam(run_as_user).pw_uid
         gid = grp.getgrnam(run_as_user).gr_gid    
+
+        #set directory ownership
+        os.chown(data_dir, uid, gid)
+
+        #set proper file ownership and mode
         os.chown(cfg_path, uid, gid)
         os.chmod(cfg_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP) #660
     else:
@@ -288,7 +292,7 @@ def main():
     
     logging.info("%s DONE. (It's time to kick ass, and chew bubblegum... and I'm all outta gum.)" % ("BUILD" if build else "SETUP"))
     if not build:
-        create_default_config(paths, run_as_user)
+        create_default_datadir_and_config(paths, run_as_user)
 
 
 if __name__ == "__main__":

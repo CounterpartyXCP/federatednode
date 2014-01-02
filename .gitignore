@@ -1,6 +1,7 @@
 *.py[cod]
 env
 docs/_build/*
+dist/counterpartyd
 
 # C extensions
 *.so

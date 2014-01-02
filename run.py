@@ -8,8 +8,8 @@ import sys
 assert os.name in ("nt", "posix")
 
 #under *nix, script must NOT be run as root
-if os.name == "posix" and os.geteuid() != 0:
-    logging.error("Please run this script as a non-root user.")
+if os.name == "posix" and os.geteuid() == 0:
+    print("Please run this script as a non-root user.")
     sys.exit(1)
 
 run_tests = False

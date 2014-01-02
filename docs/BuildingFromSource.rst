@@ -116,7 +116,7 @@ Installing
     sudo apt-get -y update
     sudo apt-get -y install git-core
     git clone https://github.com/xnova/counterpartyd_build ~/counterpartyd_build
-    sudo ~/counterpartyd_build/setup.py
+    sudo python3 ~/counterpartyd_build/setup.py
 
 The ``setup.py`` script will install necessary dependencies, check out the newest version of ``counterpartyd``
 itself from git, create the python environment for ``counterpartyd``, and install an upstart script that
