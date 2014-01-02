@@ -106,7 +106,7 @@ Section "Counterpartyd (required)"
   InitPluginsDir
 
   SetShellVarContext all
-  !define INSTDIR_DATA "$APPDATA\Counterparty\counterpartyd" ; call "SetShellVarContext all" before!
+  !define INSTDIRDATA "$APPDATA\Counterparty\counterpartyd" ; call "SetShellVarContext all" before!
   
   ; Set output path to the installation directory.
   SetOutPath $INSTDIR
@@ -125,14 +125,14 @@ Section "Counterpartyd (required)"
   WriteUninstaller "uninstall.exe"
   
   ;copy in the config file
-  CreateDirectory $INSTDIR_DATA
-  CopyFiles $INSTDIR\counterpartyd.conf.default $INSTDIR_DATA\counterpartyd.conf
+  CreateDirectory ${INSTDIRDATA}
+  CopyFiles $INSTDIR\counterpartyd.conf.default ${INSTDIRDATA}\counterpartyd.conf
   
   ;modify the config file based on what was entered earlier by the user
-  !insertmacro _ReplaceInFile "$INSTDIR_DATA\counterpartyd.conf" "rpc-connect=localhost" "rpc-connect=$txtHostname"
-  !insertmacro _ReplaceInFile "$INSTDIR_DATA\counterpartyd.conf" "rpc-port=18832" "rpc-port=$txtPort"
-  !insertmacro _ReplaceInFile "$INSTDIR_DATA\counterpartyd.conf" "rpc-user=rpc" "rpc-user=$txtUsername"
-  !insertmacro _ReplaceInFile "$INSTDIR_DATA\counterpartyd.conf" "rpc-password=rpcpw1234" "rpc-password=$pwdPassword"
+  !insertmacro _ReplaceInFile "${INSTDIRDATA}\counterpartyd.conf" "rpc-connect=localhost" "rpc-connect=$txtHostname"
+  !insertmacro _ReplaceInFile "${INSTDIRDATA}\counterpartyd.conf" "rpc-port=18832" "rpc-port=$txtPort"
+  !insertmacro _ReplaceInFile "${INSTDIRDATA}\counterpartyd.conf" "rpc-user=rpc" "rpc-user=$txtUsername"
+  !insertmacro _ReplaceInFile "${INSTDIRDATA}\counterpartyd.conf" "rpc-password=rpcpw1234" "rpc-password=$pwdPassword"
   
   ; Install a service - ServiceType own process - StartType automatic - NoDependencies - Logon as System Account
   SimpleSC::InstallService "Counterpartyd" "Counterparty Daemon" "16" "2" "$INSTDIR\counterpartyd.exe" "" "" ""
@@ -171,8 +171,7 @@ Section "Uninstall"
   DeleteRegKey HKLM SOFTWARE\Counterpartyd
 
   ; Remove files and uninstaller
-  Delete $INSTDIR\counterpartyd.exe
-  Delete $INSTDIR\uninstall.exe
+  RMDir /r $INSTDIR
 
   ; Remove shortcuts, if any
   Delete "$SMPROGRAMS\Counterpartyd\*.*"

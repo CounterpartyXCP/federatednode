@@ -3,10 +3,14 @@ import os
 from cx_Freeze import setup, Executable
 
 # Dependencies are automatically detected, but it might need fine tuning.
-build_exe_options = {"packages": ["os"], "excludes": []}
+build_exe_options = {"packages": ["prettytable",], "excludes": []}
+
+scriptPath = os.path.normpath(os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), "counterpartyd"))
+
+sys.path.insert(0, scriptPath)
+path = sys.path
 
 base = None
-scriptPath = os.path.normpath(os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), "counterpartyd"))
 setup(  name = "counterpartyd",
         version = "0.1",
         description = "Counterparty Daemon",

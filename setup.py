@@ -23,6 +23,33 @@ PYTHON_VER = "3.3"
 DEFAULT_CONFIG = "[Default]%srpc-connect=localhost%srpc-port=18832%srpc-user=rpc%srpc-password=rpcpw1234" % (
     os.linesep, os.linesep, os.linesep, os.linesep)
 
+def _rmtree(path):
+    """We use this function instead of the built-in shutil.rmtree because it unsets the windoze read-only/archive bit
+    before trying a delete (and if we don't do this, we can have problems)"""
+    def rmgeneric(path, __func__):
+        if os.name == 'nt':
+            import win32api, win32con
+            win32api.SetFileAttributes(path, win32con.FILE_ATTRIBUTE_NORMAL)
+        
+        try:
+            __func__(path)
+            #print 'Removed ', path
+        except OSError as err:
+            logging.error("Error removing %(path)s, %(error)s" % {'path' : path, 'error': err })
+
+    if not os.path.isdir(path):
+        return
+    files=os.listdir(path)
+    for x in files:
+        fullpath=os.path.join(path, x)
+        if os.path.isfile(fullpath):
+            f=os.remove
+            rmgeneric(fullpath, f)
+        elif os.path.isdir(fullpath):
+            _rmtree(fullpath)
+            f=os.rmdir
+            rmgeneric(fullpath, f)    
+
 def usage():
     print("SYNTAX: %s [-h] [--build]" % sys.argv[0])
 
@@ -49,9 +76,9 @@ def do_prerun_checks():
     if os.name == "posix" and "SUDO_USER" not in os.environ:
         logging.error("Please use `sudo` to run this script.")
 
-def get_paths():
+def get_paths(is_build):
     paths = {}
-    paths['python_path'] = os.path.dirname(sys.executable)
+    paths['sys_python_path'] = os.path.dirname(sys.executable)
 
     paths['base_path'] = os.path.normpath(os.path.dirname(os.path.realpath(sys.argv[0])))
     #^ the dir of where counterparty source was downloaded to
@@ -62,8 +89,9 @@ def get_paths():
         paths['virtualenv_path'] = "/usr/bin/virtualenv"
         paths['virtualenv_args'] = "--python=python%s" % PYTHON_VER
     elif os.name == "nt":
-        paths['virtualenv_path'] = os.path.join(paths['python_path'], "Scripts", "virtualenv.exe")
-        paths['virtualenv_args'] = ""
+        paths['virtualenv_path'] = os.path.join(paths['sys_python_path'], "Scripts", "virtualenv.exe")
+        paths['virtualenv_args'] = "--system-site-packages" if is_build else ""
+        #^ we use system-site-packages here because we need to be able to import cx_freeze from the sys packages
     
     #compose the rest of the paths...
     paths['dist_path'] = os.path.join(paths['base_path'], "dist")
@@ -77,6 +105,7 @@ def get_paths():
     
     #the pip executiable that we'll be using does not exist yet, but it will, once we've created the virtualenv
     paths['pip_path'] = os.path.join(paths['env_path'], "Scripts" if os.name == "nt" else "bin", "pip.exe" if os.name == "nt" else "pip")
+    paths['python_path'] = os.path.join(paths['env_path'], "Scripts" if os.name == "nt" else "bin", "python.exe" if os.name == "nt" else "python3")
     
     return paths
 
@@ -94,28 +123,24 @@ def install_dependencies(paths):
         runcmd("sudo pip install appdirs==1.2.0")
     elif os.name == 'nt':
         logging.info("WINDOWS: Installing Required Packages...")
-        if not os.path.exists(os.path.join(paths['python_path'], "Scripts", "easy_install.exe")):
+        if not os.path.exists(os.path.join(paths['sys_python_path'], "Scripts", "easy_install.exe")):
             #^ ez_setup.py doesn't seem to tolerate being run after it's already been installed... errors out
             #run the ez_setup.py script to download and install easy_install.exe so we can grab virtualenv and more...
             runcmd("pushd %%TEMP%% && %s %s && popd" % (sys.executable,
                 os.path.join(paths['dist_path'], "windows", "ez_setup.py")))
         
         #now easy_install is installed, install virtualenv, and sphinx for doc building
-        runcmd("%s virtualenv sphinx pip" % (os.path.join(paths['python_path'], "Scripts", "easy_install.exe")))
+        runcmd("%s virtualenv sphinx pip" % (os.path.join(paths['sys_python_path'], "Scripts", "easy_install.exe")))
         
         #now that pip is installed, install necessary deps outside of the virtualenv (e.g. for this script)
-        runcmd("%s install appdirs==1.2.0" % (os.path.join(paths['python_path'], "Scripts", "pip.exe")))
+        runcmd("%s install appdirs==1.2.0" % (os.path.join(paths['sys_python_path'], "Scripts", "pip.exe")))
 
 def checkout_counterpartyd(paths):
     logging.info("Checking out counterpartyd from git...")
     counterpartyd_path = os.path.join(paths['dist_path'], "counterpartyd")
     if os.path.exists(counterpartyd_path):
-        #shutil.rmtree(counterpartyd_path)
-        runcmd("cd \"%s\" && git pull origin master" % counterpartyd_path)
-        #optimally we'd use shutil.rmtree and just recheckout the dir, but windows thows a permission error 
-    else:
-        runcmd("git clone https://github.com/PhantomPhreak/counterpartyd \"%s\"" % counterpartyd_path)
-        
+        _rmtree(counterpartyd_path)
+    runcmd("git clone https://github.com/PhantomPhreak/counterpartyd \"%s\"" % counterpartyd_path)
     sys.path.insert(0, os.path.join(paths['dist_path'], "counterpartyd")) #can now import counterparty modules
 
 def create_virtualenv(paths):
@@ -125,7 +150,7 @@ def create_virtualenv(paths):
     
     if os.path.exists(paths['env_path']):
         logging.warning("Deleting existing virtualenv...")
-        shutil.rmtree(paths['env_path'])
+        _rmtree(paths['env_path'])
     logging.info("Creating virtualenv at '%s' ..." % paths['env_path'])
     runcmd("%s %s %s" % (paths['virtualenv_path'], paths['virtualenv_args'], paths['env_path']))
     
@@ -221,10 +246,9 @@ def do_build(paths):
     if os.path.exists(os.path.join(paths['bin_path'], "build")):
         shutil.rmtree(os.path.join(paths['bin_path'], "build"))
 
-    logging.info("Building Counterparty...")
     #Run cx_freeze to build the counterparty sources into a self-contained executiable
     runcmd("%s \"%s\" build -b \"%s\"" % (
-        sys.executable, os.path.join(paths['dist_path'], "_cxfreeze_setup.py"), paths['bin_path']))
+        paths['python_path'], os.path.join(paths['dist_path'], "_cxfreeze_setup.py"), paths['bin_path']))
     #move the build dir to something more predictable so we can build an installer with it
     arch = "amd64" if os.path.exists(os.path.join(paths['bin_path'], "exe.win-amd64-%s" % PYTHON_VER)) else "i386"
     shutil.move(os.path.join(paths['bin_path'], "exe.win-%s-%s" % (arch, PYTHON_VER)), os.path.join(paths['bin_path'], "build"))
@@ -265,12 +289,9 @@ def main():
     if os.name != "nt":
         run_as_user = os.environ["SUDO_USER"]
         assert run_as_user
-    
-    paths = get_paths()
-    checkout_counterpartyd(paths)
 
     #parse any command line objects
-    build = False
+    is_build = False
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hb", ["build", "help"])
     except getopt.GetoptError as err:
@@ -279,23 +300,30 @@ def main():
     mode = None
     for o, a in opts:
         if o in ("-b", "--build"):
-            build = True
+            is_build = True
         elif o in ("-h", "--help"):
             usage()
             sys.exit()
         else:
             assert False, "Unhandled or unimplemented switch or option"
 
-    if build:
+    paths = get_paths(is_build)
+
+    if is_build:
+        logging.info("Building Counterparty...")
+        checkout_counterpartyd(paths)
+        install_dependencies(paths)
+        create_virtualenv(paths)
         do_build(paths)
     else: #install mode
         logging.info("Installing Counterparty from source for user '%s'..." % run_as_user)
+        checkout_counterpartyd(paths)
         install_dependencies(paths)
         create_virtualenv(paths)
         setup_startup(paths, run_as_user)
     
-    logging.info("%s DONE. (It's time to kick ass, and chew bubblegum... and I'm all outta gum.)" % ("BUILD" if build else "SETUP"))
-    if not build:
+    logging.info("%s DONE. (It's time to kick ass, and chew bubblegum... and I'm all outta gum.)" % ("BUILD" if is_build else "SETUP"))
+    if not is_build:
         create_default_datadir_and_config(paths, run_as_user)
 
 
