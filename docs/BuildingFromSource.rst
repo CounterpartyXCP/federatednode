@@ -10,63 +10,6 @@ This section provides information about how to install and run ``counterpartyd``
 Linux users, as well as Windows users that want to develop/enhance ``counterpartyd`` (or just don't want to
 use the binary installer).
 
-On Linux
------------
-
-Prerequisites
-~~~~~~~~~~~~~
-
-Currently, Ubuntu Linux (Server or Desktop) 12.04 LTS, 12.10, 13.04 or 13.10 are required.
-
-Support for other distributions is a future task.
-
-
-Installing
-~~~~~~~~~~~
-
-**As the user you want to run** ``counterpartyd`` **as**, launch a terminal window, and type the following::
-
-    sudo apt-get -y update
-    sudo apt-get -y install git-core
-    git clone https://github.com/xnova/counterpartyd_build ~/counterpartyd_build
-    sudo python3 ~/counterpartyd_build/setup.py
-
-The ``setup.py`` script will install necessary dependencies, check out the newest version of ``counterpartyd``
-itself from git, create the python environment for ``counterpartyd``, and install an upstart script that
-will automatically start ``counterpartyd`` on startup.
-
-
-Creating a default config
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Follow the instructions listed under the **Config and Logging** section in :doc:`GettingStarted`.
-
-
-Running from Source
-~~~~~~~~~~~~~~~~~~~
-
-After installing and creating the necessary basic config, run ``counterpartyd`` in the foreground to make sure
-everything works fine::
-
-    counterpartyd
-    
-(The above assumes ``/usr/local/bin`` is in your PATH, which is where the ``counterpartyd`` symlink (which just
-points to the ``run.py`` script) is placed. If not, run ``/usr/local/bin/counterpartyd`` instead.
-
-Once you're sure it launches and runs fine, press CTRL-C to exit it, and then run ``counterpartyd`` as a background process via::
-
-    sudo service counterpartyd start
-
-You can then run any of counterparty’s other functions, like::
-
-    counterpartyd --help
-    counterpartyd send <options....>
-    counterpartyd order <options....>
-
-To run the counterparty testsuite::
-
-    counterpartyd tests
-
 
 On Windows
 -----------
@@ -157,6 +100,65 @@ Then, execute the following commands to build from source::
     C:\Python33\python.exe setup.py -b
     
 If successful, you will be provided the location of the resulting installer for ``counterpartyd``.
+
+
+On Linux
+-----------
+
+Prerequisites
+~~~~~~~~~~~~~
+
+Currently, Ubuntu Linux (Server or Desktop) 12.04 LTS, 12.10, 13.04 or 13.10 are required.
+
+Support for other distributions is a future task.
+
+
+Installing
+~~~~~~~~~~~
+
+**As the user you want to run** ``counterpartyd`` **as**, launch a terminal window, and type the following::
+
+    sudo apt-get -y update
+    sudo apt-get -y install git-core
+    git clone https://github.com/xnova/counterpartyd_build ~/counterpartyd_build
+    sudo python3 ~/counterpartyd_build/setup.py
+
+The ``setup.py`` script will install necessary dependencies, check out the newest version of ``counterpartyd``
+itself from git, create the python environment for ``counterpartyd``, and install an upstart script that
+will automatically start ``counterpartyd`` on startup.
+
+
+Creating a default config
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Follow the instructions listed under the **Config and Logging** section in :doc:`GettingStarted`.
+
+
+Running from Source
+~~~~~~~~~~~~~~~~~~~
+
+After installing and creating the necessary basic config, run ``counterpartyd`` in the foreground to make sure
+everything works fine::
+
+    counterpartyd
+    
+(The above assumes ``/usr/local/bin`` is in your PATH, which is where the ``counterpartyd`` symlink (which just
+points to the ``run.py`` script) is placed. If not, run ``/usr/local/bin/counterpartyd`` instead.
+
+Once you're sure it launches and runs fine, press CTRL-C to exit it, and then run ``counterpartyd`` as a background process via::
+
+    sudo service counterpartyd start
+
+You can then run any of counterparty’s other functions, like::
+
+    counterpartyd --help
+    counterpartyd send <options....>
+    counterpartyd order <options....>
+
+To run the counterparty testsuite::
+
+    counterpartyd tests
+
     
 
 Mac OS X
