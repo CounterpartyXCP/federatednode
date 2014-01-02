@@ -20,7 +20,7 @@ except ImportError:
     pass
 
 PYTHON_VER = "3.3"
-DEFAULT_CONFIG = "[Default]%srpc-connect=localhost%srpc-port=18832%srpc-user=rpc%srpc-password=rpcpw1234" % (
+DEFAULT_CONFIG = "[Default]%srpc-connect=localhost%srpc-port=18332%srpc-user=rpc%srpc-password=rpcpw1234" % (
     os.linesep, os.linesep, os.linesep, os.linesep)
 
 def _rmtree(path):
@@ -139,12 +139,16 @@ def install_dependencies(paths):
         #now that pip is installed, install necessary deps outside of the virtualenv (e.g. for this script)
         runcmd("%s install appdirs==1.2.0" % (os.path.join(paths['sys_python_path'], "Scripts", "pip.exe")))
 
-def checkout_counterpartyd(paths):
-    logging.info("Checking out counterpartyd from git...")
+def checkout_counterpartyd(paths, run_as_user):
+    logging.info("Checking out/updating counterpartyd from git...")
     counterpartyd_path = os.path.join(paths['dist_path'], "counterpartyd")
     if os.path.exists(counterpartyd_path):
-        _rmtree(counterpartyd_path)
-    runcmd("git clone https://github.com/PhantomPhreak/counterpartyd \"%s\"" % counterpartyd_path)
+        runcmd("cd \"%s\" && git pull origin master" % counterpartyd_path)
+    else:
+        runcmd("git clone https://github.com/PhantomPhreak/counterpartyd \"%s\"" % counterpartyd_path)
+    
+    if os.name != 'nt':
+        runcmd("chown -R %s \"%s\"" % (run_as_user, counterpartyd_path))
     sys.path.insert(0, os.path.join(paths['dist_path'], "counterpartyd")) #can now import counterparty modules
 
 def create_virtualenv(paths):
@@ -212,10 +216,11 @@ def create_default_datadir_and_config(paths, run_as_user):
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
     
-    #create a default config file
-    cfg = open(cfg_path, 'w')
-    cfg.write(DEFAULT_CONFIG)
-    cfg.close()
+    if not os.path.exists(cfg_path):
+        #create a default config file
+        cfg = open(cfg_path, 'w')
+        cfg.write(DEFAULT_CONFIG)
+        cfg.close()
     
     if os.name != "nt": 
         uid = pwd.getpwnam(run_as_user).pw_uid
@@ -315,13 +320,13 @@ def main():
 
     if is_build:
         logging.info("Building Counterparty...")
-        checkout_counterpartyd(paths)
+        checkout_counterpartyd(paths, run_as_user)
         install_dependencies(paths)
         create_virtualenv(paths)
         do_build(paths)
     else: #install mode
         logging.info("Installing Counterparty from source for user '%s'..." % run_as_user)
-        checkout_counterpartyd(paths)
+        checkout_counterpartyd(paths, run_as_user)
         install_dependencies(paths)
         create_virtualenv(paths)
         setup_startup(paths, run_as_user)
