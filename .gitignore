@@ -2,6 +2,7 @@
 env
 docs/_build/*
 dist/counterpartyd
+bin
 
 # C extensions
 *.so

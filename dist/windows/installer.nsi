@@ -24,7 +24,7 @@ InstallDirRegKey HKLM "Software\Counterpartyd" "Install_Dir"
 ; Request application privileges for Windows Vista
 RequestExecutionLevel admin
 
-LicenseData "..\..\License.md"
+LicenseData "..\counterpartyd\LICENSE"
 
 ;--------------------------------
 

@@ -56,7 +56,6 @@ def get_paths():
     paths['base_path'] = os.path.normpath(os.path.dirname(os.path.realpath(sys.argv[0])))
     #^ the dir of where counterparty source was downloaded to
     logging.debug("base path: '%s'" % paths['base_path'])
-    sys.path.insert(0, paths['base_path']) #can now import counterparty modules
     
     #find the location of the virtualenv command and make sure it exists
     if os.name == "posix":
@@ -111,8 +110,13 @@ def checkout_counterpartyd(paths):
     logging.info("Checking out counterpartyd from git...")
     counterpartyd_path = os.path.join(paths['dist_path'], "counterpartyd")
     if os.path.exists(counterpartyd_path):
-        shutil.rmtree(counterpartyd_path)
-    runcmd("git clone https://github.com/PhantomPhreak/counterpartyd \"%s\"" % counterpartyd_path)
+        #shutil.rmtree(counterpartyd_path)
+        runcmd("cd \"%s\" && git pull origin master" % counterpartyd_path)
+        #optimally we'd use shutil.rmtree and just recheckout the dir, but windows thows a permission error 
+    else:
+        runcmd("git clone https://github.com/PhantomPhreak/counterpartyd \"%s\"" % counterpartyd_path)
+        
+    sys.path.insert(0, os.path.join(paths['dist_path'], "counterpartyd")) #can now import counterparty modules
 
 def create_virtualenv(paths):
     if paths['virtualenv_path'] is None or not os.path.exists(paths['virtualenv_path']):
@@ -228,7 +232,7 @@ def do_build(paths):
     logging.info("Frozen executiable data created in %s" % os.path.join(paths['bin_path'], "build"))
     
     #Add a default config to the build
-    cfg = open(os.path.join(paths['bin_path'], "counterpartyd.conf.default"), 'w')
+    cfg = open(os.path.join(os.path.join(paths['bin_path'], "build"), "counterpartyd.conf.default"), 'w')
     cfg.write(DEFAULT_CONFIG)
     cfg.close()
     

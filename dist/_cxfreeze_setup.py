@@ -6,7 +6,7 @@ from cx_Freeze import setup, Executable
 build_exe_options = {"packages": ["os"], "excludes": []}
 
 base = None
-scriptPath = os.path.normpath(os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), ".."))
+scriptPath = os.path.normpath(os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), "counterpartyd"))
 setup(  name = "counterpartyd",
         version = "0.1",
         description = "Counterparty Daemon",
