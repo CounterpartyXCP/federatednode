@@ -28,7 +28,7 @@ Installing
 **As the user you want to run** ``counterpartyd`` **as**, launch a terminal window, and type the following::
 
     sudo apt-get -y update
-    sudo apt-get -y install git-core
+    sudo apt-get -y install git-core python3.3 python3
     git clone https://github.com/xnova/counterpartyd_build ~/counterpartyd_build
     sudo python3 ~/counterpartyd_build/setup.py
 
@@ -49,7 +49,7 @@ Running from Source
 After installing and creating the necessary basic config, run ``counterpartyd`` in the foreground to make sure
 everything works fine::
 
-    counterpartyd
+    counterpartyd --log-file=- -v
     
 (The above assumes ``/usr/local/bin`` is in your PATH, which is where the ``counterpartyd`` symlink (which just
 points to the ``run.py`` script) is placed. If not, run ``/usr/local/bin/counterpartyd`` instead.
@@ -58,15 +58,22 @@ Once you're sure it launches and runs fine, press CTRL-C to exit it, and then ru
 
     sudo service counterpartyd start
 
-You can then run any of counterparty’s other functions, like::
+You can then run any of ``counterpartyd’s`` other functions, like `the examples listed here <https://github.com/PhantomPhreak/counterpartyd#examples>`__.
 
-    counterpartyd --help
-    counterpartyd send <options....>
-    counterpartyd order <options....>
-
-To run the counterparty testsuite::
+To run the ``counterpartyd`` testsuite::
 
     counterpartyd tests
+
+
+Updating to the newest source
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+As the code is enhanced and improved on Github, you can refresh your local copy of the repositories like so::
+
+    cd ~/counterpartyd_build
+    git pull origin master
+    cd ~/counterpartyd_build/dist/counterpartyd
+    git pull origin master
 
     
 
@@ -129,36 +136,37 @@ Running from Source
 After installing, open a command window and run ``counterpartyd`` in the foreground via::
 
     cd C:\counterpartyd_build
-    run.py
+    C:\Python33\python.exe run.py --log-file=- -v
 
+You can then run any of ``counterpartyd’s`` other functions, like `the examples listed here <https://github.com/PhantomPhreak/counterpartyd#examples>`__.
 
-Or, if you have multiple versions of python on your computer and want to make sure you use the right one::
-    
-    cd C:\counterpartyd_build
-    C:\Python33\python.exe run.py
-
-In another command window, you can then run any of counterparty’s other functions, like::
-
-    run.py --help
-    run.py send <options....>
-    run.py order <options....>
-
-To run the counterparty testsuite::
+To run the ``counterpartyd`` testsuite::
 
     cd C:\counterpartyd_build
     run.py tests 
 
 
+Updating to the newest source
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+As the code is enhanced and improved on Github, you can refresh your local copy of the repositories like so::
+
+    cd C:\counterpartyd_build
+    git pull origin master
+    cd C:\counterpartyd_build\dist\counterpartyd
+    git pull origin master
+
+
 Building your own Installer
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Complete the instructions under **Running from Source** above.
-Then, execute the following commands to build from source::
+Complete the instructions under **Prerequisites** above.
+Then, execute the following commands to build the installer package::
 
     cd C:\counterpartyd_build
     C:\Python33\python.exe setup.py -b
     
-If successful, you will be provided the location of the resulting installer for ``counterpartyd``.
+If successful, you will be provided the location of the resulting installer package.
 
 
 Mac OS X

@@ -20,8 +20,8 @@ except ImportError:
     pass
 
 PYTHON_VER = "3.3"
-DEFAULT_CONFIG = "[Default]%srpc-connect=localhost%srpc-port=18332%srpc-user=rpc%srpc-password=rpcpw1234" % (
-    os.linesep, os.linesep, os.linesep, os.linesep)
+DEFAULT_CONFIG = "[Default]\nrpc-connect=localhost\nrpc-port=18332\nrpc-user=rpc\nrpc-password=rpcpw1234\n"
+DEFAULT_CONFIG_INSTALLER = "[Default]\nrpc-connect=RPC_CONNECT\nrpc-port=RPC_PORT\nrpc-user=RPC_USER\nrpc-password=RPC_PASSWORD\n"
 
 def _rmtree(path):
     """We use this function instead of the built-in shutil.rmtree because it unsets the windoze read-only/archive bit
@@ -266,7 +266,7 @@ def do_build(paths):
     
     #Add a default config to the build
     cfg = open(os.path.join(os.path.join(paths['bin_path'], "build"), "counterpartyd.conf.default"), 'w')
-    cfg.write(DEFAULT_CONFIG)
+    cfg.write(DEFAULT_CONFIG_INSTALLER)
     cfg.close()
     
     #find the location of makensis.exe (freaking windows...)
@@ -279,7 +279,8 @@ def do_build(paths):
     if not os.path.exists(make_nsis_path):
         logging.error("Error finding makensis.exe at path '%s'. Did you install NSIS?" % make_nsis_path)
         sys.exit(1)
-    runcmd(r'%s %s' % (make_nsis_path, os.path.normpath(os.path.join(paths['dist_path'], "windows", "installer.nsi"))))
+    runcmd(r'%s %s%s' % (make_nsis_path, "/DIS_64BIT " if arch == "amd64" else '',
+        os.path.normpath(os.path.join(paths['dist_path'], "windows", "installer.nsi"))))
     
     #move created .msi file to the bin dir
     from lib import config #counter party
