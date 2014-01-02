@@ -4,7 +4,7 @@ Using the Installer
 .. warning::
 
     The Windows installer will be released around 1 week after project launch (or, once ``counterpartyd`` proves itself
-    as reletively stable, without major bugs/issues). In the meantime, Windows-based users should :doc:`build from
+    as relatively stable, without major bugs/issues). In the meantime, Windows-based users should :doc:`build from
     source <BuildingFromSource>` so that keeping up with any major bugfixes is more straightforward.  
 
 .. note::
@@ -19,6 +19,8 @@ to other OSes in the future.
 
 On Windows
 ~~~~~~~~~~~~~~~~~~~~~~
+
+**INSTALLERS ARE NOT AVAILABLE YET**
 
 - Download the ``counterpartyd`` installer for `64-bit Windows <https://raw.github.com/xnova/counterpartyd_binaries/counterpartyd-v1-amd64_install.exe>`__
   or `32-bit Windows <https://raw.github.com/xnova/counterpartyd_binaries/counterpartyd-v1-i386_install.exe>`__

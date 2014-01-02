@@ -18,7 +18,7 @@ all setup necessary to run ``counterpartyd`` from source.
 .. warning::
 
     The Windows installer will be released around 1 week after project launch (or, once ``counterpartyd`` proves itself
-    as reletively stable, without major bugs/issues). In the meantime, Windows-based users should :doc:`build from
+    as relatively stable, without major bugs/issues). In the meantime, Windows-based users should :doc:`build from
     source <BuildingFromSource>` so that keeping up with any major bugfixes is more straightforward.  
 
 
