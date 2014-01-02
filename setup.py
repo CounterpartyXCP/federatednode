@@ -30,7 +30,7 @@ def _rmtree(path):
     if os.name != 'nt':
         return shutil.rmtree(path) #this works fine on non-windows
 
-    #this code only for windows    
+    #this code only for windows - DO NOT USE THIS CODE ON NON-WINDOWS
     def rmgeneric(path, __func__):
         import win32api, win32con
         win32api.SetFileAttributes(path, win32con.FILE_ATTRIBUTE_NORMAL)
