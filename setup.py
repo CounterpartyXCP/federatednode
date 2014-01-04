@@ -58,6 +58,7 @@ def usage():
     print("SYNTAX: %s [-h] [--build]" % sys.argv[0])
 
 def runcmd(command, abort_on_failure=True):
+    logging.debug("RUNNING COMMAND: %s" % command)
     ret = os.system(command)
     if abort_on_failure and ret != 0:
         logging.error("Command failed: '%s'" % command)
@@ -113,6 +114,18 @@ def get_paths(is_build):
     
     return paths
 
+def checkout_counterpartyd(paths, run_as_user):
+    logging.info("Checking out/updating counterpartyd from git...")
+    counterpartyd_path = os.path.join(paths['dist_path'], "counterpartyd")
+    if os.path.exists(counterpartyd_path):
+        runcmd("cd \"%s\" && git pull origin master" % counterpartyd_path)
+    else:
+        runcmd("git clone https://github.com/PhantomPhreak/counterpartyd \"%s\"" % counterpartyd_path)
+    
+    if os.name != 'nt':
+        runcmd("chown -R %s \"%s\"" % (run_as_user, counterpartyd_path))
+    sys.path.insert(0, os.path.join(paths['dist_path'], "counterpartyd")) #can now import counterparty modules
+
 def install_dependencies(paths):
     if os.name == "posix" and platform.dist()[0] == "Ubuntu":
         logging.info("UBUNTU LINUX: Installing Required Packages...")
@@ -134,22 +147,10 @@ def install_dependencies(paths):
                 os.path.join(paths['dist_path'], "windows", "ez_setup.py")))
         
         #now easy_install is installed, install virtualenv, and sphinx for doc building
-        runcmd("%s virtualenv sphinx pip" % (os.path.join(paths['sys_python_path'], "Scripts", "easy_install.exe")))
+        runcmd("%s virtualenv==1.10.1 pip==1.4.1 sphinx==1.2" % (os.path.join(paths['sys_python_path'], "Scripts", "easy_install.exe")))
         
         #now that pip is installed, install necessary deps outside of the virtualenv (e.g. for this script)
         runcmd("%s install appdirs==1.2.0" % (os.path.join(paths['sys_python_path'], "Scripts", "pip.exe")))
-
-def checkout_counterpartyd(paths, run_as_user):
-    logging.info("Checking out/updating counterpartyd from git...")
-    counterpartyd_path = os.path.join(paths['dist_path'], "counterpartyd")
-    if os.path.exists(counterpartyd_path):
-        runcmd("cd \"%s\" && git pull origin master" % counterpartyd_path)
-    else:
-        runcmd("git clone https://github.com/PhantomPhreak/counterpartyd \"%s\"" % counterpartyd_path)
-    
-    if os.name != 'nt':
-        runcmd("chown -R %s \"%s\"" % (run_as_user, counterpartyd_path))
-    sys.path.insert(0, os.path.join(paths['dist_path'], "counterpartyd")) #can now import counterparty modules
 
 def create_virtualenv(paths):
     if paths['virtualenv_path'] is None or not os.path.exists(paths['virtualenv_path']):
@@ -326,7 +327,8 @@ def main():
         create_virtualenv(paths)
         do_build(paths)
     else: #install mode
-        logging.info("Installing Counterparty from source for user '%s'..." % run_as_user)
+        logging.info("Installing Counterparty from source%s..." % (
+            (" for user '%s'" % run_as_user) if os.name != "nt" else '',))
         checkout_counterpartyd(paths, run_as_user)
         install_dependencies(paths)
         create_virtualenv(paths)
