@@ -19,9 +19,19 @@ try: #ignore import errors on windows
 except ImportError:
     pass
 
-PYTHON_VER = "3.3"
+PYTHON_VER = None
 DEFAULT_CONFIG = "[Default]\nrpc-connect=localhost\nrpc-port=18332\nrpc-user=rpc\nrpc-password=rpcpw1234\n"
 DEFAULT_CONFIG_INSTALLER = "[Default]\nrpc-connect=RPC_CONNECT\nrpc-port=RPC_PORT\nrpc-user=RPC_USER\nrpc-password=RPC_PASSWORD\n"
+
+def which(filename):
+    """docstring for which"""
+    locations = os.environ.get("PATH").split(os.pathsep)
+    candidates = []
+    for location in locations:
+        candidate = os.path.join(location, filename)
+        if os.path.isfile(candidate):
+            candidates.append(candidate)
+    return candidates
 
 def _rmtree(path):
     """We use this function instead of the built-in shutil.rmtree because it unsets the windoze read-only/archive bit
@@ -80,6 +90,20 @@ def do_prerun_checks():
         
     if os.name == "posix" and "SUDO_USER" not in os.environ:
         logging.error("Please use `sudo` to run this script.")
+        
+    #establish python version
+    global PYTHON_VER
+    if os.name == "nt":
+        PYTHON_VER = "3.3"
+    else:
+        for ver in ["3.3", "3.2", "3.1"]:
+            if which("python%s" % ver):
+                PYTHON_VER = ver
+                logging.info("Found Python version %s" % PYTHON_VER)
+                break
+        else:
+            logging.error("Cannot find your Python version in your path")
+            sys.exit(1)
 
 def get_paths(is_build):
     paths = {}
@@ -128,10 +152,25 @@ def checkout_counterpartyd(paths, run_as_user):
 
 def install_dependencies(paths):
     if os.name == "posix" and platform.dist()[0] == "Ubuntu":
-        logging.info("UBUNTU LINUX: Installing Required Packages...")
+        ubuntu_release = platform.linux_distribution()[1]
+        logging.info("UBUNTU LINUX %s: Installing Required Packages..." % ubuntu_release) 
         runcmd("sudo apt-get -y update")
-        runcmd("sudo apt-get -y install software-properties-common python-software-properties git-core wget cx-freeze \
-        python3 python3-setuptools python3-dev python3-pip build-essential python3-sphinx python-virtualenv")
+        
+        #13.10 deps
+        if ubuntu_release == "13.10":
+            runcmd("sudo apt-get -y install software-properties-common python-software-properties git-core wget cx-freeze \
+            python3 python3-setuptools python3-dev python3-pip build-essential python3-sphinx python-virtualenv")
+        elif ubuntu_release == "12.04":
+            #12.04 deps. 12.04 doesn't include python3-pip, so we need to use the workaround at http://stackoverflow.com/a/12262143
+            runcmd("sudo apt-get -y install software-properties-common python-software-properties git-core wget cx-freeze \
+            python3 python3-setuptools python3-dev build-essential python3-sphinx python-virtualenv")
+            if not os.path.exists("/usr/local/bin/pip3"):
+                runcmd("sudo easy_install3 pip==1.4.1") #pip1.5 breaks things due to its use of wheel by default
+                #for some reason, it installs "pip" to /usr/local/bin, instead of "pip3"
+                runcmd("sudo mv /usr/local/bin/pip /usr/local/bin/pip3")
+        else:
+            logging.error("Unsupported Ubuntu version, please use 13.10 or 12.04 LTS")
+            sys.exit(1)
 
         #install sqlite utilities (not technically required as python's sqlite3 module is self-contained, but nice to have)
         runcmd("sudo apt-get -y install sqlite sqlite3 libsqlite3-dev libleveldb-dev")

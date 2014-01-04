@@ -17,7 +17,7 @@ On Linux
 Prerequisites
 ~~~~~~~~~~~~~
 
-Currently, Ubuntu Linux (Server or Desktop) 12.04 LTS, 12.10, 13.04 or 13.10 are required.
+Currently, Ubuntu Linux (Server or Desktop) **12.04 LTS** and **13.10** are supported.
 
 Support for other distributions is a future task.
 
@@ -28,7 +28,7 @@ Installing
 **As the user you want to run** ``counterpartyd`` **as**, launch a terminal window, and type the following::
 
     sudo apt-get -y update
-    sudo apt-get -y install git-core python3.3 python3
+    sudo apt-get -y install git-core python3
     git clone https://github.com/xnova/counterpartyd_build ~/counterpartyd_build
     sudo python3 ~/counterpartyd_build/setup.py
 
