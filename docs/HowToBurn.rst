@@ -123,8 +123,8 @@ transaction listed, like so:
 .. image:: images/burntut7.jpg
 
 "Valid" transactions look like that one above (which sends to the Counterparty burn address
-(``1CounterpartyXXXXXXXXXXXXXXXUWLpVr``), and has a change address that is the same as the sending address),
-OR, like the following:
+(``1CounterpartyXXXXXXXXXXXXXXXUWLpVr``), **which must be listed as the first output address** and has a
+change address that is the same as the sending address), OR, like the following:
 
 .. image:: images/burntut8.jpg
 
