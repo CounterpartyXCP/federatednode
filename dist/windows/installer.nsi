@@ -1,10 +1,11 @@
 ; installer.nsi
 ;
-; NSIS install script for counterpartyd 
-!include StrRep.nsh ;for ReplaceInFile
+; NSIS install script for counterpartyd
+!include "StrFunc.nsh"
 !include ReplaceInFile.nsh ;for ReplaceInFile
 !include nsDialogs.nsh ;for install dialogs
 !include LogicLib.nsh ;for install dialogs
+!include EnvVarUpdate.nsh ;to add counterpartyd path to PATH
 
 ;--------------------------------
 
@@ -150,13 +151,12 @@ Section "counterpartyd (required)"
   !insertmacro _ReplaceInFile "$CPDATADIR\counterpartyd.conf" "RPC_PASSWORD" "$dataPassword"
   
   ; Install a service - ServiceType own process - StartType automatic - NoDependencies - Logon as System Account
-  SimpleSC::InstallService "counterpartyd" "Counterparty Daemon" "16" "2" "$INSTDIR\counterpartyd.exe" "" "" ""
-  Pop $0 ; returns an errorcode (<>0) otherwise success (0)
-  ;IntCmp $0 0 SqlDone  
-
+  ;SimpleSC::InstallService "counterpartyd" "Counterparty Daemon" "16" "2" "$INSTDIR\counterpartyd.exe" "" "" ""
+  ;Pop $0 ; returns an errorcode (<>0) otherwise success (0)
+  
   ; Start a service. Be sure to pass the service name, not the display name.
-  SimpleSC::StartService "counterpartyd" "" 30
-  Pop $0 ; returns an errorcode (<>0) otherwise success (0)
+  ;SimpleSC::StartService "counterpartyd" "" 30
+  ;Pop $0 ; returns an errorcode (<>0) otherwise success (0)
 SectionEnd
 
 ; Optional section (can be disabled by the user)
@@ -166,18 +166,29 @@ Section "Start Menu Shortcuts"
   CreateShortCut "$SMPROGRAMS\counterpartyd\counterpartyd.lnk" "$INSTDIR\counterpartyd.exe" "--log-file=-" "$INSTDIR\counterpartyd.exe" 0
 SectionEnd
 
+; Optional section (can be disabled by the user)
+Section "Start counterpartyd on Login?"
+  CreateShortCut "$SMSTARTUP\counterpartyd.lnk" "$INSTDIR\counterpartyd.exe" "--log-file=-" "$INSTDIR\counterpartyd.exe" 0
+SectionEnd
+
+; Optional section (can be disabled by the user)
+Section "Add to PATH?"
+  ;add the counterpartyd to PATH
+  ${EnvVarUpdate} $0 "PATH" "A" "HKCU" "$INSTDIR"  
+SectionEnd
+
 ;--------------------------------
 
 ; Uninstaller
 
 Section "Uninstall"
   ; Stop a service and waits for file release. Be sure to pass the service name, not the display name.
-  SimpleSC::StopService "counterpartyd" 1 30
-  Pop $0 ; returns an errorcode (<>0) otherwise success (0)
+  ;SimpleSC::StopService "counterpartyd" 1 30
+  ;Pop $0 ; returns an errorcode (<>0) otherwise success (0)
   
   ; Remove a service
-  SimpleSC::RemoveService "counterpartyd"
-  Pop $0 ; returns an errorcode (<>0) otherwise success (0)
+  ;SimpleSC::RemoveService "counterpartyd"
+  ;Pop $0 ; returns an errorcode (<>0) otherwise success (0)
   
   ; Remove registry keys
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\counterpartyd"
@@ -188,6 +199,7 @@ Section "Uninstall"
 
   ; Remove shortcuts, if any
   Delete "$SMPROGRAMS\counterpartyd\*.*"
+  Delete "$SMSTARTUP\counterpartyd.lnk"
 
   ; Remove directories used
   RMDir "$SMPROGRAMS\counterpartyd"

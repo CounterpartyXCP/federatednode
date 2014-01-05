@@ -136,7 +136,7 @@ Running from Source
 After installing, open a command window and run ``counterpartyd`` in the foreground via::
 
     cd C:\counterpartyd_build
-    C:\Python33\python.exe run.py --log-file=- -v
+    C:\Python33\python.exe run.py --log-file=-
 
 You can then run any of ``counterpartyd’s`` other functions, like `the examples listed here <https://github.com/PhantomPhreak/counterpartyd#examples>`__.
 

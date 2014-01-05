@@ -76,6 +76,7 @@ address, which you will be sending money to, so that you can burn that money for
 .. image:: images/burntut2.jpg
 
 **Step 4**
+
 Click on the "Send Money" tab, then click on "Custom" under "Transaction Type". Do the following:
 
 - Ensure that your main address (that you sent the BTC to) is selected under the **"From"** box
@@ -89,12 +90,14 @@ Click on the "Send Money" tab, then click on "Custom" under "Transaction Type". 
 Once done, click on the "Review Payment" button. Make sure it's what you want, then click the "Send Transaction" button.
 
 **Step 5**
+
 Now, click back on "Recieve Money" and you should see that the address you just created (``1J6Sb7BbhCQKRTwmt8yKxXAAQByeNsED7P`` in this case)
 has some funds now (in this case, the .1 BTC we sent, listed as dollars):
 
 .. image:: images/burntut4.jpg
 
 **Step 6**
+
 Now, we're going to "burn" the .1 BTC in ``1J6Sb7BbhCQKRTwmt8yKxXAAQByeNsED7P``. To do this, click back on "Send Money", then "Custom". Do the following:
 
 - Ensure that the address you want to burn the BTC in is selected under the **"From"** box

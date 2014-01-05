@@ -15,12 +15,6 @@ all setup necessary to run ``counterpartyd`` from source.
   install/setup from source <BuildingFromSource>`
 - If you are **neither**, at this point you will need to follow `the manual installation instructions <https://github.com/PhantomPhreak/counterpartyd/blob/master/README.md>`__.
 
-.. warning::
-
-    The Windows installer will be released around 1 week after project launch (or, once ``counterpartyd`` proves itself
-    as relatively stable, without major bugs/issues). In the meantime, Windows-based users should :doc:`build from
-    source <BuildingFromSource>` so that keeping up with any major bugfixes is more straightforward.  
-
 
 When to use?
 ------------------

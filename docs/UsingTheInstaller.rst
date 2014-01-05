@@ -3,9 +3,7 @@ Using the Installer
 
 .. warning::
 
-    The Windows installer will be released around 1 week after project launch (or, once ``counterpartyd`` proves itself
-    as relatively stable, without major bugs/issues). In the meantime, Windows-based users should :doc:`build from
-    source <BuildingFromSource>` so that keeping up with any major bugfixes is more straightforward.  
+    The Windows installer is in a beta state.  
 
 .. note::
 
@@ -20,10 +18,8 @@ to other OSes in the future.
 On Windows
 ~~~~~~~~~~~~~~~~~~~~~~
 
-**INSTALLERS ARE NOT AVAILABLE YET**
-
 - Download the ``counterpartyd`` installer for `64-bit Windows <https://raw.github.com/xnova/counterpartyd_binaries/counterpartyd-v1-amd64_install.exe>`__
-  or `32-bit Windows <https://raw.github.com/xnova/counterpartyd_binaries/counterpartyd-v1-i386_install.exe>`__
+  (32 bit Windows installer will be available shortly)
 - Run the installer and navigate through the setup wizard
 - The installer will verify all dependencies are on your system, as well as installing ``counterpartyd.exe``
   (i.e. which has been created as a self-contained program with all the necessary Python dependencies compiled in)
