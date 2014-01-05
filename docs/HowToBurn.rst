@@ -34,7 +34,7 @@ Full examples::
 Without using counterpartyd
 -------------------------------------------
 
-.. warning:
+.. warning::
 
     **DISCLAIMER:** The format of a Counterparty transaction is very specific, and we can’t guarantee that a
     transaction constructed by any other software will work (and if it doesn’t, you’ll lose your BTC).
