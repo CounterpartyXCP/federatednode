@@ -1,4 +1,3 @@
-
 How to Burn Bitcoin (to generate XCP)
 ======================================
 
