@@ -2,7 +2,7 @@
 How to Burn Bitcoin (to generate XCP)
 ======================================
 
-.. warning:
+.. warning::
 
    This document is valid only during the "burn" period of Bitcoin blockrange between 278310 and 283810.
    Please do not try burning after this period. 
@@ -14,7 +14,7 @@ Using counterpartyd
 ``counterpartyd`` is the preferred way to "burn" BTC to generate XCP. To burn BTC, configure ``bitcoind`` and
 install ``counterpartyd`` using the instructions from the earlier sections of this document (either from source, or via the installer).
 
-Once done, you can open up a command prompt, then, just run the command like:
+Once done, you can open up a command prompt, then, just run the command like::
 
     counterpartyd burn --from=<ADDRESS> --quantity=<QUANTITY>
     #under Linux
@@ -22,7 +22,7 @@ Once done, you can open up a command prompt, then, just run the command like:
     C:\python33\python.exe C:\counterpartyd_build\run.py burn --from=<ADDRESS> --quantity=<QUANTITY>
     #under Windows
     
-Full examples: 
+Full examples::
 
     counterpartyd burn --from=1J6Sb7BbhCQKRTwmt8yKxXAAQByeNsED7P --quantity=0.5
     #under Linux
@@ -52,20 +52,30 @@ Here are the requirements for a successful "burn":
   or ``mvCounterpartyXXXXXXXXXXXXXXW24Hef`` (testnet).
 - The total number of BTC burned by the source address is less than or equal to 1.
 
-How to do this on blockchain.info:
+blockchain.info
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-First, sign up with a blockchain.info wallet (if you haven't already) at `this link <https://blockchain.info/wallet/new>`__.
+To perform this burn on `blockchain.info <http://blockchain.info>`__, do the following:
+
+**Step 1**
+
+First, sign up with a wallet (if you haven't already) at `this link <https://blockchain.info/wallet/new>`__.
+
+**Step 2**
 
 Once created, send money to your wallet using the receive address listed. Once sent, it should appear in your
 total balance in the upper right hand side of the screen.
 
 .. image:: images/burntut1.jpg
 
+**Step 3**
+
 Next, click on the "Receive Money" tab, and click on the green "New Address" button. This will generate a second
 address, which you will be sending money to, so that you can burn that money for XCP.
 
 .. image:: images/burntut2.jpg
 
+**Step 4**
 Click on the "Send Money" tab, then click on "Custom" under "Transaction Type". Do the following:
 
 - Ensure that your main address (that you sent the BTC to) is selected under the **"From"** box
@@ -78,11 +88,13 @@ Click on the "Send Money" tab, then click on "Custom" under "Transaction Type". 
 
 Once done, click on the "Review Payment" button. Make sure it's what you want, then click the "Send Transaction" button.
 
+**Step 5**
 Now, click back on "Recieve Money" and you should see that the address you just created (``1J6Sb7BbhCQKRTwmt8yKxXAAQByeNsED7P`` in this case)
 has some funds now (in this case, the .1 BTC we sent, listed as dollars):
 
 .. image:: images/burntut4.jpg
 
+**Step 6**
 Now, we're going to "burn" the .1 BTC in ``1J6Sb7BbhCQKRTwmt8yKxXAAQByeNsED7P``. To do this, click back on "Send Money", then "Custom". Do the following:
 
 - Ensure that the address you want to burn the BTC in is selected under the **"From"** box
@@ -96,12 +108,14 @@ Now, we're going to "burn" the .1 BTC in ``1J6Sb7BbhCQKRTwmt8yKxXAAQByeNsED7P``.
 So, in the screenshot above, I'm going to burn .005 BTC, from address ``1J6Sb7BbhCQKRTwmt8yKxXAAQByeNsED7P``.
 Once you're sure you're good here, click "Review Payment", then "Send Transaction".
 
-Then, you can click on the "My Transactions" tab to see the transaction you just made:
+You can then click on the "My Transactions" tab to see the transaction you just made:
 
 .. image:: images/burntut6.jpg
 
-Once this transaction has at least 1 confirmation, it should then show up at
-`this link <https://blockchain.info/address/1CounterpartyXXXXXXXXXXXXXXXUWLpVr>`__, like so: 
+**Verification**
+
+Click `this link <https://blockchain.info/address/1CounterpartyXXXXXXXXXXXXXXXUWLpVr>`__. You should see the
+transaction listed, like so: 
 
 .. image:: images/burntut7.jpg
 
@@ -113,7 +127,7 @@ OR, like the following:
 
 Which sends the entire balance of the address (**being under 1BTC**) to the Counterparty burn address, with no change address listed.
 
-.. note:
+.. note::
 
     You can make multiple sends from a single address to the Counterparty burn address, **as long as the
     total amount of BTC sent from that address is not greater than 1 BTC**.
