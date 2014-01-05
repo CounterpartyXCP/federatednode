@@ -54,6 +54,7 @@ Table of Contents
    UsingTheInstaller
    BuildingFromSource
    AdditionalTopics
+   HowToBurn
 
 
 Indices and tables

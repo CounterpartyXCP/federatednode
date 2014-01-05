@@ -49,7 +49,7 @@ Running from Source
 After installing and creating the necessary basic config, run ``counterpartyd`` in the foreground to make sure
 everything works fine::
 
-    counterpartyd --log-file=- -v
+    counterpartyd --log-file=-
     
 (The above assumes ``/usr/local/bin`` is in your PATH, which is where the ``counterpartyd`` symlink (which just
 points to the ``run.py`` script) is placed. If not, run ``/usr/local/bin/counterpartyd`` instead.
