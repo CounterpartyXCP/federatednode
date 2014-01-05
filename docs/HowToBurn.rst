@@ -82,7 +82,7 @@ Click on the "Send Money" tab, then click on "Custom" under "Transaction Type". 
 - In the **"To"** box, enter the new address that you just created (in my case, ``1J6Sb7BbhCQKRTwmt8yKxXAAQByeNsED7P``). 
   Choose an amount less than 1 BTC to send over (as each address is limited to "burning" 1 BTC total).
 - For **"Miners Fee"**, entering .0001 is a good bet (so your transaction goes through faster)
-- Under **"Change Address"**, you should choose the same address as your **"To"** address
+- Under **"Change Address"**, you should choose the same address as your **"From"** address
 
 .. image:: images/burntut3.jpg
 
