@@ -104,7 +104,7 @@ Now, we're going to "burn" the .1 BTC in ``1J6Sb7BbhCQKRTwmt8yKxXAAQByeNsED7P``.
 - In the **"To"** box, enter ``1CounterpartyXXXXXXXXXXXXXXXUWLpVr``. For the amount, enter the amount
   you wish to burn (which does not have to be the entire balance of the address, must should not exceed 1 BTC from any given address)
 - For **"Miners Fee"**, entering .0001 is a good bet (so your transaction goes through faster)
-- **THIS IS VERY IMPORTANT:** Under **"Change Address"**, you *must* choose the same address as your **"To"** address. 
+- **THIS IS VERY IMPORTANT:** Under **"Change Address"**, you *must* choose the same address as your **"From"** address. 
 
 .. image:: images/burntut5.jpg
 
