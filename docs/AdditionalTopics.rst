@@ -53,6 +53,72 @@ Under Linux, you can monitor these logs via a command like ``tail -f ~/.config/c
 Under Windows, you can use a tool like `Notepad++ <http://notepad-plus-plus.org/>`__ to view the log file,
 which will detect changes to the file and update if necessary.
 
+Testing counterpartyd on testnet
+--------------------------------
+
+Here's the steps you'll need to take to set up an additional bitcoind on testnet for ``counterpartyd`` testing. 
+This assumes that you're already running ``bitcoind`` (or ``bitcoin-qt``) on mainnet, and would like to set up a
+second instance for testnet:
+
+Windows
+~~~~~~~~
+
+First, find your current ``bitcoind`` data directory, which is normally located at ``%APPDATA%\Bitcoin``. Examples of this are:
+
+- ``C:\Users\<your username>\AppData\Roaming\Bitcoin`` (Windows 7/8/Server)
+- ``C:\Documents and Settings\<your username>\Application Data\Bitcoin`` (Windows XP)
+
+Alongside that directory (e.g. at the root of your AppData\Roaming dir), create another directory, name it something
+like ``BitcoinTest``.
+
+- ``C:\Users\<your username>\AppData\Roaming\BitcoinTest`` (Windows 7/8/Server)
+- ``C:\Documents and Settings\<your username>\Application Data\BitcoinTest`` (Windows XP)
+ 
+In this ``BitcoinTest`` directory, create a ``bitcoin.conf`` file with the following contents:
+
+    rpcuser=rpc
+    rpcpassword=rpcpw1234
+    server=1
+    daemon=1
+    txindex=1
+    testnet=1
+
+Now, make a shortcut to something like the following (assuming you installed to the default
+install directory from the .exe installer):
+
+To run ``bitcoin-qt``: ``"C:\Program Files (x86)\Bitcoin\bitcoin-qt.exe" --datadir="C:\Users\robbyd\AppData\Roaming\BitcoinTest"``
+To run ``bitcoind``: ``"C:\Program Files (x86)\Bitcoin\bitcoind.exe" --datadir="C:\Users\robbyd\AppData\Roaming\BitcoinTest"``
+
+Note that you can run either. If you want the GUI, run bitcoin-qt (which will also listen on the RPC interface).
+If you are comfortable using ``bitcoind`` commands (or are using a server), just run ``bitcoind``.
+
+Then, just launch that shortcut. (Or, if you are having problems, you can just open up a command window and
+try running that directly.)
+
+Once launched, ``bitcoind``/``bitcoin-qt`` will be listening on testnet RPC API port ``18832``. You can just
+run ``counterpartyd`` with its ``--datadir`` parameter to point to a directory with its own
+``counterpartyd.conf`` file that has the connection parameters to your testnet bitcoin daemon that's now running.
+
+This means, that like with ``bitcoind``, you may have two separate ``counterpartyd`` data directories, each with
+their own configuration file and database. The difference
+between the configuration files in each datadir will be that the one for your "testnet" ``counterpartyd`` will simply
+specify ``rpc-port=18832``, while the one for your "mainnet" ``counterpartyd`` will specify ``rpc-port=8832``.
+
+
+Linux
+~~~~~~
+
+Similar to the above, create a second bitcoin data directory (maybe name it ``.bitcoin-test``, instead of ``.bitcoin``). Place
+it alongside your main ``.bitcoin`` directory (e.g. under ``~``). In this directory, create a ``bitcoin.conf``
+file with the same contents as in the above Windows section.
+
+Now, run ``bitcoind`` or ``bitcoin-qt``, as such:
+
+To run ``bitcoin-qt``: ``"bitcoin-qt --datadir=~/.bitcoin-test``
+To run ``bitcoind``: ``bitcoind --data-dir=~/.bitcoin-test``
+
+For more information, see the Windows section above.
+
 
 Next Steps
 -----------
