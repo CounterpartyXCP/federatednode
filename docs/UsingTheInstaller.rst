@@ -18,7 +18,7 @@ to other OSes in the future.
 On Windows
 ~~~~~~~~~~~~~~~~~~~~~~
 
-- Download the ``counterpartyd`` installer for `64-bit Windows <https://raw.github.com/xnova/counterpartyd_binaries/counterpartyd-v1-amd64_install.exe>`__
+- Download the ``counterpartyd`` installer for `64-bit Windows <https://github.com/xnova/counterpartyd_binaries/blob/master/counterpartyd-v0.1-amd64_install.exe?raw=true>`__
   (32 bit Windows installer will be available shortly)
 - Run the installer and navigate through the setup wizard
 - The installer will verify all dependencies are on your system, as well as installing ``counterpartyd.exe``
