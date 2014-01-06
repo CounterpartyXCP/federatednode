@@ -239,7 +239,7 @@ def setup_startup(paths, run_as_user):
         scut.TargetPath = '"c:/Python33/python.exe"'
         scut.Arguments = os.path.join(paths['base_path'], 'run.py')
         scut.Save()        
-              
+    else:
         logging.info("Setting up init scripts...")
         assert run_as_user
         runcmd("sudo cp -a %s/linux/init/counterpartyd.conf.template /etc/init/counterpartyd.conf" % paths['dist_path'])
