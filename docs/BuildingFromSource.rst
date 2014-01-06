@@ -49,7 +49,7 @@ Running from Source
 After installing and creating the necessary basic config, run ``counterpartyd`` in the foreground to make sure
 everything works fine::
 
-    counterpartyd --log-file=-
+    counterpartyd
     
 (The above assumes ``/usr/local/bin`` is in your PATH, which is where the ``counterpartyd`` symlink (which just
 points to the ``run.py`` script) is placed. If not, run ``/usr/local/bin/counterpartyd`` instead.
@@ -136,7 +136,7 @@ Running from Source
 After installing, open a command window and run ``counterpartyd`` in the foreground via::
 
     cd C:\counterpartyd_build
-    C:\Python33\python.exe run.py --log-file=-
+    C:\Python33\python.exe run.py
 
 You can then run any of ``counterpartyd’s`` other functions, like `the examples listed here <https://github.com/PhantomPhreak/counterpartyd#examples>`__.
 

@@ -1,4 +1,3 @@
-
 How to Burn Bitcoin (to generate XCP)
 ======================================
 
@@ -34,7 +33,7 @@ Full examples::
 Without using counterpartyd
 -------------------------------------------
 
-.. warning:
+.. warning::
 
     **DISCLAIMER:** The format of a Counterparty transaction is very specific, and we can’t guarantee that a
     transaction constructed by any other software will work (and if it doesn’t, you’ll lose your BTC).
@@ -83,7 +82,7 @@ Click on the "Send Money" tab, then click on "Custom" under "Transaction Type". 
 - In the **"To"** box, enter the new address that you just created (in my case, ``1J6Sb7BbhCQKRTwmt8yKxXAAQByeNsED7P``). 
   Choose an amount less than 1 BTC to send over (as each address is limited to "burning" 1 BTC total).
 - For **"Miners Fee"**, entering .0001 is a good bet (so your transaction goes through faster)
-- Under **"Change Address"**, you should choose the same address as your **"To"** address
+- Under **"Change Address"**, you should choose the same address as your **"From"** address
 
 .. image:: images/burntut3.jpg
 
@@ -104,7 +103,7 @@ Now, we're going to "burn" the .1 BTC in ``1J6Sb7BbhCQKRTwmt8yKxXAAQByeNsED7P``.
 - In the **"To"** box, enter ``1CounterpartyXXXXXXXXXXXXXXXUWLpVr``. For the amount, enter the amount
   you wish to burn (which does not have to be the entire balance of the address, must should not exceed 1 BTC from any given address)
 - For **"Miners Fee"**, entering .0001 is a good bet (so your transaction goes through faster)
-- **THIS IS VERY IMPORTANT:** Under **"Change Address"**, you *must* choose the same address as your **"To"** address. 
+- **THIS IS VERY IMPORTANT:** Under **"Change Address"**, you *must* choose the same address as your **"From"** address. 
 
 .. image:: images/burntut5.jpg
 
