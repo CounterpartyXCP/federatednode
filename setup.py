@@ -257,30 +257,33 @@ def create_default_datadir_and_config(paths, run_as_user):
         os.makedirs(data_dir)
     
     if not os.path.exists(cfg_path):
+        logging.info("Creating new configuration file at: %s" % cfg_path)
         #create a default config file
         cfg = open(cfg_path, 'w')
         cfg.write(DEFAULT_CONFIG)
         cfg.close()
     
-    if os.name != "nt": 
-        uid = pwd.getpwnam(run_as_user).pw_uid
-        gid = grp.getgrnam(run_as_user).gr_gid    
-
-        #set directory ownership
-        os.chown(data_dir, uid, gid)
-
-        #set proper file ownership and mode
-        os.chown(cfg_path, uid, gid)
-        os.chmod(cfg_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP) #660
+        if os.name != "nt": #set permissions on non-windows
+            uid = pwd.getpwnam(run_as_user).pw_uid
+            gid = grp.getgrnam(run_as_user).gr_gid    
+    
+            #set directory ownership
+            os.chown(data_dir, uid, gid)
+    
+            #set proper file ownership and mode
+            os.chown(cfg_path, uid, gid)
+            os.chmod(cfg_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP) #660
+        else:
+            #on windows, open notepad to the config file to help out
+            import win32api
+            try:
+                win32api.WinExec('NOTEPAD.exe "%s"' % cfg_path)
+            except:
+                pass        
+    
+        logging.info("NEXT STEP: Edit the config file we created at '%s', according to the documentation" % cfg_path)
     else:
-        #on windows, open notepad to the file to help out
-        import win32api
-        try:
-            win32api.WinExec('NOTEPAD.exe "%s"' % cfg_path)
-        except:
-            pass        
-
-    logging.info("NEXT STEP: Edit the config file we created '%s', according to the documentation" % cfg_path)
+        logging.info("Config file already exists at: %s" % cfg_path)
 
 def do_build(paths):
     if os.name != "nt":
