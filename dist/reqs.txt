@@ -8,3 +8,7 @@ prettytable==0.7.2
 python-dateutil==2.2
 
 requests==2.1.0
+
+werkzeug==0.9.4
+
+json-rpc==1.1
