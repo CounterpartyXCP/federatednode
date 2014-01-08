@@ -61,7 +61,7 @@ First, sign up for a My Wallet account (if you haven't already) at `this link <h
 **Step 2**
 
 If you want to burn X BTC (where X <= 1 BTC) from address A, then make sure that there is **exactly**
-X + .001 BTC in address A. (And that you haven't already burned more than 1 BTC - X BTC at that address.)
+X + .0001 BTC in address A. (And that you haven't already burned more than 1 BTC - X BTC at that address.)
 
 **Step 3**
 
