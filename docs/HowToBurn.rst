@@ -44,19 +44,19 @@ Without using counterpartyd
 The requirements for a successful "burn":
 
 - All of the input addresses are identical.
-- The address of the first output is the unspendable address ``1CounterpartyXXXXXXXXXXXXXXXUWLpVr`` (mainnet)
+- The address of the **first** output is the unspendable address ``1CounterpartyXXXXXXXXXXXXXXXUWLpVr`` (mainnet)
   or ``mvCounterpartyXXXXXXXXXXXXXXW24Hef`` (testnet).
 - The total number of BTC burned by the source address is less than or equal to 1.
 
 
-blockchain.info
+Blockchain.info My Wallet
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To perform a burn on `blockchain.info <http://blockchain.info>`__, do the following:
 
 **Step 1**
 
-First, sign up with a wallet (if you haven't already) at `this link <https://blockchain.info/wallet/new>`__.
+First, sign up for a My Wallet account (if you haven't already) at `this link <https://blockchain.info/wallet/new>`__.
 
 **Step 2**
 
@@ -71,9 +71,8 @@ Click on the "Send Money" tab, then click on "Custom" under "Transaction Type". 
 - Enter '1CounterpartyXXXXXXXXXXXXXXXUWLpVr' next to the **"To"** box.
 - Enter 'X' BTC to the right of that.
 - Set the **"Miners fee"** to exactly .0001 BTC.
-- The change address can be anything, because **there must be zero change**. To clarify: Do not burn from an
-  address that has a balance of more than you are burning, as that will send what's left over to a change
-  address, which could cause your transaction to not be seen as a valid burn!
+- The change address can be anything, because there should be **zero** change. (To clarify: you should not burn from an
+  address that has a balance of more than you are burning: we can't guarantee that Blockchain.info will always list a change output last.)
 
 **Step 4**
 
