@@ -77,7 +77,7 @@ As the code is enhanced and improved on Github, you can refresh your local copy 
 
 If, upon running counterpartyd, you get a missing dependency or some other error, you can always rerun
 ``setup.py``, which will regenerate your dependencies listing to the libraries and versions as listed in
-`reqs.txt <https://github.com/xnova/counterpartyd_build/blob/master/dist/reqs.txt>`__:
+`reqs.txt <https://github.com/xnova/counterpartyd_build/blob/master/dist/reqs.txt>`__::
 
     sudo python3 ~/counterpartyd_build/setup.py
 
@@ -163,7 +163,7 @@ As the code is enhanced and improved on Github, you can refresh your local copy 
 
 If, upon running counterpartyd, you get a missing dependency or some other error, you can always rerun
 ``setup.py``, which will regenerate your dependencies listing to the libraries and versions as listed in
-`reqs.txt <https://github.com/xnova/counterpartyd_build/blob/master/dist/reqs.txt>`__:
+`reqs.txt <https://github.com/xnova/counterpartyd_build/blob/master/dist/reqs.txt>`__::
 
     cd counterpartyd_build
     C:\Python33\python.exe setup.py
