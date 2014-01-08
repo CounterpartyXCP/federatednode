@@ -60,7 +60,8 @@ First, sign up with a wallet (if you haven't already) at `this link <https://blo
 
 **Step 2**
 
-If you want to burn X BTC (X <= 1 BTC) from address A, then make sure that there is **exactly** X + .001 BTC in address A. (And that you haven't already burned more than 1 BTC - X BTC at that address.)
+If you want to burn X BTC (where X <= 1 BTC) from address A, then make sure that there is **exactly**
+X + .001 BTC in address A. (And that you haven't already burned more than 1 BTC - X BTC at that address.)
 
 **Step 3**
 
@@ -70,7 +71,9 @@ Click on the "Send Money" tab, then click on "Custom" under "Transaction Type". 
 - Enter '1CounterpartyXXXXXXXXXXXXXXXUWLpVr' next to the **"To"** box.
 - Enter 'X' BTC to the right of that.
 - Set the **"Miners fee"** to exactly .0001 BTC.
-- (The change address can be anything, because **there must be zero change**.)
+- The change address can be anything, because **there must be zero change**. To clarify: Do not burn from an
+  address that has a balance of more than you are burning, as that will send what's left over to a change
+  address, which could cause your transaction to not be seen as a valid burn!
 
 **Step 4**
 
