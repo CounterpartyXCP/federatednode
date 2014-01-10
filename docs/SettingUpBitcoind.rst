@@ -38,8 +38,13 @@ Say Yes to when Notepad asks if you want to create a new file, then paste in the
     daemon=1
     txindex=1
     testnet=1
+
+**NOTE**:
+
+- If you want ``bitcoind`` to be on mainnet, not testnet, leave out the ``testnet=1`` line.
+- You should change the RPC password above to something more secure.
     
-You should change the RPC password above to something more secure. Once done, press CTRL-S to save, and close Notepad.
+Once done, press CTRL-S to save, and close Notepad.
 
 After this, you must wait for the blockchain to finish downloading. Once this is done, you have two options:
 

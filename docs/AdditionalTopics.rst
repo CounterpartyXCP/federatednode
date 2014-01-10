@@ -33,13 +33,19 @@ If not using the Windows installer, the ``setup.py`` script will create a basic 
 options that tell ``counterpartyd`` where and how to connect to your ``bitcoind`` process. Here's an example of the default file created::
 
     [Default]
-    rpc-connect=localhost
-    rpc-port=18832
-    rpc-user=rpc
-    rpc-password=rpcpw1234
+    bitcoind-rpc-connect=localhost
+    bitcoind-rpc-port=18832
+    bitcoind-rpc-user=rpc
+    bitcoind-rpc-password=rpcpw1234
+    rpc-user=my_api_user
+    rpc-password=my_api_password
 
 After running the ``setup.py`` script to create this file, you'll probably need to edit it and tweak the settings
 to match your exact ``bitcoind`` configuration (e.g. especially ``rpc-password``).
+
+Note that also, with the config above, it will set up ``counterpartyd`` to listen on localhost (127.0.0.1)
+on port 4000 (if on mainnet) or port 14000 (if on testnet) for API connections (these are the default ports,
+and can be changed by specifying the ``rpc-host`` and/or ``rpc-port`` parameters).
 
 
 Viewing the Logs
