@@ -3,11 +3,9 @@ Setting up bitcoind
 
 .. warning::
 
-    *Counterparty* is currently primarily operating on the Bitcoin ``testnet``
-    blockchain, because it requires the use of a feature of the Bitcoin protocol
-    that is not yet enabled in the official client (namely ``OP_RETURN`` outputs).
-    Unless you are setting up counterpartyd to burn coins (i.e. invest), please be mindful that
-    your ``bitcoind`` configuration uses ``testnet=1``, when using it with Counterparty, for the time being.
+    This section sets up ``counterpartyd`` to run on mainnet, which means that when using it, **you will be working with real XCP**.
+	If you would like to run on testnet instead, please see the section entitled **Running counterpartyd on testnet** in
+	:doc:`Additional Topics <AdditionalTopics>`.
 
 ``counterpartyd`` communicates with the Bitcoin reference client (``bitcoind``). Normally, you'll run ``bitcoind``
 on the same computer as your instance of ``counterpartyd`` runs on. However, you can also use a ``bitcoind``
@@ -37,11 +35,10 @@ Say Yes to when Notepad asks if you want to create a new file, then paste in the
     server=1
     daemon=1
     txindex=1
-    testnet=1
 
 **NOTE**:
 
-- If you want ``bitcoind`` to be on mainnet, not testnet, leave out the ``testnet=1`` line.
+- If you want ``bitcoind`` to be on testnet, not mainnet, see the section entitled **Running counterpartyd on testnet** in :doc:`Additional Topics <AdditionalTopics>`.
 - You should change the RPC password above to something more secure.
     
 Once done, press CTRL-S to save, and close Notepad.

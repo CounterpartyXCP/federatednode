@@ -37,7 +37,8 @@ LicenseData "..\counterpartyd\LICENSE"
 Page license
 Page components
 Page directory
-Page custom nsGetConfigSettings nsSaveConfigSettings
+Page custom nsGetBitcoindConfigSettings nsSaveBitcoindConfigSettings
+Page custom nsGetCounterpartydConfigSettings nsSaveCounterpartydConfigSettings
 Page instfiles
 
 UninstPage uninstConfirm
@@ -55,13 +56,28 @@ Var txtPort
 Var txtUsername
 Var pwdPassword
 
+Var lblXCPLabel
+Var lblXCPHostname
+Var lblXCPPort
+Var lblXCPUsername
+Var lblXCPPassword
+Var txtXCPHostname
+Var txtXCPPort
+Var txtXCPUsername
+Var pwdXCPPassword
+
 Var dataHostname
 Var dataPort
 Var dataUsername
 Var dataPassword
 
+Var dataXCPHostname
+Var dataXCPPort
+Var dataXCPUsername
+Var dataXCPPassword
+
 ;--------------------------------
-Function nsGetConfigSettings
+Function nsGetBitcoindConfigSettings
   ;see http://www.symantec.com/connect/articles/update-sql-your-nsis-installer
   nsDialogs::Create /NOUNLOAD 1018
   Pop $Dialog
@@ -88,7 +104,7 @@ Function nsGetConfigSettings
   ${NSD_CreateText} 36u 24u 100% 12u "localhost"
   Pop $txtHostname
 
-  ${NSD_CreateText} 36u 36u 100% 12u "18832"
+  ${NSD_CreateText} 36u 36u 100% 12u "8332"
   Pop $txtPort
 
   ${NSD_CreateText} 36u 48u 100% 12u "rpc"
@@ -100,17 +116,68 @@ Function nsGetConfigSettings
   nsDialogs::Show
 FunctionEnd
 
-Function nsSaveConfigSettings
+Function nsSaveBitcoindConfigSettings
   ;get entered data
   ${NSD_GetText} $txtHostname $dataHostname
   ${NSD_GetText} $txtPort $dataPort
   ${NSD_GetText} $txtUsername $dataUsername
   ${NSD_GetText} $pwdPassword $dataPassword
+
+  ${If} $dataPassword == ""
+        MessageBox MB_OK "REQUIRED: Please enter a password to use with bitcoind authentication"
+        Abort
+  ${EndIf}  
+FunctionEnd
+
+Function nsGetCounterpartydConfigSettings
+  nsDialogs::Create /NOUNLOAD 1018
+  Pop $Dialog
+
+  ${If} $Dialog == error
+    Abort
+  ${EndIf}
+
+  ${NSD_CreateLabel} 0 0 100% 24u "Please enter in the info on how counterpartyd should listen for API requests:"
+  Pop $lblXCPLabel
+
+  ${NSD_CreateLabel} 0 24u 36u 12u "bind to"
+  Pop $lblXCPHostname
+
+  ${NSD_CreateLabel} 0 36u 36u 12u "bind port"
+  Pop $lblXCPPort
+
+  ${NSD_CreateLabel} 0 48u 36u 12u "username"
+  Pop $lblXCPUsername
+
+  ${NSD_CreateLabel} 0 60u 36u 12u "password"
+  Pop $lblXCPPassword
+
+  ${NSD_CreateText} 36u 24u 100% 12u "localhost"
+  Pop $txtXCPHostname
+
+  ${NSD_CreateText} 36u 36u 100% 12u "4000"
+  Pop $txtXCPPort
+
+  ${NSD_CreateText} 36u 48u 100% 12u "counterpartyrpc"
+  Pop $txtXCPUsername
+
+  ${NSD_CreatePassword} 36u 60u 100% 12u ""
+  Pop $pwdXCPPassword
+
+  nsDialogs::Show
+FunctionEnd
+
+Function nsSaveCounterpartydConfigSettings
+  ;get entered data
+  ${NSD_GetText} $txtXCPHostname $dataXCPHostname
+  ${NSD_GetText} $txtXCPPort $dataXCPPort
+  ${NSD_GetText} $txtXCPUsername $dataXCPUsername
+  ${NSD_GetText} $pwdXCPPassword $dataXCPPassword
   
-  ;MessageBox MB_OK "$dataHostname"
-  ;MessageBox MB_OK "$dataPort"
-  ;MessageBox MB_OK "$dataUsername"
-  ;MessageBox MB_OK "$dataPassword"
+  ${If} $dataXCPPassword == ""
+        MessageBox MB_OK "REQUIRED: Please enter a password to use with counterpartyd API authentication"
+        Abort
+  ${EndIf}  
 FunctionEnd
 
 ;--------------------------------
@@ -145,10 +212,15 @@ Section "counterpartyd (required)"
   CopyFiles $INSTDIR\counterpartyd.conf.default $CPDATADIR\counterpartyd.conf
   
   ;modify the config file based on what was entered earlier by the user
-  !insertmacro _ReplaceInFile "$CPDATADIR\counterpartyd.conf" "RPC_CONNECT" "$dataHostname"
-  !insertmacro _ReplaceInFile "$CPDATADIR\counterpartyd.conf" "RPC_PORT" "$dataPort"
-  !insertmacro _ReplaceInFile "$CPDATADIR\counterpartyd.conf" "RPC_USER" "$dataUsername"
-  !insertmacro _ReplaceInFile "$CPDATADIR\counterpartyd.conf" "RPC_PASSWORD" "$dataPassword"
+  !insertmacro _ReplaceInFile "$CPDATADIR\counterpartyd.conf" "BITCOIND_RPC_CONNECT" "$dataHostname"
+  !insertmacro _ReplaceInFile "$CPDATADIR\counterpartyd.conf" "BITCOIND_RPC_PORT" "$dataPort"
+  !insertmacro _ReplaceInFile "$CPDATADIR\counterpartyd.conf" "BITCOIND_RPC_USER" "$dataUsername"
+  !insertmacro _ReplaceInFile "$CPDATADIR\counterpartyd.conf" "BITCOIND_RPC_PASSWORD" "$dataPassword"
+
+  !insertmacro _ReplaceInFile "$CPDATADIR\counterpartyd.conf" "RPC_HOST" "$dataXCPHostname"
+  !insertmacro _ReplaceInFile "$CPDATADIR\counterpartyd.conf" "RPC_PORT" "$dataXCPPort"
+  !insertmacro _ReplaceInFile "$CPDATADIR\counterpartyd.conf" "RPC_USER" "$dataXCPUsername"
+  !insertmacro _ReplaceInFile "$CPDATADIR\counterpartyd.conf" "RPC_PASSWORD" "$dataXCPPassword"
   
   ; Install a service - ServiceType own process - StartType automatic - NoDependencies - Logon as System Account
   ;SimpleSC::InstallService "counterpartyd" "Counterparty Daemon" "16" "2" "$INSTDIR\counterpartyd.exe" "" "" ""

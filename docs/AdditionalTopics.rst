@@ -34,14 +34,15 @@ options that tell ``counterpartyd`` where and how to connect to your ``bitcoind`
 
     [Default]
     bitcoind-rpc-connect=localhost
-    bitcoind-rpc-port=18832
+    bitcoind-rpc-port=8332
     bitcoind-rpc-user=rpc
     bitcoind-rpc-password=rpcpw1234
     rpc-user=my_api_user
     rpc-password=my_api_password
 
 After running the ``setup.py`` script to create this file, you'll probably need to edit it and tweak the settings
-to match your exact ``bitcoind`` configuration (e.g. especially ``rpc-password``).
+to match your exact ``bitcoind`` configuration (e.g. especially ``rpc-password``). Note that the above config
+connects to ``bitcoind`` on mainnet (port 8332).
 
 Note that also, with the config above, it will set up ``counterpartyd`` to listen on localhost (127.0.0.1)
 on port 4000 (if on mainnet) or port 14000 (if on testnet) for API connections (these are the default ports,
@@ -59,7 +60,7 @@ Under Linux, you can monitor these logs via a command like ``tail -f ~/.config/c
 Under Windows, you can use a tool like `Notepad++ <http://notepad-plus-plus.org/>`__ to view the log file,
 which will detect changes to the file and update if necessary.
 
-Testing counterpartyd on testnet
+Running counterpartyd on testnet
 --------------------------------
 
 Here's the steps you'll need to take to set up an additional bitcoind on testnet for ``counterpartyd`` testing. 
@@ -101,14 +102,14 @@ If you are comfortable using ``bitcoind`` commands (or are using a server), just
 Then, just launch that shortcut. (Or, if you are having problems, you can just open up a command window and
 try running that directly.)
 
-Once launched, ``bitcoind``/``bitcoin-qt`` will be listening on testnet RPC API port ``18832``. You can just
+Once launched, ``bitcoind``/``bitcoin-qt`` will be listening on testnet RPC API port ``18332``. You can just
 run ``counterpartyd`` with its ``--datadir`` parameter to point to a directory with its own
 ``counterpartyd.conf`` file that has the connection parameters to your testnet bitcoin daemon that's now running.
 
 This means, that like with ``bitcoind``, you may have two separate ``counterpartyd`` data directories, each with
 their own configuration file and database. The difference
 between the configuration files in each datadir will be that the one for your "testnet" ``counterpartyd`` will simply
-specify ``rpc-port=18832``, while the one for your "mainnet" ``counterpartyd`` will specify ``rpc-port=8832``.
+specify ``rpc-port=18332``, while the one for your "mainnet" ``counterpartyd`` will specify ``rpc-port=18332``.
 
 
 Linux
