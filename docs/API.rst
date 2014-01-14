@@ -1,0 +1,566 @@
+
+Interacting with the API
+=========================
+
+.. warning::
+
+    API DOCUMENTATION STILL UNDER DEVELOPMENT. THERE ARE ERRORS, INCOMPLETE SECTIONS, ETC.
+    
+    This API documentation is still in an early state, and could still change drastically at any time.
+    
+
+Overview
+----------
+
+``counterpartyd`` features a full-fledges JSON RPC-based API, which allows 3rd party applications to perform
+functions on the CounterParty network without having to deal with the low level details of transaction encoding,
+state management, and so on.
+
+The ``counterpartyd`` API works similar to ``bitcoind``'s JSON RPC API interface. `This page <https://en.bitcoin.it/wiki/API_reference_(JSON-RPC)>`__
+contains examples of interacting with the ``bitcoind`` API in a variety of programming languages. The basic
+dynamics are similar when interacting with ``counterpartyd``.
+
+Also, please see the scripts in the ``examples`` subdirectory.
+
+
+Terms
+----------
+
+.. _assets:
+
+assets
+^^^^^^^^^
+
+Anywhere in the API where an asset may be specified, it is specified as a textual asset ID, being the ASCII
+string name of the asset. Examples are:
+
+- "BTC"
+- "XCP"
+- "MYCUSTASSET"
+- "ABCCORP_STOCK121"
+
+.. _amounts:
+
+amounts & balances
+^^^^^^^^^^^^^^^^^^^^
+
+Anywhere where an amount is specified, it is specified in **satoshis** (if a divisible asset), or as whole numbers
+(if an indivisible asset). To convert satoshis to floating-point, simply cast to float and divide by 100,000,000.
+
+Examples:
+
+- 4381030000 = 43.8103 (if divisible asset)
+- 4381030000 = 4381030000 (if indivisible asset) 
+
+**NOTE:** XCP and BTC themselves are divisible assets, and thus are listed in satoshis.
+
+
+Objects
+----------
+
+The API calls documented can return any one of these objects.
+
+
+.. _address-history-object:
+
+Address History Object
+^^^^^^^^^^^^^^^^^^^^^^^
+
+An object that describes the history of a requested address:
+
+* **balances** (*list*): Contains the balances for this address, as a list of :ref:`balance objects <balance-object>`.
+* **burns** (*list*): Contains the burns performed with this address, as a list of :ref:`burn objects <burn-object>`.
+* **sends** (*list*): The sends performed with this address, as a list of :ref:`send objects <send-object>`.
+* **orders** (*list*): The orders offered from this address,  as a list of :ref:`order objects <order-object>`.
+* **order_matches** (*list*): All orders filled (completely or partially) where this address either made the order or filled the order,
+   as a list of :ref:`order match objects <order-match-object>`.
+* **btcpays** (*list*): The BTC pays on this address, as a list of :ref:`BTCPay objects <btc-pay-object>`.
+* **issuances** (*list*): The asset issuances performed by this address, as a list of :ref:`issuance objects <issuance-object>`.
+* **broadcasts** (*list*): The broadcasts performed by this address, as a list of :ref:`broadcast objects <broadcast-object>`.
+* **bets** (*list*): All bets made from this address, as a list of :ref:`bet objects <bet-object>`.
+* **bet_matches** (*list*): The bets satisified (either completely or partially) where this address was either
+  offered the bet or responded to an existing bet, as a list of :ref:`bet match objects <bet-match-object>`.
+* **dividends** (*list*): All dividends rewarded from this address, as a list of :ref:`dividend objects <dividend-object>`.
+
+
+.. _balance-object:
+
+Balance Object
+^^^^^^^^^^^^^^^^^^^^^^^
+
+An object that describes a balance that is associated to a specific address:
+
+* **address** (*string*): The address that has the balance
+* **asset** (*string*): The ID of the :ref:`asset <assets>` in which the balance is specified
+* **amount** (*integer*): The :ref:`balance <amounts>` of the specified asset at this address
+
+
+.. _bet-object:
+
+Bet Object
+^^^^^^^^^^^^^^^^^^^^^^^
+
+An object that describes a specific bet:
+
+* **tx_index** (*integer*): The transaction index
+* **tx_hash** (*string*): The transaction hash
+* **block_index** (*integer*): The block index (block number in the block chain)
+* **source** (*string*): The address that made the bet
+* **feed_address** (*string*): The address with the feed that the bet is to be made on
+* **bet_type** (*integer*): 0 for Bullish CFD, 1 for Bearish CFD, 2 for Equal, 3 for Not Equal
+* **deadline** (*integer*): The timestamp at which the bet should be decided/settled, specified in Epoch UNIX time, in UTC
+* **wager_amount** (*integer*): The :ref:`quantity <amounts>` of XCP to wager
+* **counterwager_amount** (*integer*): The minimum :ref:`quantity <amounts>` of XCP to be wagered by the user to bet against the bet issuer, if the other party were to accept the whole thing
+* **wager_remaining** (*integer*): The quantity of XCP wagered that is remaining to bet on
+* **odds** (*float*): 
+* **target_value** (*float*): Target value for Equal/NotEqual bet
+* **leverage** (*integer*): Leverage, as a fraction of 5040
+* **expiration** (*integer*): The number of blocks for which the bet should be valid
+* **fee_multiplier** (*integer*): 
+* **validity** (*string*): Set to "Valid" if a valid bet. Any other setting signifies an invalid/improper bet
+
+
+.. _bet-match-object:
+
+Bet Match Object
+^^^^^^^^^^^^^^^^^^^^^^^
+
+An object that describes a specific occurance of two bets being matched (either partially, or fully):
+
+* **tx0_index** (*integer*): The Bitcoin transaction index of the initial bet
+* **tx0_hash** (*string*): The Bitcoin transaction hash of the initial bet
+* **tx0_block_index** (*integer*): The Bitcoin block index of the initial bet
+* **tx0_expiration** (*integer*): The number of blocks over which the initial bet was valid
+* **tx0_address** (*string*): The address that issued the initial bet
+* **tx0_bet_type** (*string*): The type of the initial bet (0 for Bullish CFD, 1 for Bearish CFD, 2 for Equal, 3 for Not Equal)
+* **tx1_index** (*integer*): The transaction index of the matching (counter) bet
+* **tx1_hash** (*string*): The transaction hash of the matching bet
+* **tx1_block_index** (*integer*): The block index of the matching bet
+* **tx1_address** (*string*): The address that issued the matching bet
+* **tx1_expiration** (*integer*): The number of blocks over which the matching bet was valid
+* **tx1_bet_type** (*string*): The type of the counter bet (0 for Bullish CFD, 1 for Bearish CFD, 2 for Equal, 3 for Not Equal)
+* **feed_address** (*string*): The address of the feed that the bets refer to
+* **initial_value** (*integer*): 
+* **deadline** (*integer*): The timestamp at which the bet match was made, specified in Epoch UNIX time, in UTC
+* **target_value** (*integer*):  
+* **leverage** (*integer*): 
+* **forward_amount** (*integer*): The :ref:`amount <amounts>` of XCP bet in the initial bet
+* **backward_amount** (*integer*): The :ref:`amount <amounts>` of XCP bet in the matching bet
+* **fee_multiplier** (*integer*): 
+* **validity** (*string*): Set to "Valid" if a valid order match. Any other setting signifies an invalid/improper order match
+
+
+.. _broadcast-object:
+
+Broadcast Object
+^^^^^^^^^^^^^^^^^^^^^^^
+
+An object that describes a specific occurance of a broadcast event (i.e. creating/extending a feed):
+
+* **tx_index** (*integer*): The transaction index
+* **tx_hash** (*string*): The transaction hash
+* **block_index** (*integer*): The block index (block number in the block chain)
+* **source** (*string*): The address that made the broadcast
+* **timestamp** (*string*): The time the broadcast was made (as UNIX Epoch time, in UTC)
+* **value** (*float*): The numerical value of the broadcast
+* **fee_multiplier** (*float*): How much of every bet on this feed should go to its operator; a fraction of 1, (i.e. .05 is five percent)
+* **text** (*string*): The textual component of the broadcast
+* **validity** (*string*): Set to "Valid" if a valid broadcast. Any other setting signifies an invalid/improper broadcast
+
+
+.. _btcpay-object:
+
+BTCPay Object
+^^^^^^^^^^^^^^^^^^^^^^^
+
+An object that matches a request to settle an Order Match for which BTC is owed:
+
+* **tx_index** (*integer*): The transaction index
+* **tx_hash** (*string*): The transaction hash
+* **block_index** (*integer*): The block index (block number in the block chain)
+* **source** (*string*):
+* **order_match_id** (*string*):
+* **validity** (*string*): Set to "Valid" if valid
+
+
+.. _burn-object:
+
+Burn Object
+^^^^^^^^^^^^^^^^^^^^^^^
+
+An object that describes an instance of a specific burn:
+
+* **tx_index** (*integer*): The transaction index
+* **tx_hash** (*string*): The transaction hash
+* **block_index** (*integer*): The block index (block number in the block chain)
+* **address** (*string*): The address the burn was performed from
+* **burned** (*integer*): The :ref:`amount <amounts>` of BTC burned
+* **earned** (*integer*): The :ref:`amount <amounts>` of XPC actually earned from the burn (takes into account any bonus amounts, 1 BTC limitation, etc)
+* **validity** (*string*): Set to "Valid" if a valid burn. Any other setting signifies an invalid/improper burn
+
+
+.. _debit-credit-object:
+
+Debit/Credit Object
+^^^^^^^^^^^^^^^^^^^^^^^
+
+An object that describes a account debit or credit:
+
+* **tx_index** (*integer*): The transaction index
+* **tx_hash** (*string*): The transaction hash
+* **block_index** (*integer*): The block index (block number in the block chain)
+* **address** (*string*): The address debited or credited
+* **asset** (*string*): The :ref:`asset <assets>` debited or credited
+* **amount** (*integer*): The :ref:`amount <amounts>` of the specified asset debited or credited
+
+
+.. _dividend-object:
+
+Dividend Object
+^^^^^^^^^^^^^^^^^^^^^^^
+
+An object that describes an issuance of dividends on a specific user defined asset:
+
+* **tx_index** (*integer*): The transaction index
+* **tx_hash** (*string*): The transaction hash
+* **block_index** (*integer*): The block index (block number in the block chain)
+* **source** (*string*): The address issuing the dividends
+* **asset** (*string*): The :ref:`asset <assets>` that the dividends are being rewarded on 
+* **amount_per_share** (*integer*): The :ref:`amount <amounts>` of XCP rewarded per share of the asset
+* **validity** (*string*): Set to "Valid" if a valid burn. Any other setting signifies an invalid/improper burn
+
+
+.. _issuance-object:
+
+Issuance Object
+^^^^^^^^^^^^^^^^^^^^^^^
+
+An object that describes a specific occurance of a user defined asset being issued, or re-issued:
+
+* **tx_index** (*integer*): The transaction index
+* **tx_hash** (*string*): The transaction hash
+* **block_index** (*integer*): The block index (block number in the block chain)
+* **asset** (*string*): The :ref:`asset <assets>` being issued, or re-issued
+* **amount** (*integer*): The :ref:`amount <amounts>` of the specified asset being issued
+* **divisible** (*boolean*): Whether or not the asset is divisible (must agree with previous issuances of the asset, if there are any)
+* **issuer** (*string*): 
+* **transfer** (*boolean*): Whether or not this objects marks the transfer of ownership rights for the specified quantity of this asset
+* **validity** (*string*): Set to "Valid" if a valid issuance. Any other setting signifies an invalid/improper issuance
+
+
+.. _order-object:
+
+Order Object
+^^^^^^^^^^^^^^^^^^^^^^^
+
+An object that describes a specific order:
+
+* **tx_index** (*integer*): The transaction index
+* **tx_hash** (*string*): The transaction hash
+* **block_index** (*integer*): The block index (block number in the block chain)
+* **source** (*string*): The address that made the order
+* **give_asset** (*string*): The :ref:`asset <assets>` being offered
+* **give_amount** (*integer*): The :ref:`amount <amounts>` of the specified asset being offered
+* **give_remaining** (*integer*):
+* **get_asset** (*string*): The :ref:`asset <assets>` desired in exchange
+* **get_amount** (*integer*): The :ref:`amount <amounts>` of the specified asset desired in exchange
+* **price** (*float*): The given exchange rate (as an exchange ratio desired from the asset offered to the asset desired)
+* **expiration** (*integer*): The number of blocks over which the order should be valid
+* **fee_provided** (*integer*): The miners' fee provided; in BTC; required only if selling BTC (should not be lower than is required for acceptance in a block)
+* **fee_required** (*integer*): The miners' fee required to be paid by orders for them to match this one; in BTC; required only if buying BTC (may be zero, though)
+
+
+.. _order-match-object:
+
+Order Match Object
+^^^^^^^^^^^^^^^^^^^^^^^
+
+An object that describes a specific occurance of two orders being matched (either partially, or fully):
+
+* **tx0_index** (*integer*): The Bitcoin transaction index of the first (earlier) order
+* **tx0_hash** (*string*): The Bitcoin transaction hash of the first order
+* **tx0_block_index** (*integer*): The Bitcoin block index of the first order
+* **tx0_expiration** (*integer*): The number of blocks over which the first order was valid
+* **tx0_address** (*string*): The address that issued the first (earlier) order
+* **tx1_index** (*integer*): The transaction index of the second (matching) order
+* **tx1_hash** (*string*): The transaction hash of the second order
+* **tx1_block_index** (*integer*): The block index of the second order
+* **tx1_address** (*string*): The address that issued the second order
+* **tx1_expiration** (*integer*): The number of blocks over which the second order was valid
+* **forward_asset** (*string*): The :ref:`asset <assets>` exchanged FROM the first order to the second order
+* **forward_amount** (*integer*): The :ref:`amount <amounts>` of the specified forward asset
+* **backward_asset** (*string*): The :ref:`asset <assets>` exchanged FROM the second order to the first order
+* **backward_amount** (*integer*): The :ref:`amount <amounts>` of the specified backward asset
+* **validity** (*string*): Set to "Valid" if a valid order match. Any other setting signifies an invalid/improper order match
+
+
+.. _send-object:
+
+Send Object
+^^^^^^^^^^^^^^^^^^^^^^^
+
+An object that describes a specific send (e.g. "simple send", of XCP, or a user defined asset):
+
+* **tx_index** (*integer*): The transaction index
+* **tx_hash** (*string*): The transaction hash
+* **block_index** (*integer*): The block index (block number in the block chain)
+* **source** (*string*): The source address of the send
+* **destination** (*string*): The destination address of the send
+* **asset** (*string*): The :ref:`asset <assets>` being sent
+* **amount** (*integer*): The :ref:`amount <amounts>` of the specified asset sent
+* **validity** (*string*): Set to "Valid" if a valid send. Any other setting signifies an invalid/improper send
+
+
+
+.. _transaction-object:
+
+Transaction Object
+-------------------
+
+The API calls below sometimes return transaction objects. Each one of these objects has the following members:
+
+
+
+API Function Reference
+------------------------
+
+.. get_address:
+
+get_address
+^^^^^^^^^^^^^^
+
+.. py:function:: get_address(address)
+
+   Gets the history for a specific address
+
+   :param string address: Address
+   :return: An :ref:`address history object <address-history-object>` if the address was found, otherwise ``null``.
+
+
+.. get_debits:
+
+get_debits
+^^^^^^^^^^^^^^
+
+.. py:function:: get_debits(address=null, asset=null, newest_first=true, order_by=null, order_dir=null)
+
+   Gets a sorted history of address debits, optionally filtered to an address and/or asset. This list does not
+   include any BTC debits.
+
+   :param string address: Address to filter on. If not specified, will get the debits for all addresses.
+   :param string asset: The specified :ref:`asset <assets>` to filter the resultant list by, if any.
+   :param boolean newest_first: Specify as ``true`` to order the results by newest first, false to order by oldest first.
+   :param string order_by: If sorted results are desired, specify the name of a :ref:`debit/credit object <debit-credit-object>` attribute to order the results by (e.g. ``tx_hash``). If left blank, the list of results will be returned unordered. 
+   :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
+   :return: A list of one or more :ref:`debit/credit objects <debit-credit-object>` if any matching records were found, otherwise ``[]`` (empty list).
+   
+
+.. get_credits:
+
+get_credits
+^^^^^^^^^^^^^^
+
+.. py:function:: get_credits(address=null, asset=null, newest_first=true, order_by=null, order_dir=null)
+
+   Gets a sorted history of address credits, optionally filtered to an address and/or asset. This list does not
+   include any BTC credits.
+
+   :param string address: Address to filter on. If not specified, will get the debits for all addresses.
+   :param string asset: The specified :ref:`asset <assets>` to filter the resultant list by, if any.
+   :param boolean newest_first: Specify as ``true`` to order the results by newest first, false to order by oldest first.
+   :param string order_by: If sorted results are desired, specify the name of a :ref:`debit/credit object <debit-credit-object>` attribute to order the results by (e.g. ``tx_hash``). If left blank, the list of results will be returned unordered. 
+   :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
+   :return: A list of one or more :ref:`debit/credit objects <debit-credit-object>` if any matching records were found, otherwise ``[]`` (empty list).
+
+
+.. get_balances:
+
+get_balances
+^^^^^^^^^^^^^^
+
+.. py:function:: get_balances(address=null, asset=null, order_by=null, order_dir=null)
+
+   Gets the current address balances, optionally filtered by an address and/or asset ID. This list does not
+   include any BTC balances.
+
+   :param string address: Address to filter on. If not specified, will get the balances for all addresses.
+   :param string asset: The specified :ref:`asset <assets>` to filter the resultant list by, if any.
+   :param string order_by: If sorted results are desired, specify the name of a :ref:`balance object <balance-object>` attribute to order the results by (e.g. ``amount``). If left blank, the list of results will be returned unordered. 
+   :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
+   :return: A list of one or more :ref:`balance objects <balance-object>` if any matching records were found, otherwise ``[]`` (empty list).
+
+
+.. get_sends:
+
+get_sends
+^^^^^^^^^^^^^^
+
+.. py:function:: get_sends(address=null, asset=null, is_valid=true, order_by=null, order_dir=null)
+
+   Gets an optionally filtered listing of past sends.
+
+   :param string address: Address to filter on. If not specified, will get the sends for all addresses.
+   :param string asset: The specified :ref:`asset <assets>` to filter the resultant list by, if any.
+   :param boolean is_valid: Set to ``true`` to only return valid sends. Set to ``false`` to return all sends (including invalid attempts).
+   :param string order_by: If sorted results are desired, specify the name of a :ref:`send object <send-object>` attribute to order the results by (e.g. ``asset``). If left blank, the list of results will be returned unordered. 
+   :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
+   :return: A list of one or more :ref:`send objects <send-object>` if any matching records were found, otherwise ``[]`` (empty list).
+
+
+.. get_orders:
+
+get_orders
+^^^^^^^^^^^^^^
+
+.. py:function:: get_orders(address=null, is_valid=true, show_empty=true, show_expired=true, order_by=null, order_dir=null)
+
+   Gets a listing of orders (ordered by price, lowest to highest, and then by transaction ID).
+
+   :param string address: Address to filter on as the order source. If not specified, will get the orders for all source addresses.
+   :param boolean is_valid: Set to ``true`` to only return valid orders. Set to ``false`` to return all orders (including invalid attempts).
+   :param boolean show_empty: Set to ``true`` to include fully filled orders in the results.
+   :param boolean show_expired: Set to ``true`` to include expired orders in the results.
+   :param string order_by: If sorted results are desired, specify the name of an :ref:`order object <order-object>` attribute to order the results by (e.g. ``get_asset``). If left blank, the list of results will be returned unordered. 
+   :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
+   :return: A list of one or more :ref:`order objects <order-object>` if any matching records were found, otherwise ``[]`` (empty list).
+
+
+.. get_order_matches:
+
+get_order_matches
+^^^^^^^^^^^^^^^^^^^
+
+.. py:function:: get_order_matches(address=null, is_valid=true, is_mine=false, tx0_hash=null, tx1_hash=null, order_by=null, order_dir=null)
+
+   Gets a listing of order matches (ordered by ``tx1_index`` ascending).
+
+   :param string address: Address to filter on as the ``tx0_address`` or ``tx1_address``, if any.
+   :param boolean is_valid: Set to ``true`` to only return valid order matches. Set to ``false`` to return all order matches (including invalid attempts).
+   :param boolean is_mine: Set to ``true`` to include results where either the ``tx0_address`` or ``tx1_address`` exist in the linked ``bitcoind`` wallet.
+   :param string tx0_hash: Set to the hash that must be matched as ``tx0_hash``, or ``null`` to not filter by a specific ``tx0_hash``.
+   :param string tx1_hash: Set to the hash that must be matched as ``tx1_hash``, or ``null`` to not filter by a specific ``tx1_hash``.
+   :param string order_by: If sorted results are desired, specify the name of an :ref:`order match object <order-match-object>` attribute to order the results by (e.g. ``forward_asset``). If left blank, the list of results will be returned unordered. 
+   :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
+   :return: A list of one or more :ref:`order match objects <order-match-object>` if any matching records were found, otherwise ``[]`` (empty list).
+
+
+.. get_btcpays:
+
+get_btcpays
+^^^^^^^^^^^^^^
+
+.. py:function:: get_btcpays(is_valid=true, order_by=null, order_dir=null)
+
+   Gets a listing of BTCPay records (ordered by ``tx_index`` ascending).
+
+   :param boolean is_valid: Set to ``true`` to only return valid BTCPays. Set to ``false`` to return all BTCPays (including invalid attempts).
+   :param string order_by: If sorted results are desired, specify the name of a :ref:`BTCPay object <btcpay-object>` attribute to order the results by (e.g. ``block_index``). If left blank, the list of results will be returned unordered. 
+   :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
+   :return: A list of one or more :ref:`BTCPay objects <btcpay-object>` if any matching records were found, otherwise ``[]`` (empty list).
+
+
+.. get_issuances:
+
+get_issuances
+^^^^^^^^^^^^^^
+
+.. py:function:: get_issuances(asset=null, issuer=null, is_valid=true, order_by=null, order_dir=null)
+
+   Gets a listing of asset issuances (ordered by ``tx_index`` ascending).
+
+   :param string asset: The specified :ref:`asset <assets>` to filter the resultant list by, if any.
+   :param string issuer: Address to filter on as asset issuer.
+   :param boolean is_valid: Set to ``true`` to only return valid issuances. Set to ``false`` to return all issuances (including invalid attempts).
+   :param string order_by: If sorted results are desired, specify the name of an :ref:`issuance object <issuance-object>` attribute to order the results by (e.g. ``transfer``). If left blank, the list of results will be returned unordered. 
+   :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
+   :return: A list of one or more :ref:`issuance objects <issuance-object>` if any matching records were found, otherwise ``[]`` (empty list).
+
+
+.. get_broadcasts:
+
+get_broadcasts
+^^^^^^^^^^^^^^
+
+.. py:function:: get_broadcasts(source=null, order_by='tx_index ASC', is_valid=true, order_by=null, order_dir=null)
+
+   Gets a listing of broadcasts.
+
+   :param string source: Address to filter on as broadcast's source.
+   :param boolean is_valid: Set to ``true`` to only return valid broadcasts. Set to ``false`` to return all broadcasts (including invalid attempts).
+   :param string order_by: If sorted results are desired, specify the name of a :ref:`broadcast object <broadcast-object>` attribute to order the results by (e.g. ``fee_multiplier``). If left blank, the list of results will be returned unordered. 
+   :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
+   :return: A list of one or more :ref:`broadcast objects <broadcast-object>` if any matching records were found, otherwise ``[]`` (empty list).
+
+
+.. get_bets:
+
+get_bets
+^^^^^^^^^^^^^^
+
+.. py:function:: get_bets(address=null, show_empty=false, is_valid=true, order_by=null, order_dir=null)
+
+   Gets a listing of bets (ordered by ``odds`` descending, then ``tx_index``).
+
+   :param string address: Address to filter on as the bet source. If not specified, will get the bets for all source addresses.
+   :param boolean show_empty: Set to ``true`` to include fully filled bets in the results.
+   :param boolean is_valid: Set to ``true`` to only return valid bets. Set to ``false`` to return all bets (including invalid attempts).
+   :param string order_by: If sorted results are desired, specify the name of a :ref:`bet object <bet-object>` attribute to order the results by (e.g. ``wager_amount``). If left blank, the list of results will be returned unordered. 
+   :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
+   :return: A list of one or more :ref:`bet objects <bet-object>` if any matching records were found, otherwise ``[]`` (empty list).
+
+
+.. get_bet_matches:
+
+get_bet_matches
+^^^^^^^^^^^^^^^^^^^
+
+.. py:function:: get_bet_matches(address=null, is_valid=true, tx0_hash=null, tx1_hash=null, order_by=null, order_dir=null)
+
+   Gets a listing of order matches (ordered by ``tx1_index`` ascending).
+
+   :param string address: Address to filter on as the ``tx0_address`` or ``tx1_address``, if any.
+   :param boolean is_valid: Set to ``true`` to only return valid bet matches. Set to ``false`` to return all bet matches (including invalid attempts).
+   :param string tx0_hash: Set to the hash that must be matched as ``tx0_hash``, or ``null`` to not filter by a specific ``tx0_hash``.
+   :param string tx1_hash: Set to the hash that must be matched as ``tx1_hash``, or ``null`` to not filter by a specific ``tx1_hash``.
+   :param string order_by: If sorted results are desired, specify the name of a :ref:`bet match object <bet-match-object>` attribute to order the results by (e.g. ``deadline``). If left blank, the list of results will be returned unordered. 
+   :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
+   :return: A list of one or more :ref:`bet match objects <bet-match-object>` if any matching records were found, otherwise ``[]`` (empty list).
+
+
+.. get_dividends:
+
+get_dividends
+^^^^^^^^^^^^^^
+
+.. py:function:: get_dividends(address=null, asset=null, is_valid=true, order_by=null, order_dir=null)
+
+   Gets a listing of dividends (ordered by ``tx_index`` ascending).
+
+   :param string address: Address to filter on. If not specified, will get the dividend issuances for all addresses.
+   :param string asset: The specified :ref:`asset <assets>` to filter the resultant list by, if any.
+   :param boolean is_valid: Set to ``true`` to only return valid dividend issuances. Set to ``false`` to return all dividend issuances (including invalid attempts).
+   :param string order_by: If sorted results are desired, specify the name of a :ref:`dividend object <dividend-object>` attribute to order the results by (e.g. ``amount_per_share``). If left blank, the list of results will be returned unordered. 
+   :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
+   :return: A list of one or more :ref:`dividend objects <dividend-object>` if any matching records were found, otherwise ``[]`` (empty list).
+
+
+.. get_burns:
+
+get_burns
+^^^^^^^^^^^^^^
+
+.. py:function:: get_burns(address=null, is_valid=true, order_by=null, order_dir=null)
+
+   Gets a listing of burns (ordered by ``tx_index`` ascending).
+
+   :param string address: Address to filter on. If not specified, will get the burns for all addresses.
+   :param boolean is_valid: Set to ``true`` to only return valid dividend issuances. Set to ``false`` to return all dividend issuances (including invalid attempts).
+   :param string order_by: If sorted results are desired, specify the name of a :ref:`burn object <burn-object>` attribute to order the results by (e.g. ``tx_hash``). If left blank, the list of results will be returned unordered. 
+   :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
+   :return: A list of one or more :ref:`burn objects <burn-object>` if any matching records were found, otherwise ``[]`` (empty list).
+
+
+Notes
+------------
+
+TODO.

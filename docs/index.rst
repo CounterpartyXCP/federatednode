@@ -47,6 +47,7 @@ Table of Contents
    SettingUpBitcoind
    UsingTheInstaller
    BuildingFromSource
+   API
    AdditionalTopics
    HowToBurn
 
