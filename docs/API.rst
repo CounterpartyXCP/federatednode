@@ -311,16 +311,6 @@ An object that describes a specific send (e.g. "simple send", of XCP, or a user 
 * **validity** (*string*): Set to "Valid" if a valid send. Any other setting signifies an invalid/improper send
 
 
-
-.. _transaction-object:
-
-Transaction Object
--------------------
-
-The API calls below sometimes return transaction objects. Each one of these objects has the following members:
-
-
-
 API Function Reference
 ------------------------
 
