@@ -3,7 +3,12 @@ Using the Installer
 
 .. warning::
 
-    The Windows installer is in a beta state.  
+    Due to the current pace of ``counterpartyd`` development, at the current moment it is recommended that
+    **Windows users do not use the Windows installer**, and instead follow the instructions in :doc:`BuildingFromSource`
+    (which are really not that involved). The reason for this is because the Windows installer always lags
+    current ``counterpartyd`` progress by a few days normally, and at this point in heavy development, this fact will
+    most likely cause issues for its users. Building from source is the best way to keep up with the frequent updates.
+
 
 .. note::
 
