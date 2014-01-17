@@ -4,8 +4,8 @@ Setting up bitcoind
 .. warning::
 
     This section sets up ``counterpartyd`` to run on mainnet, which means that when using it, **you will be working with real XCP**.
-	If you would like to run on testnet instead, please see the section entitled **Running counterpartyd on testnet** in
-	:doc:`Additional Topics <AdditionalTopics>`.
+	  If you would like to run on testnet instead, please see the section entitled **Running counterpartyd on testnet** in
+	  :doc:`Additional Topics <AdditionalTopics>`.
 
 ``counterpartyd`` communicates with the Bitcoin reference client (``bitcoind``). Normally, you'll run ``bitcoind``
 on the same computer as your instance of ``counterpartyd`` runs on. However, you can also use a ``bitcoind``
@@ -19,13 +19,12 @@ At this time, third-party RPC interfaces such as Blockchain.info's are not suppo
 On Windows
 -----------
 
-Go to `the bitcoind download page <http://bitcoin.org/en/download>`__
+If you haven't already, go to `the bitcoind download page <http://bitcoin.org/en/download>`__
 and grab the installer for Windows. Install it with the default options.
 
-Once installed, launch the GUI wallet program (Bitcoin-QT) to start the download of the blockchain.
-Then, type Windows Key-R and enter ``cmd.exe`` to open a Windows command prompt. Type the following::
+Once installed, type Windows Key-R and enter ``cmd.exe`` to open a Windows command prompt. Type the following::
 
-    cd %LOCALAPPDATA%\..\Roaming\.bitcoin
+    cd %APPDATA%\Bitcoin
     notepad bitcoin.conf  
 
 Say Yes to when Notepad asks if you want to create a new file, then paste in the text below::
@@ -43,7 +42,34 @@ Say Yes to when Notepad asks if you want to create a new file, then paste in the
     
 Once done, press CTRL-S to save, and close Notepad.
 
-After this, you must wait for the blockchain to finish downloading. Once this is done, you have two options:
+New Blockchain Download
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Next, if you haven't ever run Bitcoin on this machine (i.e. no blockchain has been downloaded),
+you can just launch ``bitcoind`` or ``bitcoin-qt`` and wait for the blockchain to finish downloading.
+
+Already have Blockchain
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you have already downloaded the blockchain on your computer (e.g. you're already using the Bitcoin client),
+you will probably need to open up a command prompt window, change to the Bitcoin program directory (e.g. ``C:\Program Files (x86)\Bitcoin\``)
+and run::
+
+    bitcoin-qt.exe --reindex
+    
+or::
+
+    daemon\bitcoind.exe --reindex
+    
+This will start up bitcoin to do a one time reindexing of the blockchain on disk. The reason this is is because we added the
+``txindex=1`` configuration parameter above to the bitcoin config file, which means that it will need to
+run through the blockchain again to generate the necessary indexes, which may take a few hours. After doing
+this once, you shouldn't have to do it again.   
+
+Next steps
+^^^^^^^^^^^
+
+Once this is done, you have two options:
 
 - Close Bitcoin-QT and run ``bitcoind.exe`` directly. You can run it on startup by adding to your
   Startup program group in Windows, or using something like `NSSM <http://nssm.cc/usage>`__.
@@ -66,13 +92,17 @@ to install it (on Ubuntu, other distros will have similar instructions)::
     mkdir -p ~/.bitcoin/
     echo -e "rpcuser=rpc\nrpcpassword=rpcpw1234\nserver=1\ndaemon=1" > ~/.bitcoin/bitcoin.conf
 
-Please then edit the ``~/.bitcoin/bitcoin.conf`` file and set the file to the contents specified above (.
+Please then edit the ``~/.bitcoin/bitcoin.conf`` file and set the file to the contents specified above.
 
-Next, start ``bitcoind``::
+New Blockchain Download
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Next, if you haven't ever run ``bitcoin-qt``/``bitcoind`` on this machine (i.e. no blockchain has been downloaded),
+you can just start ``bitcoind``::
 
     bitcoind
 
-The bitcoin server should now be started. The blockchain will begin to download automatically. You must let it finish 
+In either of the above cases, the bitcoin server should now be started. The blockchain will begin to download automatically. You must let it finish 
 downloading entirely before going to the next step. You can check the status of this by running::
 
      bitcoind getinfo|grep blocks
@@ -80,5 +110,21 @@ downloading entirely before going to the next step. You can check the status of 
 When done, the block count returned by this command will match the value given from
 `this page <http://blockexplorer.com/q/getblockcount>`__.
 
+Already have Blockchain
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you *have* already downloaded the blockchain before you modified your config, you'll probably need to launch ``bitcoind`` as follows:
+
+    bitcoind --reindex
+    
+This will start up bitcoin to do a one time reindexing of the blockchain on disk. The reason this is is because we added the
+``txindex=1`` configuration parameter above to the bitcoin config file, which means that it will need to
+run through the blockchain again to generate the necessary indexes, which may take a few hours. After doing
+this once, you shouldn't have to do it again.
+
+Next steps
+^^^^^^^^^^^
+
+At this point you should be good to go from a ``bitcoind`` perspective.
 For automatic startup of ``bitcoind`` on system boot, `this page <https://bitcointalk.org/index.php?topic=25518.0>`__
 provides some good tips.

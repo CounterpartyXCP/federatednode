@@ -116,7 +116,7 @@ def get_paths(is_build):
     #find the location of the virtualenv command and make sure it exists
     if os.name == "posix":
         paths['virtualenv_path'] = "/usr/bin/virtualenv"
-        paths['virtualenv_args'] = "--python=python%s" % PYTHON_VER
+        paths['virtualenv_args'] = "--system-site-packages --python=python%s" % PYTHON_VER
     elif os.name == "nt":
         paths['virtualenv_path'] = os.path.join(paths['sys_python_path'], "Scripts", "virtualenv.exe")
         paths['virtualenv_args'] = "--system-site-packages" if is_build else ""
@@ -159,7 +159,7 @@ def install_dependencies(paths):
         #13.10 deps
         if ubuntu_release == "13.10":
             runcmd("sudo apt-get -y install software-properties-common python-software-properties git-core wget cx-freeze \
-            python3 python3-setuptools python3-dev python3-pip build-essential python3-sphinx python-virtualenv")
+            python3 python3-setuptools python3-dev python3-pip build-essential python3-sphinx python-virtualenv python3-apsw")
         elif ubuntu_release == "12.04":
             #12.04 deps. 12.04 doesn't include python3-pip, so we need to use the workaround at http://stackoverflow.com/a/12262143
             runcmd("sudo apt-get -y install software-properties-common python-software-properties git-core wget cx-freeze \
@@ -168,6 +168,9 @@ def install_dependencies(paths):
                 runcmd("sudo easy_install3 pip==1.4.1") #pip1.5 breaks things due to its use of wheel by default
                 #for some reason, it installs "pip" to /usr/local/bin, instead of "pip3"
                 runcmd("sudo mv /usr/local/bin/pip /usr/local/bin/pip3")
+            #12.04 also has no python3-apsw module as well (unlike 13.10), so we need to do this one manually
+            # Ubuntu 12.04 (Precise) ships with sqlite3 version 3.7.9 - the apsw version needs to match that exactly
+            runcmd("sudo pip3 install https://github.com/rogerbinns/apsw/zipball/f5bf9e5e7617bc7ff2a5b4e1ea7a978257e08c95#egg=apsw")
         else:
             logging.error("Unsupported Ubuntu version, please use 13.10 or 12.04 LTS")
             sys.exit(1)

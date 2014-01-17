@@ -31,13 +31,12 @@ Terms
 assets
 ^^^^^^^^^
 
-Anywhere in the API where an asset may be specified, it is specified as a textual asset ID, being the ASCII
-string name of the asset. Examples are:
+Anywhere in the API where an asset may be specified, it is specified as a textual asset ID, being an uppercase
+alphabetic (base 26) string name of the asset, of at least 4 characters in length. Examples are:
 
 - "BTC"
 - "XCP"
 - "MYCUSTASSET"
-- "ABCCORP_STOCK121"
 
 .. _amounts:
 
