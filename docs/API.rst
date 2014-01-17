@@ -332,14 +332,13 @@ get_address
 get_debits
 ^^^^^^^^^^^^^^
 
-.. py:function:: get_debits(address=null, asset=null, newest_first=true, order_by=null, order_dir=null)
+.. py:function:: get_debits(address=null, asset=null, order_by=null, order_dir=null)
 
    Gets a sorted history of address debits, optionally filtered to an address and/or asset. This list does not
    include any BTC debits.
 
    :param string address: Address to filter on. If not specified, will get the debits for all addresses.
    :param string asset: The specified :ref:`asset <assets>` to filter the resultant list by, if any.
-   :param boolean newest_first: Specify as ``true`` to order the results by newest first, false to order by oldest first.
    :param string order_by: If sorted results are desired, specify the name of a :ref:`debit/credit object <debit-credit-object>` attribute to order the results by (e.g. ``tx_hash``). If left blank, the list of results will be returned unordered. 
    :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
    :return: A list of one or more :ref:`debit/credit objects <debit-credit-object>` if any matching records were found, otherwise ``[]`` (empty list).
@@ -350,14 +349,13 @@ get_debits
 get_credits
 ^^^^^^^^^^^^^^
 
-.. py:function:: get_credits(address=null, asset=null, newest_first=true, order_by=null, order_dir=null)
+.. py:function:: get_credits(address=null, asset=null, order_by=null, order_dir=null)
 
    Gets a sorted history of address credits, optionally filtered to an address and/or asset. This list does not
    include any BTC credits.
 
    :param string address: Address to filter on. If not specified, will get the debits for all addresses.
    :param string asset: The specified :ref:`asset <assets>` to filter the resultant list by, if any.
-   :param boolean newest_first: Specify as ``true`` to order the results by newest first, false to order by oldest first.
    :param string order_by: If sorted results are desired, specify the name of a :ref:`debit/credit object <debit-credit-object>` attribute to order the results by (e.g. ``tx_hash``). If left blank, the list of results will be returned unordered. 
    :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
    :return: A list of one or more :ref:`debit/credit objects <debit-credit-object>` if any matching records were found, otherwise ``[]`` (empty list).
@@ -385,15 +383,18 @@ get_balances
 get_sends
 ^^^^^^^^^^^^^^
 
-.. py:function:: get_sends(address=null, asset=null, is_valid=true, order_by=null, order_dir=null)
+.. py:function:: get_sends(source=null, destination=null, is_valid=true, order_by=null, order_dir=null, start_block=None, end_block=None)
 
    Gets an optionally filtered listing of past sends.
 
-   :param string address: Address to filter on. If not specified, will get the sends for all addresses.
+   :param string source: Source address to filter on. If not specified, will not limit the results to a specific source address.
+   :param string destination: Source destination to filter on. If not specified, will not limit the results to a specific destination address.
    :param string asset: The specified :ref:`asset <assets>` to filter the resultant list by, if any.
    :param boolean is_valid: Set to ``true`` to only return valid sends. Set to ``false`` to return all sends (including invalid attempts).
    :param string order_by: If sorted results are desired, specify the name of a :ref:`send object <send-object>` attribute to order the results by (e.g. ``asset``). If left blank, the list of results will be returned unordered. 
-   :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
+   :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.
+   :param integer start_block: If specified, only results from the specified block index on will be returned  
+   :param integer end_block: If specified, only results up to and including the specified block index on will be returned  
    :return: A list of one or more :ref:`send objects <send-object>` if any matching records were found, otherwise ``[]`` (empty list).
 
 
@@ -402,7 +403,7 @@ get_sends
 get_orders
 ^^^^^^^^^^^^^^
 
-.. py:function:: get_orders(address=null, is_valid=true, show_empty=true, show_expired=true, order_by=null, order_dir=null)
+.. py:function:: get_orders(address=null, is_valid=true, show_empty=true, show_expired=true, order_by=null, order_dir=null, start_block=None, end_block=None)
 
    Gets a listing of orders (ordered by price, lowest to highest, and then by transaction ID).
 
@@ -412,6 +413,8 @@ get_orders
    :param boolean show_expired: Set to ``true`` to include expired orders in the results.
    :param string order_by: If sorted results are desired, specify the name of an :ref:`order object <order-object>` attribute to order the results by (e.g. ``get_asset``). If left blank, the list of results will be returned unordered. 
    :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
+   :param integer start_block: If specified, only results from the specified block index on will be returned  
+   :param integer end_block: If specified, only results up to and including the specified block index on will be returned  
    :return: A list of one or more :ref:`order objects <order-object>` if any matching records were found, otherwise ``[]`` (empty list).
 
 
@@ -420,7 +423,7 @@ get_orders
 get_order_matches
 ^^^^^^^^^^^^^^^^^^^
 
-.. py:function:: get_order_matches(address=null, is_valid=true, is_mine=false, tx0_hash=null, tx1_hash=null, order_by=null, order_dir=null)
+.. py:function:: get_order_matches(address=null, is_valid=true, is_mine=false, tx0_hash=null, tx1_hash=null, order_by=null, order_dir=null, start_block=None, end_block=None)
 
    Gets a listing of order matches (ordered by ``tx1_index`` ascending).
 
@@ -431,6 +434,8 @@ get_order_matches
    :param string tx1_hash: Set to the hash that must be matched as ``tx1_hash``, or ``null`` to not filter by a specific ``tx1_hash``.
    :param string order_by: If sorted results are desired, specify the name of an :ref:`order match object <order-match-object>` attribute to order the results by (e.g. ``forward_asset``). If left blank, the list of results will be returned unordered. 
    :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
+   :param integer start_block: If specified, only results from the specified block index on will be returned  
+   :param integer end_block: If specified, only results up to and including the specified block index on will be returned  
    :return: A list of one or more :ref:`order match objects <order-match-object>` if any matching records were found, otherwise ``[]`` (empty list).
 
 
@@ -439,13 +444,15 @@ get_order_matches
 get_btcpays
 ^^^^^^^^^^^^^^
 
-.. py:function:: get_btcpays(is_valid=true, order_by=null, order_dir=null)
+.. py:function:: get_btcpays(is_valid=true, order_by=null, order_dir=null, start_block=None, end_block=None)
 
    Gets a listing of BTCPay records (ordered by ``tx_index`` ascending).
 
    :param boolean is_valid: Set to ``true`` to only return valid BTCPays. Set to ``false`` to return all BTCPays (including invalid attempts).
    :param string order_by: If sorted results are desired, specify the name of a :ref:`BTCPay object <btcpay-object>` attribute to order the results by (e.g. ``block_index``). If left blank, the list of results will be returned unordered. 
    :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
+   :param integer start_block: If specified, only results from the specified block index on will be returned  
+   :param integer end_block: If specified, only results up to and including the specified block index on will be returned  
    :return: A list of one or more :ref:`BTCPay objects <btcpay-object>` if any matching records were found, otherwise ``[]`` (empty list).
 
 
@@ -454,7 +461,7 @@ get_btcpays
 get_issuances
 ^^^^^^^^^^^^^^
 
-.. py:function:: get_issuances(asset=null, issuer=null, is_valid=true, order_by=null, order_dir=null)
+.. py:function:: get_issuances(asset=null, issuer=null, is_valid=true, order_by=null, order_dir=null, start_block=None, end_block=None)
 
    Gets a listing of asset issuances (ordered by ``tx_index`` ascending).
 
@@ -463,6 +470,8 @@ get_issuances
    :param boolean is_valid: Set to ``true`` to only return valid issuances. Set to ``false`` to return all issuances (including invalid attempts).
    :param string order_by: If sorted results are desired, specify the name of an :ref:`issuance object <issuance-object>` attribute to order the results by (e.g. ``transfer``). If left blank, the list of results will be returned unordered. 
    :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
+   :param integer start_block: If specified, only results from the specified block index on will be returned  
+   :param integer end_block: If specified, only results up to and including the specified block index on will be returned  
    :return: A list of one or more :ref:`issuance objects <issuance-object>` if any matching records were found, otherwise ``[]`` (empty list).
 
 
@@ -471,7 +480,7 @@ get_issuances
 get_broadcasts
 ^^^^^^^^^^^^^^
 
-.. py:function:: get_broadcasts(source=null, order_by='tx_index ASC', is_valid=true, order_by=null, order_dir=null)
+.. py:function:: get_broadcasts(source=null, is_valid=true, order_by=null, order_dir=null, start_block=None, end_block=None)
 
    Gets a listing of broadcasts.
 
@@ -479,6 +488,8 @@ get_broadcasts
    :param boolean is_valid: Set to ``true`` to only return valid broadcasts. Set to ``false`` to return all broadcasts (including invalid attempts).
    :param string order_by: If sorted results are desired, specify the name of a :ref:`broadcast object <broadcast-object>` attribute to order the results by (e.g. ``fee_multiplier``). If left blank, the list of results will be returned unordered. 
    :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
+   :param integer start_block: If specified, only results from the specified block index on will be returned  
+   :param integer end_block: If specified, only results up to and including the specified block index on will be returned  
    :return: A list of one or more :ref:`broadcast objects <broadcast-object>` if any matching records were found, otherwise ``[]`` (empty list).
 
 
@@ -487,7 +498,7 @@ get_broadcasts
 get_bets
 ^^^^^^^^^^^^^^
 
-.. py:function:: get_bets(address=null, show_empty=false, is_valid=true, order_by=null, order_dir=null)
+.. py:function:: get_bets(address=null, show_empty=false, is_valid=true, order_by=null, order_dir=null, start_block=None, end_block=None)
 
    Gets a listing of bets (ordered by ``odds`` descending, then ``tx_index``).
 
@@ -496,6 +507,8 @@ get_bets
    :param boolean is_valid: Set to ``true`` to only return valid bets. Set to ``false`` to return all bets (including invalid attempts).
    :param string order_by: If sorted results are desired, specify the name of a :ref:`bet object <bet-object>` attribute to order the results by (e.g. ``wager_amount``). If left blank, the list of results will be returned unordered. 
    :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
+   :param integer start_block: If specified, only results from the specified block index on will be returned  
+   :param integer end_block: If specified, only results up to and including the specified block index on will be returned  
    :return: A list of one or more :ref:`bet objects <bet-object>` if any matching records were found, otherwise ``[]`` (empty list).
 
 
@@ -504,7 +517,7 @@ get_bets
 get_bet_matches
 ^^^^^^^^^^^^^^^^^^^
 
-.. py:function:: get_bet_matches(address=null, is_valid=true, tx0_hash=null, tx1_hash=null, order_by=null, order_dir=null)
+.. py:function:: get_bet_matches(address=null, is_valid=true, tx0_hash=null, tx1_hash=null, order_by=null, order_dir=null, start_block=None, end_block=None)
 
    Gets a listing of order matches (ordered by ``tx1_index`` ascending).
 
@@ -514,6 +527,8 @@ get_bet_matches
    :param string tx1_hash: Set to the hash that must be matched as ``tx1_hash``, or ``null`` to not filter by a specific ``tx1_hash``.
    :param string order_by: If sorted results are desired, specify the name of a :ref:`bet match object <bet-match-object>` attribute to order the results by (e.g. ``deadline``). If left blank, the list of results will be returned unordered. 
    :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
+   :param integer start_block: If specified, only results from the specified block index on will be returned  
+   :param integer end_block: If specified, only results up to and including the specified block index on will be returned  
    :return: A list of one or more :ref:`bet match objects <bet-match-object>` if any matching records were found, otherwise ``[]`` (empty list).
 
 
@@ -522,7 +537,7 @@ get_bet_matches
 get_dividends
 ^^^^^^^^^^^^^^
 
-.. py:function:: get_dividends(address=null, asset=null, is_valid=true, order_by=null, order_dir=null)
+.. py:function:: get_dividends(address=null, asset=null, is_valid=true, order_by=null, order_dir=null, start_block=None, end_block=None)
 
    Gets a listing of dividends (ordered by ``tx_index`` ascending).
 
@@ -531,6 +546,8 @@ get_dividends
    :param boolean is_valid: Set to ``true`` to only return valid dividend issuances. Set to ``false`` to return all dividend issuances (including invalid attempts).
    :param string order_by: If sorted results are desired, specify the name of a :ref:`dividend object <dividend-object>` attribute to order the results by (e.g. ``amount_per_share``). If left blank, the list of results will be returned unordered. 
    :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
+   :param integer start_block: If specified, only results from the specified block index on will be returned  
+   :param integer end_block: If specified, only results up to and including the specified block index on will be returned  
    :return: A list of one or more :ref:`dividend objects <dividend-object>` if any matching records were found, otherwise ``[]`` (empty list).
 
 
@@ -539,7 +556,7 @@ get_dividends
 get_burns
 ^^^^^^^^^^^^^^
 
-.. py:function:: get_burns(address=null, is_valid=true, order_by=null, order_dir=null)
+.. py:function:: get_burns(address=null, is_valid=true, order_by=null, order_dir=null, start_block=None, end_block=None)
 
    Gets a listing of burns (ordered by ``tx_index`` ascending).
 
@@ -547,7 +564,103 @@ get_burns
    :param boolean is_valid: Set to ``true`` to only return valid dividend issuances. Set to ``false`` to return all dividend issuances (including invalid attempts).
    :param string order_by: If sorted results are desired, specify the name of a :ref:`burn object <burn-object>` attribute to order the results by (e.g. ``tx_hash``). If left blank, the list of results will be returned unordered. 
    :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
+   :param integer start_block: If specified, only results from the specified block index on will be returned  
+   :param integer end_block: If specified, only results up to and including the specified block index on will be returned  
    :return: A list of one or more :ref:`burn objects <burn-object>` if any matching records were found, otherwise ``[]`` (empty list).
+
+
+.. do_send:
+
+do_send
+^^^^^^^^^^^^^^
+
+.. py:function:: do_send(source, destination, quantity, asset, unsigned=false)
+
+   Send XCP or a user defined asset.
+
+   :param string source: The address that will be sending (must have the necessary quantity of the specified asset).
+   :param string destination: The address to receive the asset.
+   :param integer quantity: The :ref:`quantity <amounts>` of the asset to send.
+   :param string asset: The :ref:`asset <assets>` to send.
+   :param boolean unsigned: If set to ``true``, just return the unsigned raw transaction (as hex) instead of actually processing it.
+   :return: If unsigned is set to ``false``, the hash of the transaction on success. If unsigend is set to ``true``, the unsigned raw transaction is returned (see the line above).
+
+
+.. do_order:
+
+do_order
+^^^^^^^^^^^^^^
+
+.. py:function:: do_order(source, give_quantity, give_asset, get_quantity, get_asset, expiration, fee_required=0, fee_provided=config.MIN_FEE / config.UNIT, unsigned=False)
+
+   Issue an order request.
+
+   :param string source: The address that will be issuing the order request (must have the necessary quantity of the specified asset to give).
+   :param integer give_quantity: The :ref:`quantity <amounts>` of the asset to give.
+   :param string give_asset: The :ref:`asset <assets>` to give.
+   :param integer get_quantity: The :ref:`quantity <amounts>` of the asset requested in return.
+   :param string get_asset: The :ref:`asset <assets>` requested in return.
+   :param integer expiration: The number of blocks for which the order should be valid.
+   :param integer fee_required: The miners' fee required to be paid by orders for them to match this one; in BTC; required only if buying BTC (may be zero, though).
+   :param integer fee_provided: The miners' fee provided; in BTC; required only if selling BTC (should not be lower than is required for acceptance in a block)
+   :param boolean unsigned: If set to ``true``, just return the unsigned raw transaction (as hex) instead of actually processing it.
+   :return: If unsigned is set to ``false``, the hash of the transaction on success. If unsigend is set to ``true``, the unsigned raw transaction is returned (see the line above).
+
+
+.. do_btcpay:
+
+do_btcpay
+^^^^^^^^^^^^^^
+
+.. py:function:: do_btcpay(order_match_id, unsigned=False)
+
+   Create and (optionally) broadcast a BTCpay message, to settle an Order Match for which you owe BTC. 
+
+   :param string order_match_id: The concatenation of the hashes of the two transactions which compose the order match.
+   :param boolean unsigned: If set to ``true``, just return the unsigned raw transaction (as hex) instead of actually processing it.
+   :return: If unsigned is set to ``false``, the hash of the transaction on success. If unsigend is set to ``true``, the unsigned raw transaction is returned (see the line above).
+
+
+.. do_issuance:
+
+do_issuance
+^^^^^^^^^^^^^^
+
+.. py:function:: do_issuance(source, quantity, asset, divisible, transfer_destination=null, unsigned=False)
+
+   Issue a new asset, issue more of an existing asset or transfer the ownership of an asset.
+
+   :param string source: The address that will be issuing or transfering the asset.
+   :param integer quantity: The :ref:`quantity <amounts>` of the asset to issue (set to 0 if *transferring* an asset).
+   :param string asset: The :ref:`asset <assets>` to issue or transfer.
+   :param boolean divisible: Whether this asset is divisible or not (if a transfer, this value must match the value specified when the asset was originally issued).
+   :param string transfer_destination: The address to receive the asset (only used when *transferring* assets -- leave set to ``null`` if issuing an asset).
+   :param boolean unsigned: If set to ``true``, just return the unsigned raw transaction (as hex) instead of actually processing it.
+   :return: If unsigned is set to ``false``, the hash of the transaction on success. If unsigend is set to ``true``, the unsigned raw transaction is returned (see the line above).
+
+
+.. do_broadcast:
+
+do_broadcast
+^^^^^^^^^^^^^^
+
+.. py:function:: do_broadcast(source, fee_multiplier, text, value=0, unsigned=False)
+
+   Broadcast textual and numerical information to the network
+
+   :param string source: The address that will be sending (must have the necessary quantity of the specified asset).
+   :param float fee_multiplier: How much of every bet on this feed should go to its operator; a fraction of 1, (i.e. .05 is five percent).
+   :param string text: The textual part of the broadcast.
+   :param float value: Numerical value of the broadcast.
+   :param boolean unsigned: If set to ``true``, just return the unsigned raw transaction (as hex) instead of actually processing it.
+   :return: If unsigned is set to ``false``, the hash of the transaction on success. If unsigend is set to ``true``, the unsigned raw transaction is returned (see the line above).
+
+
+
+        def do_bet(source, feed_address, bet_type, deadline, wager, counterwager, target_value=0.0, leverage=5040, unsigned=False):
+        def do_dividend(source, quantity_per_share, share_asset, unsigned=False):
+        def do_burn(source, quantity, unsigned=False):
+        def do_cancel(offer_hash, unsigned=False):
 
 
 Notes

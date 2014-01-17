@@ -101,7 +101,8 @@ Minimally required to build ``counterpartyd`` from source is the following:
   Install to the default ``C:\Python33`` location
 - Python Win32 extensions -- grab the `32-bit version <http://sourceforge.net/projects/pywin32/files/pywin32/Build%20218/pywin32-218.win32-py3.3.exe/download>`__
   or `64-bit version <http://sourceforge.net/projects/pywin32/files/pywin32/Build%20218/pywin32-218.win-amd64-py3.3.exe/download>`__
-- Git for Windows. Download `here <http://git-scm.com/download/win>`__ and install. Use the default installer options
+- Git for Windows. Download `here <http://git-scm.com/download/win>`__ and install. Use the default installer
+  options (except, select *"Run Git from the Windows Command Prompt"* on the appropriate screen)
 
 If you want to be able to build the Counterpartyd installer, also download the following:
 

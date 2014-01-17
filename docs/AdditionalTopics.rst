@@ -93,8 +93,8 @@ In this ``BitcoinTest`` directory, create a ``bitcoin.conf`` file with the follo
 Now, make a shortcut to something like the following (assuming you installed to the default
 install directory from the .exe installer):
 
-To run ``bitcoin-qt``: ``"C:\Program Files (x86)\Bitcoin\bitcoin-qt.exe" --datadir="C:\Users\robbyd\AppData\Roaming\BitcoinTest"``
-To run ``bitcoind``: ``"C:\Program Files (x86)\Bitcoin\bitcoind.exe" --datadir="C:\Users\robbyd\AppData\Roaming\BitcoinTest"``
+To run ``bitcoin-qt``: ``"C:\Program Files (x86)\Bitcoin\bitcoin-qt.exe" --datadir="C:\Users\<your username\AppData\Roaming\BitcoinTest"``
+To run ``bitcoind``: ``"C:\Program Files (x86)\Bitcoin\bitcoind.exe" --datadir="C:\Users\<your username>\AppData\Roaming\BitcoinTest"``
 
 Note that you can run either. If you want the GUI, run bitcoin-qt (which will also listen on the RPC interface).
 If you are comfortable using ``bitcoind`` commands (or are using a server), just run ``bitcoind``.
