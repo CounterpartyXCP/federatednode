@@ -96,11 +96,13 @@ Prerequisites
 
 Minimally required to build ``counterpartyd`` from source is the following:
 
-- Python 3.3.x -- grab the `32-bit version <http://www.python.org/ftp/python/3.3.3/python-3.3.3.msi>`__
-  or `64-bit version <http://www.python.org/ftp/python/3.3.3/python-3.3.3.amd64.msi>`__.
-  Install to the default ``C:\Python33`` location
-- Python Win32 extensions -- grab the `32-bit version <http://sourceforge.net/projects/pywin32/files/pywin32/Build%20218/pywin32-218.win32-py3.3.exe/download>`__
-  or `64-bit version <http://sourceforge.net/projects/pywin32/files/pywin32/Build%20218/pywin32-218.win-amd64-py3.3.exe/download>`__
+- Python 3.2.x -- grab the `32-bit version <http://www.python.org/ftp/python/3.2.5/python-3.2.5.msi>`__
+  or `64-bit version <http://www.python.org/ftp/python/3.2.5/python-3.2.5.amd64.msi>`__.
+  Install to the default ``C:\Python32`` location
+- Python Win32 extensions -- grab the `32-bit version <http://sourceforge.net/projects/pywin32/files/pywin32/Build%20218/pywin32-218.win32-py3.2.exe/download>`__
+  or `64-bit version <http://sourceforge.net/projects/pywin32/files/pywin32/Build%20218/pywin32-218.win-amd64-py3.2.exe/download>`__
+- APSW for Windows -- grab the `32-bit version <https://apsw.googlecode.com/files/apsw-3.8.2-r1.win32-py3.2.exe>`__
+  or `64-bit version <https://apsw.googlecode.com/files/apsw-3.8.2-r1.win-amd64-py3.2.exe>`__
 - Git for Windows. Download `here <http://git-scm.com/download/win>`__ and install. Use the default installer
   options (except, select *"Run Git from the Windows Command Prompt"* on the appropriate screen)
 
@@ -110,8 +112,8 @@ If you want to be able to build the Counterpartyd installer, also download the f
   options during installation, and install to the default path
 - Download the NSIS SimpleService plugin from `here <http://nsis.sourceforge.net/mediawiki/images/c/c9/NSIS_Simple_Service_Plugin_1.30.zip>`__
   and save the .dll file contained in that zip to your NSIS ``plugins`` directory (e.g. ``C:\Program Files (X86)\NSIS\plugins``)
-- cx_freeze -- grab the `32-bit version <http://prdownloads.sourceforge.net/cx-freeze/cx_Freeze-4.3.2.win32-py3.3.msi?download>`__
-  or `64-bit version <http://prdownloads.sourceforge.net/cx-freeze/cx_Freeze-4.3.2.win-amd64-py3.3.msi?download>`__ as appropriate
+- cx_freeze -- grab the `32-bit version <http://prdownloads.sourceforge.net/cx-freeze/cx_Freeze-4.3.2.win32-py3.2.msi?download>`__
+  or `64-bit version <http://prdownloads.sourceforge.net/cx-freeze/cx_Freeze-4.3.2.win-amd64-py3.2.msi?download>`__ as appropriate
 
 
 Installing
@@ -124,7 +126,7 @@ In the command window, type the following commands::
     cd C:\
     git clone https://github.com/xnova/counterpartyd_build
     cd counterpartyd_build
-    C:\Python33\python.exe setup.py
+    C:\Python32\python.exe setup.py
      
 The above steps will check out the build scripts to ``C:\counterpartyd_build``, and run the ``setup.py`` script, which
 will check out the newest version of ``counterpartyd`` itself from git, create a virtual environment with the
@@ -142,7 +144,7 @@ Running from Source
 After installing, open a command window and run ``counterpartyd`` in the foreground via::
 
     cd C:\counterpartyd_build
-    C:\Python33\python.exe run.py
+    C:\Python32\python.exe run.py
 
 You can then run any of ``counterpartyd’s`` other functions, like `the examples listed here <https://github.com/PhantomPhreak/counterpartyd#examples>`__.
 
@@ -167,7 +169,7 @@ If, upon running counterpartyd, you get a missing dependency or some other error
 `reqs.txt <https://github.com/xnova/counterpartyd_build/blob/master/dist/reqs.txt>`__::
 
     cd counterpartyd_build
-    C:\Python33\python.exe setup.py
+    C:\Python32\python.exe setup.py
 
 
 Building your own Installer
@@ -177,7 +179,7 @@ Complete the instructions under **Prerequisites** above.
 Then, execute the following commands to build the installer package::
 
     cd C:\counterpartyd_build
-    C:\Python33\python.exe setup.py -b
+    C:\Python32\python.exe setup.py -b
     
 If successful, you will be provided the location of the resulting installer package.
 

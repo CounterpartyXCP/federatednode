@@ -9,7 +9,7 @@ python-dateutil==2.2
 
 requests==2.1.0
 
-werkzeug==0.9.4
+cherrypy==3.2.4
 
 json-rpc==1.1
 

@@ -175,7 +175,7 @@ def install_dependencies(paths):
             logging.error("Unsupported Ubuntu version, please use 13.10 or 12.04 LTS")
             sys.exit(1)
 
-        #install sqlite utilities (not technically required as python's sqlite3 module is self-contained, but nice to have)
+        #install sqlite utilities (not technically required, but nice to have)
         runcmd("sudo apt-get -y install sqlite sqlite3 libsqlite3-dev libleveldb-dev")
         
         #now that pip is installed, install necessary deps outside of the virtualenv (e.g. for this script)
