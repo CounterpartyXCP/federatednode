@@ -107,277 +107,6 @@ Examples:
 **NOTE:** XCP and BTC themselves are divisible assets, and thus are listed in satoshis.
 
 
-Objects
-----------
-
-The API calls documented can return any one of these objects.
-
-
-.. _address-history-object:
-
-Address History Object
-^^^^^^^^^^^^^^^^^^^^^^^
-
-An object that describes the history of a requested address:
-
-* **balances** (*list*): Contains the balances for this address, as a list of :ref:`balance objects <balance-object>`.
-* **burns** (*list*): Contains the burns performed with this address, as a list of :ref:`burn objects <burn-object>`.
-* **sends** (*list*): The sends performed with this address, as a list of :ref:`send objects <send-object>`.
-* **orders** (*list*): The orders offered from this address,  as a list of :ref:`order objects <order-object>`.
-* **order_matches** (*list*): All orders filled (completely or partially) where this address either made the order or filled the order,
-   as a list of :ref:`order match objects <order-match-object>`.
-* **btcpays** (*list*): The BTC pays on this address, as a list of :ref:`BTCPay objects <btc-pay-object>`.
-* **issuances** (*list*): The asset issuances performed by this address, as a list of :ref:`issuance objects <issuance-object>`.
-* **broadcasts** (*list*): The broadcasts performed by this address, as a list of :ref:`broadcast objects <broadcast-object>`.
-* **bets** (*list*): All bets made from this address, as a list of :ref:`bet objects <bet-object>`.
-* **bet_matches** (*list*): The bets satisified (either completely or partially) where this address was either
-  offered the bet or responded to an existing bet, as a list of :ref:`bet match objects <bet-match-object>`.
-* **dividends** (*list*): All dividends rewarded from this address, as a list of :ref:`dividend objects <dividend-object>`.
-
-
-.. _balance-object:
-
-Balance Object
-^^^^^^^^^^^^^^^^^^^^^^^
-
-An object that describes a balance that is associated to a specific address:
-
-* **address** (*string*): The address that has the balance
-* **asset** (*string*): The ID of the :ref:`asset <assets>` in which the balance is specified
-* **amount** (*integer*): The :ref:`balance <amounts>` of the specified asset at this address
-
-
-.. _bet-object:
-
-Bet Object
-^^^^^^^^^^^^^^^^^^^^^^^
-
-An object that describes a specific bet:
-
-* **tx_index** (*integer*): The transaction index
-* **tx_hash** (*string*): The transaction hash
-* **block_index** (*integer*): The block index (block number in the block chain)
-* **source** (*string*): The address that made the bet
-* **feed_address** (*string*): The address with the feed that the bet is to be made on
-* **bet_type** (*integer*): 0 for Bullish CFD, 1 for Bearish CFD, 2 for Equal, 3 for Not Equal
-* **deadline** (*integer*): The timestamp at which the bet should be decided/settled, specified in Epoch UNIX time, in UTC
-* **wager_amount** (*integer*): The :ref:`quantity <amounts>` of XCP to wager
-* **counterwager_amount** (*integer*): The minimum :ref:`quantity <amounts>` of XCP to be wagered by the user to bet against the bet issuer, if the other party were to accept the whole thing
-* **wager_remaining** (*integer*): The quantity of XCP wagered that is remaining to bet on
-* **odds** (*float*): 
-* **target_value** (*float*): Target value for Equal/NotEqual bet
-* **leverage** (*integer*): Leverage, as a fraction of 5040
-* **expiration** (*integer*): The number of blocks for which the bet should be valid
-* **fee_multiplier** (*integer*): 
-* **validity** (*string*): Set to "Valid" if a valid bet. Any other setting signifies an invalid/improper bet
-
-
-.. _bet-match-object:
-
-Bet Match Object
-^^^^^^^^^^^^^^^^^^^^^^^
-
-An object that describes a specific occurance of two bets being matched (either partially, or fully):
-
-* **tx0_index** (*integer*): The Bitcoin transaction index of the initial bet
-* **tx0_hash** (*string*): The Bitcoin transaction hash of the initial bet
-* **tx0_block_index** (*integer*): The Bitcoin block index of the initial bet
-* **tx0_expiration** (*integer*): The number of blocks over which the initial bet was valid
-* **tx0_address** (*string*): The address that issued the initial bet
-* **tx0_bet_type** (*string*): The type of the initial bet (0 for Bullish CFD, 1 for Bearish CFD, 2 for Equal, 3 for Not Equal)
-* **tx1_index** (*integer*): The transaction index of the matching (counter) bet
-* **tx1_hash** (*string*): The transaction hash of the matching bet
-* **tx1_block_index** (*integer*): The block index of the matching bet
-* **tx1_address** (*string*): The address that issued the matching bet
-* **tx1_expiration** (*integer*): The number of blocks over which the matching bet was valid
-* **tx1_bet_type** (*string*): The type of the counter bet (0 for Bullish CFD, 1 for Bearish CFD, 2 for Equal, 3 for Not Equal)
-* **feed_address** (*string*): The address of the feed that the bets refer to
-* **initial_value** (*integer*): 
-* **deadline** (*integer*): The timestamp at which the bet match was made, specified in Epoch UNIX time, in UTC
-* **target_value** (*float*): Target value for Equal/NotEqual bet  
-* **leverage** (*integer*): Leverage, as a fraction of 5040
-* **forward_amount** (*integer*): The :ref:`amount <amounts>` of XCP bet in the initial bet
-* **backward_amount** (*integer*): The :ref:`amount <amounts>` of XCP bet in the matching bet
-* **fee_multiplier** (*integer*): 
-* **validity** (*string*): Set to "Valid" if a valid order match. Any other setting signifies an invalid/improper order match
-
-
-.. _broadcast-object:
-
-Broadcast Object
-^^^^^^^^^^^^^^^^^^^^^^^
-
-An object that describes a specific occurance of a broadcast event (i.e. creating/extending a feed):
-
-* **tx_index** (*integer*): The transaction index
-* **tx_hash** (*string*): The transaction hash
-* **block_index** (*integer*): The block index (block number in the block chain)
-* **source** (*string*): The address that made the broadcast
-* **timestamp** (*string*): The time the broadcast was made (as UNIX Epoch time, in UTC)
-* **value** (*float*): The numerical value of the broadcast
-* **fee_multiplier** (*float*): How much of every bet on this feed should go to its operator; a fraction of 1, (i.e. .05 is five percent)
-* **text** (*string*): The textual component of the broadcast
-* **validity** (*string*): Set to "Valid" if a valid broadcast. Any other setting signifies an invalid/improper broadcast
-
-
-.. _btcpay-object:
-
-BTCPay Object
-^^^^^^^^^^^^^^^^^^^^^^^
-
-An object that matches a request to settle an Order Match for which BTC is owed:
-
-* **tx_index** (*integer*): The transaction index
-* **tx_hash** (*string*): The transaction hash
-* **block_index** (*integer*): The block index (block number in the block chain)
-* **source** (*string*):
-* **order_match_id** (*string*):
-* **validity** (*string*): Set to "Valid" if valid
-
-
-.. _burn-object:
-
-Burn Object
-^^^^^^^^^^^^^^^^^^^^^^^
-
-An object that describes an instance of a specific burn:
-
-* **tx_index** (*integer*): The transaction index
-* **tx_hash** (*string*): The transaction hash
-* **block_index** (*integer*): The block index (block number in the block chain)
-* **address** (*string*): The address the burn was performed from
-* **burned** (*integer*): The :ref:`amount <amounts>` of BTC burned
-* **earned** (*integer*): The :ref:`amount <amounts>` of XPC actually earned from the burn (takes into account any bonus amounts, 1 BTC limitation, etc)
-* **validity** (*string*): Set to "Valid" if a valid burn. Any other setting signifies an invalid/improper burn
-
-
-.. _cancel-object:
-
-Cancel Object
-^^^^^^^^^^^^^^^^^^^^^^^
-
-An object that describes a cancellation of a (previously) open order or bet:
-
-* **tx_index** (*integer*): The transaction index
-* **tx_hash** (*string*): The transaction hash
-* **block_index** (*integer*): The block index (block number in the block chain)
-* **source** (*string*): The address with the open order or bet that was cancelled
-* **offer_hash** (*string*): The transaction hash of the order or bet cancelled
-* **validity** (*string*): Set to "Valid" if a valid burn. Any other setting signifies an invalid/improper burn
-
-
-.. _debit-credit-object:
-
-Debit/Credit Object
-^^^^^^^^^^^^^^^^^^^^^^^
-
-An object that describes a account debit or credit:
-
-* **tx_index** (*integer*): The transaction index
-* **tx_hash** (*string*): The transaction hash
-* **block_index** (*integer*): The block index (block number in the block chain)
-* **address** (*string*): The address debited or credited
-* **asset** (*string*): The :ref:`asset <assets>` debited or credited
-* **amount** (*integer*): The :ref:`amount <amounts>` of the specified asset debited or credited
-
-
-.. _dividend-object:
-
-Dividend Object
-^^^^^^^^^^^^^^^^^^^^^^^
-
-An object that describes an issuance of dividends on a specific user defined asset:
-
-* **tx_index** (*integer*): The transaction index
-* **tx_hash** (*string*): The transaction hash
-* **block_index** (*integer*): The block index (block number in the block chain)
-* **source** (*string*): The address that issued the dividend
-* **asset** (*string*): The :ref:`asset <assets>` that the dividends are being rewarded on 
-* **amount_per_share** (*integer*): The :ref:`amount <amounts>` of XCP rewarded per share of the asset
-* **validity** (*string*): Set to "Valid" if a valid burn. Any other setting signifies an invalid/improper burn
-
-
-.. _issuance-object:
-
-Issuance Object
-^^^^^^^^^^^^^^^^^^^^^^^
-
-An object that describes a specific occurance of a user defined asset being issued, or re-issued:
-
-* **tx_index** (*integer*): The transaction index
-* **tx_hash** (*string*): The transaction hash
-* **block_index** (*integer*): The block index (block number in the block chain)
-* **asset** (*string*): The :ref:`asset <assets>` being issued, or re-issued
-* **amount** (*integer*): The :ref:`amount <amounts>` of the specified asset being issued
-* **divisible** (*boolean*): Whether or not the asset is divisible (must agree with previous issuances of the asset, if there are any)
-* **issuer** (*string*): 
-* **transfer** (*boolean*): Whether or not this objects marks the transfer of ownership rights for the specified quantity of this asset
-* **validity** (*string*): Set to "Valid" if a valid issuance. Any other setting signifies an invalid/improper issuance
-
-
-.. _order-object:
-
-Order Object
-^^^^^^^^^^^^^^^^^^^^^^^
-
-An object that describes a specific order:
-
-* **tx_index** (*integer*): The transaction index
-* **tx_hash** (*string*): The transaction hash
-* **block_index** (*integer*): The block index (block number in the block chain)
-* **source** (*string*): The address that made the order
-* **give_asset** (*string*): The :ref:`asset <assets>` being offered
-* **give_amount** (*integer*): The :ref:`amount <amounts>` of the specified asset being offered
-* **give_remaining** (*integer*):
-* **get_asset** (*string*): The :ref:`asset <assets>` desired in exchange
-* **get_amount** (*integer*): The :ref:`amount <amounts>` of the specified asset desired in exchange
-* **price** (*float*): The given exchange rate (as an exchange ratio desired from the asset offered to the asset desired)
-* **expiration** (*integer*): The number of blocks over which the order should be valid
-* **fee_provided** (*integer*): The miners' fee provided; in BTC; required only if selling BTC (should not be lower than is required for acceptance in a block)
-* **fee_required** (*integer*): The miners' fee required to be paid by orders for them to match this one; in BTC; required only if buying BTC (may be zero, though)
-
-
-.. _order-match-object:
-
-Order Match Object
-^^^^^^^^^^^^^^^^^^^^^^^
-
-An object that describes a specific occurance of two orders being matched (either partially, or fully):
-
-* **tx0_index** (*integer*): The Bitcoin transaction index of the first (earlier) order
-* **tx0_hash** (*string*): The Bitcoin transaction hash of the first order
-* **tx0_block_index** (*integer*): The Bitcoin block index of the first order
-* **tx0_expiration** (*integer*): The number of blocks over which the first order was valid
-* **tx0_address** (*string*): The address that issued the first (earlier) order
-* **tx1_index** (*integer*): The transaction index of the second (matching) order
-* **tx1_hash** (*string*): The transaction hash of the second order
-* **tx1_block_index** (*integer*): The block index of the second order
-* **tx1_address** (*string*): The address that issued the second order
-* **tx1_expiration** (*integer*): The number of blocks over which the second order was valid
-* **forward_asset** (*string*): The :ref:`asset <assets>` exchanged FROM the first order to the second order
-* **forward_amount** (*integer*): The :ref:`amount <amounts>` of the specified forward asset
-* **backward_asset** (*string*): The :ref:`asset <assets>` exchanged FROM the second order to the first order
-* **backward_amount** (*integer*): The :ref:`amount <amounts>` of the specified backward asset
-* **validity** (*string*): Set to "Valid" if a valid order match. Any other setting signifies an invalid/improper order match
-
-
-.. _send-object:
-
-Send Object
-^^^^^^^^^^^^^^^^^^^^^^^
-
-An object that describes a specific send (e.g. "simple send", of XCP, or a user defined asset):
-
-* **tx_index** (*integer*): The transaction index
-* **tx_hash** (*string*): The transaction hash
-* **block_index** (*integer*): The block index (block number in the block chain)
-* **source** (*string*): The source address of the send
-* **destination** (*string*): The destination address of the send
-* **asset** (*string*): The :ref:`asset <assets>` being sent
-* **amount** (*integer*): The :ref:`amount <amounts>` of the specified asset sent
-* **validity** (*string*): Set to "Valid" if a valid send. Any other setting signifies an invalid/improper send
-
-
 Read API Function Reference
 ------------------------------------
 
@@ -808,3 +537,273 @@ do_send
    :param string asset: The :ref:`asset <assets>` to send.
    :param boolean unsigned: If set to ``true``, just return the unsigned raw transaction (as hex) instead of actually processing it.
    :return: If unsigned is set to ``false``, the hash of the transaction on success. If unsigend is set to ``true``, the unsigned raw transaction is returned (see the line above).
+
+   
+Objects
+----------
+
+The API calls documented can return any one of these objects.
+
+
+.. _address-history-object:
+
+Address History Object
+^^^^^^^^^^^^^^^^^^^^^^^
+
+An object that describes the history of a requested address:
+
+* **balances** (*list*): Contains the balances for this address, as a list of :ref:`balance objects <balance-object>`.
+* **burns** (*list*): Contains the burns performed with this address, as a list of :ref:`burn objects <burn-object>`.
+* **sends** (*list*): The sends performed with this address, as a list of :ref:`send objects <send-object>`.
+* **orders** (*list*): The orders offered from this address,  as a list of :ref:`order objects <order-object>`.
+* **order_matches** (*list*): All orders filled (completely or partially) where this address either made the order or filled the order, as a list of :ref:`order match objects <order-match-object>`.
+* **btcpays** (*list*): The BTC pays on this address, as a list of :ref:`BTCPay objects <btc-pay-object>`.
+* **issuances** (*list*): The asset issuances performed by this address, as a list of :ref:`issuance objects <issuance-object>`.
+* **broadcasts** (*list*): The broadcasts performed by this address, as a list of :ref:`broadcast objects <broadcast-object>`.
+* **bets** (*list*): All bets made from this address, as a list of :ref:`bet objects <bet-object>`.
+* **bet_matches** (*list*): The bets satisified (either completely or partially) where this address was either
+  offered the bet or responded to an existing bet, as a list of :ref:`bet match objects <bet-match-object>`.
+* **dividends** (*list*): All dividends rewarded from this address, as a list of :ref:`dividend objects <dividend-object>`.
+
+
+.. _balance-object:
+
+Balance Object
+^^^^^^^^^^^^^^^^^^^^^^^
+
+An object that describes a balance that is associated to a specific address:
+
+* **address** (*string*): The address that has the balance
+* **asset** (*string*): The ID of the :ref:`asset <assets>` in which the balance is specified
+* **amount** (*integer*): The :ref:`balance <amounts>` of the specified asset at this address
+
+
+.. _bet-object:
+
+Bet Object
+^^^^^^^^^^^^^^^^^^^^^^^
+
+An object that describes a specific bet:
+
+* **tx_index** (*integer*): The transaction index
+* **tx_hash** (*string*): The transaction hash
+* **block_index** (*integer*): The block index (block number in the block chain)
+* **source** (*string*): The address that made the bet
+* **feed_address** (*string*): The address with the feed that the bet is to be made on
+* **bet_type** (*integer*): 0 for Bullish CFD, 1 for Bearish CFD, 2 for Equal, 3 for Not Equal
+* **deadline** (*integer*): The timestamp at which the bet should be decided/settled, specified in Epoch UNIX time, in UTC
+* **wager_amount** (*integer*): The :ref:`quantity <amounts>` of XCP to wager
+* **counterwager_amount** (*integer*): The minimum :ref:`quantity <amounts>` of XCP to be wagered by the user to bet against the bet issuer, if the other party were to accept the whole thing
+* **wager_remaining** (*integer*): The quantity of XCP wagered that is remaining to bet on
+* **odds** (*float*): 
+* **target_value** (*float*): Target value for Equal/NotEqual bet
+* **leverage** (*integer*): Leverage, as a fraction of 5040
+* **expiration** (*integer*): The number of blocks for which the bet should be valid
+* **fee_multiplier** (*integer*): 
+* **validity** (*string*): Set to "Valid" if a valid bet. Any other setting signifies an invalid/improper bet
+
+
+.. _bet-match-object:
+
+Bet Match Object
+^^^^^^^^^^^^^^^^^^^^^^^
+
+An object that describes a specific occurance of two bets being matched (either partially, or fully):
+
+* **tx0_index** (*integer*): The Bitcoin transaction index of the initial bet
+* **tx0_hash** (*string*): The Bitcoin transaction hash of the initial bet
+* **tx0_block_index** (*integer*): The Bitcoin block index of the initial bet
+* **tx0_expiration** (*integer*): The number of blocks over which the initial bet was valid
+* **tx0_address** (*string*): The address that issued the initial bet
+* **tx0_bet_type** (*string*): The type of the initial bet (0 for Bullish CFD, 1 for Bearish CFD, 2 for Equal, 3 for Not Equal)
+* **tx1_index** (*integer*): The transaction index of the matching (counter) bet
+* **tx1_hash** (*string*): The transaction hash of the matching bet
+* **tx1_block_index** (*integer*): The block index of the matching bet
+* **tx1_address** (*string*): The address that issued the matching bet
+* **tx1_expiration** (*integer*): The number of blocks over which the matching bet was valid
+* **tx1_bet_type** (*string*): The type of the counter bet (0 for Bullish CFD, 1 for Bearish CFD, 2 for Equal, 3 for Not Equal)
+* **feed_address** (*string*): The address of the feed that the bets refer to
+* **initial_value** (*integer*): 
+* **deadline** (*integer*): The timestamp at which the bet match was made, specified in Epoch UNIX time, in UTC
+* **target_value** (*float*): Target value for Equal/NotEqual bet  
+* **leverage** (*integer*): Leverage, as a fraction of 5040
+* **forward_amount** (*integer*): The :ref:`amount <amounts>` of XCP bet in the initial bet
+* **backward_amount** (*integer*): The :ref:`amount <amounts>` of XCP bet in the matching bet
+* **fee_multiplier** (*integer*): 
+* **validity** (*string*): Set to "Valid" if a valid order match. Any other setting signifies an invalid/improper order match
+
+
+.. _broadcast-object:
+
+Broadcast Object
+^^^^^^^^^^^^^^^^^^^^^^^
+
+An object that describes a specific occurance of a broadcast event (i.e. creating/extending a feed):
+
+* **tx_index** (*integer*): The transaction index
+* **tx_hash** (*string*): The transaction hash
+* **block_index** (*integer*): The block index (block number in the block chain)
+* **source** (*string*): The address that made the broadcast
+* **timestamp** (*string*): The time the broadcast was made (as UNIX Epoch time, in UTC)
+* **value** (*float*): The numerical value of the broadcast
+* **fee_multiplier** (*float*): How much of every bet on this feed should go to its operator; a fraction of 1, (i.e. .05 is five percent)
+* **text** (*string*): The textual component of the broadcast
+* **validity** (*string*): Set to "Valid" if a valid broadcast. Any other setting signifies an invalid/improper broadcast
+
+
+.. _btcpay-object:
+
+BTCPay Object
+^^^^^^^^^^^^^^^^^^^^^^^
+
+An object that matches a request to settle an Order Match for which BTC is owed:
+
+* **tx_index** (*integer*): The transaction index
+* **tx_hash** (*string*): The transaction hash
+* **block_index** (*integer*): The block index (block number in the block chain)
+* **source** (*string*):
+* **order_match_id** (*string*):
+* **validity** (*string*): Set to "Valid" if valid
+
+
+.. _burn-object:
+
+Burn Object
+^^^^^^^^^^^^^^^^^^^^^^^
+
+An object that describes an instance of a specific burn:
+
+* **tx_index** (*integer*): The transaction index
+* **tx_hash** (*string*): The transaction hash
+* **block_index** (*integer*): The block index (block number in the block chain)
+* **address** (*string*): The address the burn was performed from
+* **burned** (*integer*): The :ref:`amount <amounts>` of BTC burned
+* **earned** (*integer*): The :ref:`amount <amounts>` of XPC actually earned from the burn (takes into account any bonus amounts, 1 BTC limitation, etc)
+* **validity** (*string*): Set to "Valid" if a valid burn. Any other setting signifies an invalid/improper burn
+
+
+.. _cancel-object:
+
+Cancel Object
+^^^^^^^^^^^^^^^^^^^^^^^
+
+An object that describes a cancellation of a (previously) open order or bet:
+
+* **tx_index** (*integer*): The transaction index
+* **tx_hash** (*string*): The transaction hash
+* **block_index** (*integer*): The block index (block number in the block chain)
+* **source** (*string*): The address with the open order or bet that was cancelled
+* **offer_hash** (*string*): The transaction hash of the order or bet cancelled
+* **validity** (*string*): Set to "Valid" if a valid burn. Any other setting signifies an invalid/improper burn
+
+
+.. _debit-credit-object:
+
+Debit/Credit Object
+^^^^^^^^^^^^^^^^^^^^^^^
+
+An object that describes a account debit or credit:
+
+* **tx_index** (*integer*): The transaction index
+* **tx_hash** (*string*): The transaction hash
+* **block_index** (*integer*): The block index (block number in the block chain)
+* **address** (*string*): The address debited or credited
+* **asset** (*string*): The :ref:`asset <assets>` debited or credited
+* **amount** (*integer*): The :ref:`amount <amounts>` of the specified asset debited or credited
+
+
+.. _dividend-object:
+
+Dividend Object
+^^^^^^^^^^^^^^^^^^^^^^^
+
+An object that describes an issuance of dividends on a specific user defined asset:
+
+* **tx_index** (*integer*): The transaction index
+* **tx_hash** (*string*): The transaction hash
+* **block_index** (*integer*): The block index (block number in the block chain)
+* **source** (*string*): The address that issued the dividend
+* **asset** (*string*): The :ref:`asset <assets>` that the dividends are being rewarded on 
+* **amount_per_share** (*integer*): The :ref:`amount <amounts>` of XCP rewarded per share of the asset
+* **validity** (*string*): Set to "Valid" if a valid burn. Any other setting signifies an invalid/improper burn
+
+
+.. _issuance-object:
+
+Issuance Object
+^^^^^^^^^^^^^^^^^^^^^^^
+
+An object that describes a specific occurance of a user defined asset being issued, or re-issued:
+
+* **tx_index** (*integer*): The transaction index
+* **tx_hash** (*string*): The transaction hash
+* **block_index** (*integer*): The block index (block number in the block chain)
+* **asset** (*string*): The :ref:`asset <assets>` being issued, or re-issued
+* **amount** (*integer*): The :ref:`amount <amounts>` of the specified asset being issued
+* **divisible** (*boolean*): Whether or not the asset is divisible (must agree with previous issuances of the asset, if there are any)
+* **issuer** (*string*): 
+* **transfer** (*boolean*): Whether or not this objects marks the transfer of ownership rights for the specified quantity of this asset
+* **validity** (*string*): Set to "Valid" if a valid issuance. Any other setting signifies an invalid/improper issuance
+
+
+.. _order-object:
+
+Order Object
+^^^^^^^^^^^^^^^^^^^^^^^
+
+An object that describes a specific order:
+
+* **tx_index** (*integer*): The transaction index
+* **tx_hash** (*string*): The transaction hash
+* **block_index** (*integer*): The block index (block number in the block chain)
+* **source** (*string*): The address that made the order
+* **give_asset** (*string*): The :ref:`asset <assets>` being offered
+* **give_amount** (*integer*): The :ref:`amount <amounts>` of the specified asset being offered
+* **give_remaining** (*integer*):
+* **get_asset** (*string*): The :ref:`asset <assets>` desired in exchange
+* **get_amount** (*integer*): The :ref:`amount <amounts>` of the specified asset desired in exchange
+* **price** (*float*): The given exchange rate (as an exchange ratio desired from the asset offered to the asset desired)
+* **expiration** (*integer*): The number of blocks over which the order should be valid
+* **fee_provided** (*integer*): The miners' fee provided; in BTC; required only if selling BTC (should not be lower than is required for acceptance in a block)
+* **fee_required** (*integer*): The miners' fee required to be paid by orders for them to match this one; in BTC; required only if buying BTC (may be zero, though)
+
+
+.. _order-match-object:
+
+Order Match Object
+^^^^^^^^^^^^^^^^^^^^^^^
+
+An object that describes a specific occurance of two orders being matched (either partially, or fully):
+
+* **tx0_index** (*integer*): The Bitcoin transaction index of the first (earlier) order
+* **tx0_hash** (*string*): The Bitcoin transaction hash of the first order
+* **tx0_block_index** (*integer*): The Bitcoin block index of the first order
+* **tx0_expiration** (*integer*): The number of blocks over which the first order was valid
+* **tx0_address** (*string*): The address that issued the first (earlier) order
+* **tx1_index** (*integer*): The transaction index of the second (matching) order
+* **tx1_hash** (*string*): The transaction hash of the second order
+* **tx1_block_index** (*integer*): The block index of the second order
+* **tx1_address** (*string*): The address that issued the second order
+* **tx1_expiration** (*integer*): The number of blocks over which the second order was valid
+* **forward_asset** (*string*): The :ref:`asset <assets>` exchanged FROM the first order to the second order
+* **forward_amount** (*integer*): The :ref:`amount <amounts>` of the specified forward asset
+* **backward_asset** (*string*): The :ref:`asset <assets>` exchanged FROM the second order to the first order
+* **backward_amount** (*integer*): The :ref:`amount <amounts>` of the specified backward asset
+* **validity** (*string*): Set to "Valid" if a valid order match. Any other setting signifies an invalid/improper order match
+
+
+.. _send-object:
+
+Send Object
+^^^^^^^^^^^^^^^^^^^^^^^
+
+An object that describes a specific send (e.g. "simple send", of XCP, or a user defined asset):
+
+* **tx_index** (*integer*): The transaction index
+* **tx_hash** (*string*): The transaction hash
+* **block_index** (*integer*): The block index (block number in the block chain)
+* **source** (*string*): The source address of the send
+* **destination** (*string*): The destination address of the send
+* **asset** (*string*): The :ref:`asset <assets>` being sent
+* **amount** (*integer*): The :ref:`amount <amounts>` of the specified asset sent
+* **validity** (*string*): Set to "Valid" if a valid send. Any other setting signifies an invalid/improper send
