@@ -11,4 +11,4 @@ stop on shutdown
 respawn
 
 env USER=!RUN_AS_USER!
-exec start-stop-daemon --start --background --make-pidfile --pidfile /var/run/counterpartyd.pid --chuid $USER --exec /usr/local/bin/counterpartyd
+exec start-stop-daemon --start --background --make-pidfile --pidfile /var/run/counterpartyd.pid --chuid $USER --exec /usr/local/bin/counterpartyd -- server

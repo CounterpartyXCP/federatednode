@@ -240,7 +240,7 @@ def setup_startup(paths, run_as_user):
         ws = win32com.client.Dispatch("wscript.shell")
         scut = ws.CreateShortcut(os.path.join(buf.value, 'run_counterpartyd.lnk'))
         scut.TargetPath = '"c:/Python32/python.exe"'
-        scut.Arguments = os.path.join(paths['base_path'], 'run.py')
+        scut.Arguments = os.path.join(paths['base_path'], 'run.py') + ' server'
         scut.Save()        
     else:
         logging.info("Setting up init scripts...")
