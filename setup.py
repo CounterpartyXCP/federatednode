@@ -119,7 +119,7 @@ def get_paths(is_build):
         paths['virtualenv_args'] = "--system-site-packages --python=python%s" % PYTHON_VER
     elif os.name == "nt":
         paths['virtualenv_path'] = os.path.join(paths['sys_python_path'], "Scripts", "virtualenv.exe")
-        paths['virtualenv_args'] = "--system-site-packages" if is_build else ""
+        paths['virtualenv_args'] = "--system-site-packages"
         #^ we use system-site-packages here because we need to be able to import cx_freeze from the sys packages
     
     #compose the rest of the paths...
@@ -239,7 +239,7 @@ def setup_startup(paths, run_as_user):
         
         ws = win32com.client.Dispatch("wscript.shell")
         scut = ws.CreateShortcut(os.path.join(buf.value, 'run_counterpartyd.lnk'))
-        scut.TargetPath = '"c:/Python33/python.exe"'
+        scut.TargetPath = '"c:/Python32/python.exe"'
         scut.Arguments = os.path.join(paths['base_path'], 'run.py')
         scut.Save()        
     else:

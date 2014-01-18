@@ -24,7 +24,7 @@ dist_path = os.path.join(base_path, "dist")
 python_path = os.path.join(env_path, "Scripts" if os.name == "nt" else "bin", "python.exe" if os.name == "nt" else "python")
 pytest_path = os.path.join(env_path, "Scripts" if os.name == "nt" else "bin", "py.test.exe" if os.name == "nt" else "pytest")
 counterpartyd_path = os.path.join(dist_path, "counterpartyd", "counterpartyd.py")
-counterpartyd_tests_path = os.path.join(dist_path, "counterpartyd", "test", "test.py")
+counterpartyd_tests_path = os.path.join(dist_path, "counterpartyd", "test", "test_.py")
 
 os.system("%s %s %s" % (pytest_path if run_tests else python_path,
     counterpartyd_tests_path if run_tests else counterpartyd_path, ' '.join(args)))
