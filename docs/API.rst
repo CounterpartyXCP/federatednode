@@ -1,33 +1,27 @@
-
 Interacting with the API
 =========================
 
 .. warning::
 
-    API DOCUMENTATION STILL UNDER DEVELOPMENT. THERE ARE ERRORS, INCOMPLETE SECTIONS, ETC.
-    
-    This API documentation is still in an early state, and could still change drastically at any time.
+    This API documentation is still in an early state. It contains errors, omissions, etc., and could change drastically at any time.
     
 
 Overview
 ----------
 
-``counterpartyd`` features a full-fledges JSON RPC-based API, which allows 3rd party applications to perform
-functions on the CounterParty network without having to deal with the low level details of transaction encoding,
-state management, and so on.
+``counterpartyd`` features a full-fledged JSON RPC-based API, which allows
+third‐party applications to perform functions on the Counterparty network
+without having to deal with the low‐level details of the protocol such as
+transaction encoding and state management.
 
-The ``counterpartyd`` API works similar to ``bitcoind``'s JSON RPC API interface. `This page <https://en.bitcoin.it/wiki/API_reference_(JSON-RPC)>`__
-contains examples of interacting with the ``bitcoind`` API in a variety of programming languages. The basic
-dynamics are similar when interacting with ``counterpartyd``.
-
-Also, please see the scripts in the ``examples`` subdirectory.
+Please see the scripts in the ``examples`` subdirectory.
 
 
 Connecting to the API
 ----------------------
 
 By default, ``counterpartyd`` will listen on port ``4000`` (if on mainnet) or port ``14000`` (on testnet) for API
-requests. API requests are made via a HTTP POST request to ``/jsonrpc/`` (note the trailing slash), with JSON-encoded
+requests. API requests are made via a HTTP POST request to ``/jsonrpc/``, with JSON-encoded
 data passed as the POST body. For more information on JSON RPC, please see the `JSON RPC specification <http://json-rpc.org/wiki/specification>`__.
 
 .. _examples:
@@ -97,12 +91,12 @@ Terms & Conventions
 assets
 ^^^^^^^^^
 
-Anywhere in the API where an asset may be specified, it is specified as a textual asset ID, being an uppercase
-alphabetic (base 26) string name of the asset, of at least 4 characters in length. Examples are:
+Everywhere in the API an asset is referenced as an uppercase alphabetic (base
+26) string name of the asset, of at least 4 characters in length, or as 'BTC' or 'XCP' as appropriate. Examples are:
 
 - "BTC"
 - "XCP"
-- "MYCUSTASSET"
+- "FOOBAR"
 
 .. _amounts:
 
@@ -423,13 +417,13 @@ do_bet
 
    Issue a bet against a feed.
 
-   :param string source: The address that will be making the bet.
-   :param string feed_address: The address that is hosting the feed to be bet on.
-   :param integer bet_type: 0 for Bullish CFD, 1 for Bearish CFD, 2 for Equal, 3 for Not Equal.
-   :param integer deadline: The timestamp at which the bet should be decided/settled, specified in Epoch UNIX time, in UTC.
+   :param string source: The address that will make the bet.
+   :param string feed_address: The address that host the feed to be bet on.
+   :param integer bet_type: 0 for Bullish CFD, 1 for Bearish CFD, 2 for Equal, 3 for NotEqual.
+   :param integer deadline: The time at which the bet should be decided/settled, in Unix time.
    :param integer wager: The :ref:`quantity <amounts>` of XCP to wager.
-   :param integer counterwager: The minimum :ref:`quantity <amounts>` of XCP to be wagered by the user to bet against the bet issuer, if the other party were to accept the whole thing.
-   :param float target_value: Target value for Equal/NotEqual bet  
+   :param integer counterwager: The minimum :ref:`quantity <amounts>` of XCP to be wagered against, for the bets to match.
+   :param float target_value: Target value for Equal/NotEqual bet
    :param integer leverage: Leverage, as a fraction of 5040
    :param boolean unsigned: If set to ``true``, just return the unsigned raw transaction (as hex) instead of actually processing it.
    :return: If unsigned is set to ``false``, the hash of the transaction on success. If unsigend is set to ``true``, the unsigned raw transaction is returned (see the line above).
@@ -447,6 +441,7 @@ do_broadcast
    :param string source: The address that will be sending (must have the necessary quantity of the specified asset).
    :param float fee_multiplier: How much of every bet on this feed should go to its operator; a fraction of 1, (i.e. .05 is five percent).
    :param string text: The textual part of the broadcast.
+   :param integer timestamp: The timestamp of the broadcast, in Unix time.
    :param float value: Numerical value of the broadcast.
    :param boolean unsigned: If set to ``true``, just return the unsigned raw transaction (as hex) instead of actually processing it.
    :return: If unsigned is set to ``false``, the hash of the transaction on success. If unsigend is set to ``true``, the unsigned raw transaction is returned (see the line above).
@@ -583,15 +578,15 @@ An object that describes the history of a requested address:
 * **balances** (*list*): Contains the balances for this address, as a list of :ref:`balance objects <balance-object>`.
 * **burns** (*list*): Contains the burns performed with this address, as a list of :ref:`burn objects <burn-object>`.
 * **sends** (*list*): The sends performed with this address, as a list of :ref:`send objects <send-object>`.
-* **orders** (*list*): The orders offered from this address,  as a list of :ref:`order objects <order-object>`.
-* **order_matches** (*list*): All orders filled (completely or partially) where this address either made the order or filled the order, as a list of :ref:`order match objects <order-match-object>`.
-* **btcpays** (*list*): The BTC pays on this address, as a list of :ref:`BTCPay objects <btcpay-object>`.
+* **orders** (*list*): The orders of this address,  as a list of :ref:`order objects <order-object>`.
+* **order_matches** (*list*): All orders matchings to which this address was a party, as a list of :ref:`order match objects <order-match-object>`.
+* **btcpays** (*list*): The BTC pays on this address, as a list of :ref:`BTCPay objects <btc-pay-object>`.
 * **issuances** (*list*): The asset issuances performed by this address, as a list of :ref:`issuance objects <issuance-object>`.
 * **broadcasts** (*list*): The broadcasts performed by this address, as a list of :ref:`broadcast objects <broadcast-object>`.
 * **bets** (*list*): All bets made from this address, as a list of :ref:`bet objects <bet-object>`.
-* **bet_matches** (*list*): The bets satisified (either completely or partially) where this address was either
-  offered the bet or responded to an existing bet, as a list of :ref:`bet match objects <bet-match-object>`.
+* **bet_matches** (*list*): The bets matchings to which this address was a party, as a list of :ref:`bet match objects <bet-match-object>`.
 * **dividends** (*list*): All dividends rewarded from this address, as a list of :ref:`dividend objects <dividend-object>`.
+* **cancels** (*list*): All cancels from this address, as a list of :ref:`cancel objects <cancel-object>`.
 
 
 .. _balance-object:
@@ -619,7 +614,7 @@ An object that describes a specific bet:
 * **source** (*string*): The address that made the bet
 * **feed_address** (*string*): The address with the feed that the bet is to be made on
 * **bet_type** (*integer*): 0 for Bullish CFD, 1 for Bearish CFD, 2 for Equal, 3 for Not Equal
-* **deadline** (*integer*): The timestamp at which the bet should be decided/settled, specified in Epoch UNIX time, in UTC
+* **deadline** (*integer*): The timestamp at which the bet should be decided/settled, in Unix time.
 * **wager_amount** (*integer*): The :ref:`quantity <amounts>` of XCP to wager
 * **counterwager_amount** (*integer*): The minimum :ref:`quantity <amounts>` of XCP to be wagered by the user to bet against the bet issuer, if the other party were to accept the whole thing
 * **wager_remaining** (*integer*): The quantity of XCP wagered that is remaining to bet on
@@ -652,7 +647,7 @@ An object that describes a specific occurance of two bets being matched (either 
 * **tx1_bet_type** (*string*): The type of the counter bet (0 for Bullish CFD, 1 for Bearish CFD, 2 for Equal, 3 for Not Equal)
 * **feed_address** (*string*): The address of the feed that the bets refer to
 * **initial_value** (*integer*): 
-* **deadline** (*integer*): The timestamp at which the bet match was made, specified in Epoch UNIX time, in UTC
+* **deadline** (*integer*): The timestamp at which the bet match was made, in Unix time.
 * **target_value** (*float*): Target value for Equal/NotEqual bet  
 * **leverage** (*integer*): Leverage, as a fraction of 5040
 * **forward_amount** (*integer*): The :ref:`amount <amounts>` of XCP bet in the initial bet
@@ -672,7 +667,7 @@ An object that describes a specific occurance of a broadcast event (i.e. creatin
 * **tx_hash** (*string*): The transaction hash
 * **block_index** (*integer*): The block index (block number in the block chain)
 * **source** (*string*): The address that made the broadcast
-* **timestamp** (*string*): The time the broadcast was made (as UNIX Epoch time, in UTC)
+* **timestamp** (*string*): The time the broadcast was made, in Unix time. 
 * **value** (*float*): The numerical value of the broadcast
 * **fee_multiplier** (*float*): How much of every bet on this feed should go to its operator; a fraction of 1, (i.e. .05 is five percent)
 * **text** (*string*): The textual component of the broadcast
