@@ -14,3 +14,5 @@ cherrypy==3.2.4
 json-rpc==1.1
 
 pycoin==0.23
+
+pytest==2.5.1

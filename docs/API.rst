@@ -30,6 +30,8 @@ By default, ``counterpartyd`` will listen on port ``4000`` (if on mainnet) or po
 requests. API requests are made via a HTTP POST request to ``/jsonrpc/`` (note the trailing slash), with JSON-encoded
 data passed as the POST body. For more information on JSON RPC, please see the `JSON RPC specification <http://json-rpc.org/wiki/specification>`__.
 
+.. _examples:
+
 Python Example
 ^^^^^^^^^^^^^^^
 
@@ -41,10 +43,10 @@ Python Example
     url = "http://localhost:4000/jsonrpc/"
     headers = {'content-type': 'application/json'}
     
-    #get all burns between two block numbers, sorting by tx_hash, ascending
+    #Get all burns between blocks 280537 and 280539 where greater than .2 BTC was burned, sorting by tx_hash (ascending order)
     payload = {
       "method": "get_burns",
-      "params": [None, True, 'tx_hash', 'asc', 280537, 280539],
+      "params": [{'field': 'burned', 'op': '>', 'value': 20000000}, True, 'tx_hash', 'asc', 280537, 280539],
       "jsonrpc": "2.0",
       "id": 0,
     }
@@ -52,7 +54,18 @@ Python Example
       url, data=json.dumps(payload), headers=headers).json()
     print("GET_BURNS RESULT: ", response)
     
-    #get information for a specific address
+    #Fetch all debits for > 2 XCP between blocks 280537 and 280539, sorting the results by amount (descending order)
+    payload = {
+      "method": "get_debits",
+      "params": [[{'field': 'asset', 'op': '==', 'value': "XCP"}, {'field': 'amount', 'op': '>', 'value': 200000000}], 'amount', 'desc'],
+      "jsonrpc": "2.0",
+      "id": 0,
+    }
+    response = requests.post(
+      url, data=json.dumps(payload), headers=headers).json()
+    print("GET_DEBITS RESULT: ", response)
+
+    #Get information for a specific address
     payload = {
       "method": "get_address",
       "params": ["1CUdFmgK9trTNZHALfqGvd8d6nUZqH2AAf"],
@@ -63,7 +76,7 @@ Python Example
       url, data=json.dumps(payload), headers=headers).json()
     print("\nGET ADDRESS RESULT: ", response)
     
-    #send 1 XCP (specified in satoshis) from one address to another (you must have the sending address in your wallet)
+    #Send 1 XCP (specified in satoshis) from one address to another (you must have the sending address in your wallet)
     payload = {
       "method": "do_send",
       "params": ["1CUdFmgK9trTNZHALfqGvd8d6nUZqH2AAf", "17rRm52PYGkntcJxD2yQF9jQqRS4S2nZ7E", 100000000, "XCP"],
@@ -76,8 +89,8 @@ Python Example
 
 
 
-Terms
-----------
+Terms & Conventions
+---------------------
 
 .. _assets:
 
@@ -106,11 +119,36 @@ Examples:
 
 **NOTE:** XCP and BTC themselves are divisible assets, and thus are listed in satoshis.
 
+.. _filtering:
+
+Filtering Read API results
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The Counterparty API aims to be as simple and flexible as possible. To this end, it includes a straightforward
+way to filter the results of most :ref:`Read API functions <read_api>` to get the data you want, and only that.
+
+For each Read API function that supports it, a ``filter`` parameter exists. To apply a filter to a specific data field,
+specify an object (e.g. dict in Python) as this parameter, with the following members:
+
+- field: The field to filter on. Must be a valid field in the type of object being returned
+- op: The comparison operation to perform. One of: ``==``, ``!=``, ``>``, ``<``, ``>=``, ``<=``
+- value: The value that the field will be compared against. Must be the same data type as the field is
+  (e.g. if the field is a string, the value must be a string too)
+
+If you want to filter by multiple fields, then you can specify a list of filter objects.
+
+To disable filtering, you can just not specify the filter argument (if using keyword-based arguments), or,
+if using positional arguments, just pass ``null`` or ``[]`` (empty list) for the parameter.
+
+For examples of filtering in-use, please see the :ref:`API code examples <examples>`.
+
+
+.. _read_api:
 
 Read API Function Reference
 ------------------------------------
 
-.. get_address:
+.. _get_address:
 
 get_address
 ^^^^^^^^^^^^^^
@@ -123,34 +161,32 @@ get_address
    :return: An :ref:`address history object <address-history-object>` if the address was found, otherwise ``null``.
 
 
-.. get_balances:
+.. _get_balances:
 
 get_balances
 ^^^^^^^^^^^^^^
 
-.. py:function:: get_balances(address=null, asset=null, order_by=null, order_dir=null)
+.. py:function:: get_balances(filter=[], order_by=null, order_dir=null)
 
    Gets the current address balances, optionally filtered by an address and/or asset ID. This list does not
    include any BTC balances.
 
-   :param string address: Address to filter on. If not specified, will get the balances for all addresses.
-   :param string asset: The specified :ref:`asset <assets>` to filter the resultant list by, if any.
+   :param list/dict filter: An optional filtering object, or list of filtering objects. See :ref:`Filtering Read API results <filtering>` for more information.   
    :param string order_by: If sorted results are desired, specify the name of a :ref:`balance object <balance-object>` attribute to order the results by (e.g. ``amount``). If left blank, the list of results will be returned unordered. 
-   :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
+   :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.
    :return: A list of one or more :ref:`balance objects <balance-object>` if any matching records were found, otherwise ``[]`` (empty list).
 
 
-.. get_bets:
+.. _get_bets:
 
 get_bets
 ^^^^^^^^^^^^^^
 
-.. py:function:: get_bets(address=null, show_empty=false, is_valid=true, order_by=null, order_dir=null, start_block=None, end_block=None)
+.. py:function:: get_bets(filters=[], is_valid=true, order_by=null, order_dir=null, start_block=None, end_block=None)
 
    Gets a listing of bets.
 
-   :param string address: Address to filter on as the bet source. If not specified, will get the bets for all source addresses.
-   :param boolean show_empty: Set to ``true`` to include fully filled bets in the results.
+   :param list/dict filter: An optional filtering object, or list of filtering objects. See :ref:`Filtering Read API results <filtering>` for more information.   
    :param boolean is_valid: Set to ``true`` to only return valid bets. Set to ``false`` to return all bets (including invalid attempts).
    :param string order_by: If sorted results are desired, specify the name of a :ref:`bet object <bet-object>` attribute to order the results by (e.g. ``wager_amount``). If left blank, the list of results will be returned unordered. 
    :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
@@ -159,19 +195,17 @@ get_bets
    :return: A list of one or more :ref:`bet objects <bet-object>` if any matching records were found, otherwise ``[]`` (empty list).
 
 
-.. get_bet_matches:
+.. _get_bet_matches:
 
 get_bet_matches
 ^^^^^^^^^^^^^^^^^^^
 
-.. py:function:: get_bet_matches(address=null, is_valid=true, tx0_hash=null, tx1_hash=null, order_by=null, order_dir=null, start_block=None, end_block=None)
+.. py:function:: get_bet_matches(filters=[], is_valid=true, order_by=null, order_dir=null, start_block=None, end_block=None)
 
    Gets a listing of order matches.
 
-   :param string address: Address to filter on as the ``tx0_address`` or ``tx1_address``, if any.
+   :param list/dict filter: An optional filtering object, or list of filtering objects. See :ref:`Filtering Read API results <filtering>` for more information.   
    :param boolean is_valid: Set to ``true`` to only return valid bet matches. Set to ``false`` to return all bet matches (including invalid attempts).
-   :param string tx0_hash: Set to the hash that must be matched as ``tx0_hash``, or ``null`` to not filter by a specific ``tx0_hash``.
-   :param string tx1_hash: Set to the hash that must be matched as ``tx1_hash``, or ``null`` to not filter by a specific ``tx1_hash``.
    :param string order_by: If sorted results are desired, specify the name of a :ref:`bet match object <bet-match-object>` attribute to order the results by (e.g. ``deadline``). If left blank, the list of results will be returned unordered. 
    :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
    :param integer start_block: If specified, only results from the specified block index on will be returned  
@@ -179,16 +213,16 @@ get_bet_matches
    :return: A list of one or more :ref:`bet match objects <bet-match-object>` if any matching records were found, otherwise ``[]`` (empty list).
 
 
-.. get_broadcasts:
+.. _get_broadcasts:
 
 get_broadcasts
 ^^^^^^^^^^^^^^
 
-.. py:function:: get_broadcasts(source=null, is_valid=true, order_by=null, order_dir=null, start_block=None, end_block=None)
+.. py:function:: get_broadcasts(filters=[], is_valid=true, order_by=null, order_dir=null, start_block=None, end_block=None)
 
    Gets a listing of broadcasts.
 
-   :param string source: Address to filter on as broadcast's source.
+   :param list/dict filter: An optional filtering object, or list of filtering objects. See :ref:`Filtering Read API results <filtering>` for more information.   
    :param boolean is_valid: Set to ``true`` to only return valid broadcasts. Set to ``false`` to return all broadcasts (including invalid attempts).
    :param string order_by: If sorted results are desired, specify the name of a :ref:`broadcast object <broadcast-object>` attribute to order the results by (e.g. ``fee_multiplier``). If left blank, the list of results will be returned unordered. 
    :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
@@ -197,15 +231,16 @@ get_broadcasts
    :return: A list of one or more :ref:`broadcast objects <broadcast-object>` if any matching records were found, otherwise ``[]`` (empty list).
 
 
-.. get_btcpays:
+.. _get_btcpays:
 
 get_btcpays
 ^^^^^^^^^^^^^^
 
-.. py:function:: get_btcpays(is_valid=true, order_by=null, order_dir=null, start_block=None, end_block=None)
+.. py:function:: get_btcpays(filters=[], is_valid=true, order_by=null, order_dir=null, start_block=None, end_block=None)
 
    Gets a listing of BTCPay records.
 
+   :param list/dict filter: An optional filtering object, or list of filtering objects. See :ref:`Filtering Read API results <filtering>` for more information.   
    :param boolean is_valid: Set to ``true`` to only return valid BTCPays. Set to ``false`` to return all BTCPays (including invalid attempts).
    :param string order_by: If sorted results are desired, specify the name of a :ref:`BTCPay object <btcpay-object>` attribute to order the results by (e.g. ``block_index``). If left blank, the list of results will be returned unordered. 
    :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
@@ -214,16 +249,16 @@ get_btcpays
    :return: A list of one or more :ref:`BTCPay objects <btcpay-object>` if any matching records were found, otherwise ``[]`` (empty list).
 
 
-.. get_burns:
+.. _get_burns:
 
 get_burns
 ^^^^^^^^^^^^^^
 
-.. py:function:: get_burns(address=null, is_valid=true, order_by=null, order_dir=null, start_block=None, end_block=None)
+.. py:function:: get_burns(filters=[], is_valid=true, order_by=null, order_dir=null, start_block=None, end_block=None)
 
    Gets a listing of burns.
 
-   :param string address: Address to filter on. If not specified, will get the burns for all addresses.
+   :param list/dict filter: An optional filtering object, or list of filtering objects. See :ref:`Filtering Read API results <filtering>` for more information.   
    :param boolean is_valid: Set to ``true`` to only return valid dividend issuances. Set to ``false`` to return all dividend issuances (including invalid attempts).
    :param string order_by: If sorted results are desired, specify the name of a :ref:`burn object <burn-object>` attribute to order the results by (e.g. ``tx_hash``). If left blank, the list of results will be returned unordered. 
    :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
@@ -232,16 +267,16 @@ get_burns
    :return: A list of one or more :ref:`burn objects <burn-object>` if any matching records were found, otherwise ``[]`` (empty list).
 
 
-.. get_cancels:
+.. _get_cancels:
 
 get_cancels
 ^^^^^^^^^^^^^^
 
-.. py:function:: get_cancels(source=null, is_valid=true, order_by=null, order_dir=null, start_block=None, end_block=None)
+.. py:function:: get_cancels(filters=[], is_valid=true, order_by=null, order_dir=null, start_block=None, end_block=None)
 
    Gets a listing of canceled orders or bets.
 
-   :param string source: Address to filter on. If not specified, will get the cancels for all addresses.
+   :param list/dict filter: An optional filtering object, or list of filtering objects. See :ref:`Filtering Read API results <filtering>` for more information.   
    :param boolean is_valid: Set to ``true`` to only return valid dividend issuances. Set to ``false`` to return all dividend issuances (including invalid attempts).
    :param string order_by: If sorted results are desired, specify the name of a :ref:`cancel object <cancel-object>` attribute to order the results by (e.g. ``source``). If left blank, the list of results will be returned unordered. 
    :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
@@ -250,51 +285,48 @@ get_cancels
    :return: A list of one or more :ref:`cancel objects <cancel-object>` if any matching records were found, otherwise ``[]`` (empty list).
 
 
-.. get_credits:
+.. _get_credits:
 
 get_credits
 ^^^^^^^^^^^^^^
 
-.. py:function:: get_credits(address=null, asset=null, order_by=null, order_dir=null)
+.. py:function:: get_credits(filters=[], order_by=null, order_dir=null)
 
    Gets a sorted history of address credits, optionally filtered to an address and/or asset. This list does not
    include any BTC credits.
 
-   :param string address: Address to filter on. If not specified, will get the debits for all addresses.
-   :param string asset: The specified :ref:`asset <assets>` to filter the resultant list by, if any.
+   :param list/dict filter: An optional filtering object, or list of filtering objects. See :ref:`Filtering Read API results <filtering>` for more information.   
    :param string order_by: If sorted results are desired, specify the name of a :ref:`debit/credit object <debit-credit-object>` attribute to order the results by (e.g. ``tx_hash``). If left blank, the list of results will be returned unordered. 
    :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
    :return: A list of one or more :ref:`debit/credit objects <debit-credit-object>` if any matching records were found, otherwise ``[]`` (empty list).
 
 
-.. get_debits:
+.. _get_debits:
 
 get_debits
 ^^^^^^^^^^^^^^
 
-.. py:function:: get_debits(address=null, asset=null, order_by=null, order_dir=null)
+.. py:function:: get_debits(filters=[], order_by=null, order_dir=null)
 
    Gets a sorted history of address debits, optionally filtered to an address and/or asset. This list does not
    include any BTC debits.
 
-   :param string address: Address to filter on. If not specified, will get the debits for all addresses.
-   :param string asset: The specified :ref:`asset <assets>` to filter the resultant list by, if any.
+   :param list/dict filter: An optional filtering object, or list of filtering objects. See :ref:`Filtering Read API results <filtering>` for more information.   
    :param string order_by: If sorted results are desired, specify the name of a :ref:`debit/credit object <debit-credit-object>` attribute to order the results by (e.g. ``tx_hash``). If left blank, the list of results will be returned unordered. 
    :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
    :return: A list of one or more :ref:`debit/credit objects <debit-credit-object>` if any matching records were found, otherwise ``[]`` (empty list).
    
 
-.. get_dividends:
+.. _get_dividends:
 
 get_dividends
 ^^^^^^^^^^^^^^
 
-.. py:function:: get_dividends(address=null, asset=null, is_valid=true, order_by=null, order_dir=null, start_block=None, end_block=None)
+.. py:function:: get_dividends(filters=[], is_valid=true, order_by=null, order_dir=null, start_block=None, end_block=None)
 
    Gets a listing of dividends.
 
-   :param string address: Address to filter on. If not specified, will get the dividend issuances for all addresses.
-   :param string asset: The specified :ref:`asset <assets>` to filter the resultant list by, if any.
+   :param list/dict filter: An optional filtering object, or list of filtering objects. See :ref:`Filtering Read API results <filtering>` for more information.   
    :param boolean is_valid: Set to ``true`` to only return valid dividend issuances. Set to ``false`` to return all dividend issuances (including invalid attempts).
    :param string order_by: If sorted results are desired, specify the name of a :ref:`dividend object <dividend-object>` attribute to order the results by (e.g. ``amount_per_share``). If left blank, the list of results will be returned unordered. 
    :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
@@ -303,17 +335,16 @@ get_dividends
    :return: A list of one or more :ref:`dividend objects <dividend-object>` if any matching records were found, otherwise ``[]`` (empty list).
 
 
-.. get_issuances:
+.. _get_issuances:
 
 get_issuances
 ^^^^^^^^^^^^^^
 
-.. py:function:: get_issuances(asset=null, issuer=null, is_valid=true, order_by=null, order_dir=null, start_block=None, end_block=None)
+.. py:function:: get_issuances(filters=[], is_valid=true, order_by=null, order_dir=null, start_block=None, end_block=None)
 
    Gets a listing of asset issuances.
 
-   :param string asset: The specified :ref:`asset <assets>` to filter the resultant list by, if any.
-   :param string issuer: Address to filter on as asset issuer.
+   :param list/dict filter: An optional filtering object, or list of filtering objects. See :ref:`Filtering Read API results <filtering>` for more information.   
    :param boolean is_valid: Set to ``true`` to only return valid issuances. Set to ``false`` to return all issuances (including invalid attempts).
    :param string order_by: If sorted results are desired, specify the name of an :ref:`issuance object <issuance-object>` attribute to order the results by (e.g. ``transfer``). If left blank, the list of results will be returned unordered. 
    :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
@@ -322,18 +353,17 @@ get_issuances
    :return: A list of one or more :ref:`issuance objects <issuance-object>` if any matching records were found, otherwise ``[]`` (empty list).
 
 
-.. get_orders:
+.. _get_orders:
 
 get_orders
 ^^^^^^^^^^^^^^
 
-.. py:function:: get_orders(address=null, is_valid=true, show_empty=true, show_expired=true, order_by=null, order_dir=null, start_block=None, end_block=None)
+.. py:function:: get_orders(filters=[], is_valid=true, show_expired=true, order_by=null, order_dir=null, start_block=None, end_block=None)
 
    Gets a listing of orders (ordered by price, lowest to highest, and then by transaction ID).
 
-   :param string address: Address to filter on as the order source. If not specified, will get the orders for all source addresses.
+   :param list/dict filter: An optional filtering object, or list of filtering objects. See :ref:`Filtering Read API results <filtering>` for more information.   
    :param boolean is_valid: Set to ``true`` to only return valid orders. Set to ``false`` to return all orders (including invalid attempts).
-   :param boolean show_empty: Set to ``true`` to include fully filled orders in the results.
    :param boolean show_expired: Set to ``true`` to include expired orders in the results.
    :param string order_by: If sorted results are desired, specify the name of an :ref:`order object <order-object>` attribute to order the results by (e.g. ``get_asset``). If left blank, the list of results will be returned unordered. 
    :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
@@ -342,20 +372,18 @@ get_orders
    :return: A list of one or more :ref:`order objects <order-object>` if any matching records were found, otherwise ``[]`` (empty list).
 
 
-.. get_order_matches:
+.. _get_order_matches:
 
 get_order_matches
 ^^^^^^^^^^^^^^^^^^^
 
-.. py:function:: get_order_matches(address=null, is_valid=true, is_mine=false, tx0_hash=null, tx1_hash=null, order_by=null, order_dir=null, start_block=None, end_block=None)
+.. py:function:: get_order_matches(filters=[], is_valid=true, is_mine=false, order_by=null, order_dir=null, start_block=None, end_block=None)
 
    Gets a listing of order matches.
 
-   :param string address: Address to filter on as the ``tx0_address`` or ``tx1_address``, if any.
+   :param list/dict filter: An optional filtering object, or list of filtering objects. See :ref:`Filtering Read API results <filtering>` for more information.   
    :param boolean is_valid: Set to ``true`` to only return valid order matches. Set to ``false`` to return all order matches (including invalid attempts).
    :param boolean is_mine: Set to ``true`` to include results where either the ``tx0_address`` or ``tx1_address`` exist in the linked ``bitcoind`` wallet.
-   :param string tx0_hash: Set to the hash that must be matched as ``tx0_hash``, or ``null`` to not filter by a specific ``tx0_hash``.
-   :param string tx1_hash: Set to the hash that must be matched as ``tx1_hash``, or ``null`` to not filter by a specific ``tx1_hash``.
    :param string order_by: If sorted results are desired, specify the name of an :ref:`order match object <order-match-object>` attribute to order the results by (e.g. ``forward_asset``). If left blank, the list of results will be returned unordered. 
    :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.  
    :param integer start_block: If specified, only results from the specified block index on will be returned  
@@ -363,18 +391,16 @@ get_order_matches
    :return: A list of one or more :ref:`order match objects <order-match-object>` if any matching records were found, otherwise ``[]`` (empty list).
 
 
-.. get_sends:
+.. _get_sends:
 
 get_sends
 ^^^^^^^^^^^^^^
 
-.. py:function:: get_sends(source=null, destination=null, is_valid=true, order_by=null, order_dir=null, start_block=None, end_block=None)
+.. py:function:: get_sends(filters=[], is_valid=true, order_by=null, order_dir=null, start_block=None, end_block=None)
 
    Gets an optionally filtered listing of past sends.
 
-   :param string source: Source address to filter on. If not specified, will not limit the results to a specific source address.
-   :param string destination: Source destination to filter on. If not specified, will not limit the results to a specific destination address.
-   :param string asset: The specified :ref:`asset <assets>` to filter the resultant list by, if any.
+   :param list/dict filter: An optional filtering object, or list of filtering objects. See :ref:`Filtering Read API results <filtering>` for more information.   
    :param boolean is_valid: Set to ``true`` to only return valid sends. Set to ``false`` to return all sends (including invalid attempts).
    :param string order_by: If sorted results are desired, specify the name of a :ref:`send object <send-object>` attribute to order the results by (e.g. ``asset``). If left blank, the list of results will be returned unordered. 
    :param string order_dir: The direction of the ordering. Either ``asc`` for ascending order, or ``desc`` for descending order. Must be set if ``order_by`` is specified. Leave blank if ``order_by`` is not specified.
@@ -383,10 +409,12 @@ get_sends
    :return: A list of one or more :ref:`send objects <send-object>` if any matching records were found, otherwise ``[]`` (empty list).
 
 
+.. _action_api:
+
 Action/Write API Function Reference
 -----------------------------------
 
-.. do_bet:
+.. _do_bet:
 
 do_bet
 ^^^^^^^^^^^^^^
@@ -407,7 +435,7 @@ do_bet
    :return: If unsigned is set to ``false``, the hash of the transaction on success. If unsigend is set to ``true``, the unsigned raw transaction is returned (see the line above).
 
 
-.. do_broadcast:
+.. _do_broadcast:
 
 do_broadcast
 ^^^^^^^^^^^^^^
@@ -424,7 +452,7 @@ do_broadcast
    :return: If unsigned is set to ``false``, the hash of the transaction on success. If unsigend is set to ``true``, the unsigned raw transaction is returned (see the line above).
 
 
-.. do_btcpay:
+.. _do_btcpay:
 
 do_btcpay
 ^^^^^^^^^^^^^^
@@ -438,7 +466,7 @@ do_btcpay
    :return: If unsigned is set to ``false``, the hash of the transaction on success. If unsigend is set to ``true``, the unsigned raw transaction is returned (see the line above).
 
 
-.. do_burn:
+.. _do_burn:
 
 do_burn
 ^^^^^^^^^^^^^^
@@ -453,7 +481,7 @@ do_burn
    :return: If unsigned is set to ``false``, the hash of the transaction on success. If unsigend is set to ``true``, the unsigned raw transaction is returned (see the line above).
 
 
-.. do_cancel:
+.. _do_cancel:
 
 do_cancel
 ^^^^^^^^^^^^^^
@@ -467,7 +495,7 @@ do_cancel
    :return: If unsigned is set to ``false``, the hash of the transaction on success. If unsigend is set to ``true``, the unsigned raw transaction is returned (see the line above).
 
 
-.. do_dividend:
+.. _do_dividend:
 
 do_dividend
 ^^^^^^^^^^^^^^
@@ -483,7 +511,7 @@ do_dividend
    :return: If unsigned is set to ``false``, the hash of the transaction on success. If unsigend is set to ``true``, the unsigned raw transaction is returned (see the line above).
 
 
-.. do_issuance:
+.. _do_issuance:
 
 do_issuance
 ^^^^^^^^^^^^^^
@@ -501,7 +529,7 @@ do_issuance
    :return: If unsigned is set to ``false``, the hash of the transaction on success. If unsigend is set to ``true``, the unsigned raw transaction is returned (see the line above).
 
 
-.. do_order:
+.. _do_order:
 
 do_order
 ^^^^^^^^^^^^^^
@@ -522,7 +550,7 @@ do_order
    :return: If unsigned is set to ``false``, the hash of the transaction on success. If unsigend is set to ``true``, the unsigned raw transaction is returned (see the line above).
 
 
-.. do_send:
+.. _do_send:
 
 do_send
 ^^^^^^^^^^^^^^
@@ -557,7 +585,7 @@ An object that describes the history of a requested address:
 * **sends** (*list*): The sends performed with this address, as a list of :ref:`send objects <send-object>`.
 * **orders** (*list*): The orders offered from this address,  as a list of :ref:`order objects <order-object>`.
 * **order_matches** (*list*): All orders filled (completely or partially) where this address either made the order or filled the order, as a list of :ref:`order match objects <order-match-object>`.
-* **btcpays** (*list*): The BTC pays on this address, as a list of :ref:`BTCPay objects <btc-pay-object>`.
+* **btcpays** (*list*): The BTC pays on this address, as a list of :ref:`BTCPay objects <btcpay-object>`.
 * **issuances** (*list*): The asset issuances performed by this address, as a list of :ref:`issuance objects <issuance-object>`.
 * **broadcasts** (*list*): The broadcasts performed by this address, as a list of :ref:`broadcast objects <broadcast-object>`.
 * **bets** (*list*): All bets made from this address, as a list of :ref:`bet objects <bet-object>`.
