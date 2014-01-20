@@ -26,5 +26,7 @@ pytest_path = os.path.join(env_path, "Scripts" if os.name == "nt" else "bin", "p
 counterpartyd_path = os.path.join(dist_path, "counterpartyd", "counterpartyd.py")
 counterpartyd_tests_path = os.path.join(dist_path, "counterpartyd", "test", "test_.py")
 
-os.system("%s %s %s" % (pytest_path if run_tests else python_path,
-    counterpartyd_tests_path if run_tests else counterpartyd_path, ' '.join(args)))
+command = "%s %s %s" % (pytest_path if run_tests else python_path,
+    counterpartyd_tests_path if run_tests else counterpartyd_path, ' '.join(args))
+#print("Running: ", command)
+os.system(command)

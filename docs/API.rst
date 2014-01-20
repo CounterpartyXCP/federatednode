@@ -10,7 +10,7 @@ Overview
 ----------
 
 ``counterpartyd`` features a full-fledged JSON RPC-based API, which allows
-third‐party applications to perform functions on the Counterparty network
+third-party applications to perform functions on the Counterparty network
 without having to deal with the low‐level details of the protocol such as
 transaction encoding and state management.
 
@@ -31,13 +31,27 @@ Python Example
 
 .. code-block:: python
 
-    import requests
     import json
+    import requests
+    from requests.auth import HTTPBasicAuth
     
     url = "http://localhost:4000/jsonrpc/"
     headers = {'content-type': 'application/json'}
+    auth = HTTPBasicAuth('rpcuser', 'rpcpassword')
     
+    #Fetch all balances for all assets for a specific address, using keyword-based arguments
+    payload = {
+      "method": "get_balances",
+      "params": {"filters": {'field': 'address', 'op': '==', 'value': sourceaddr}},
+      "jsonrpc": "2.0",
+      "id": 0,
+    }
+    response = requests.post(
+      url, data=json.dumps(payload), headers=headers, auth=auth).json()
+    print("GET_BALANCES RESULT: ", response)
+
     #Get all burns between blocks 280537 and 280539 where greater than .2 BTC was burned, sorting by tx_hash (ascending order)
+    #With this (and the rest of the examples below) we use positional arguments, instead of keyword-based arguments
     payload = {
       "method": "get_burns",
       "params": [{'field': 'burned', 'op': '>', 'value': 20000000}, True, 'tx_hash', 'asc', 280537, 280539],
@@ -45,7 +59,7 @@ Python Example
       "id": 0,
     }
     response = requests.post(
-      url, data=json.dumps(payload), headers=headers).json()
+      url, data=json.dumps(payload), headers=headers, auth=auth).json()
     print("GET_BURNS RESULT: ", response)
     
     #Fetch all debits for > 2 XCP between blocks 280537 and 280539, sorting the results by amount (descending order)
@@ -56,9 +70,9 @@ Python Example
       "id": 0,
     }
     response = requests.post(
-      url, data=json.dumps(payload), headers=headers).json()
+      url, data=json.dumps(payload), headers=headers, auth=auth).json()
     print("GET_DEBITS RESULT: ", response)
-
+    
     #Get information for a specific address
     payload = {
       "method": "get_address",
@@ -67,7 +81,7 @@ Python Example
       "id": 0,
     }
     response = requests.post(
-      url, data=json.dumps(payload), headers=headers).json()
+      url, data=json.dumps(payload), headers=headers, auth=auth).json()
     print("\nGET ADDRESS RESULT: ", response)
     
     #Send 1 XCP (specified in satoshis) from one address to another (you must have the sending address in your wallet)
@@ -78,7 +92,7 @@ Python Example
       "id": 0,
     }
     response = requests.post(
-      url, data=json.dumps(payload), headers=headers).json()
+      url, data=json.dumps(payload), headers=headers, auth=auth).json()
     print("\nDO_SEND RESULT: ", response)
 
 
@@ -125,7 +139,7 @@ For each Read API function that supports it, a ``filter`` parameter exists. To a
 specify an object (e.g. dict in Python) as this parameter, with the following members:
 
 - field: The field to filter on. Must be a valid field in the type of object being returned
-- op: The comparison operation to perform. One of: ``==``, ``!=``, ``>``, ``<``, ``>=``, ``<=``
+- op: The comparison operation to perform. One of: ``"=="``, ``"!="``, ``">"``, ``"<"``, ``">="``, ``"<="``
 - value: The value that the field will be compared against. Must be the same data type as the field is
   (e.g. if the field is a string, the value must be a string too)
 
@@ -135,6 +149,10 @@ To disable filtering, you can just not specify the filter argument (if using key
 if using positional arguments, just pass ``null`` or ``[]`` (empty list) for the parameter.
 
 For examples of filtering in-use, please see the :ref:`API code examples <examples>`.
+
+NOTE: Note that with strings being compared, operators like ``>=`` do a lexigraphic string comparison (which
+compares, letter to letter, based on the ASCII ordering for individual characters. For more information on
+the specific comparison logic used, please see `this page <http://docs.python.org/3/library/stdtypes.html#comparisons>`__.
 
 
 .. _read_api:
