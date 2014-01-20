@@ -41,15 +41,18 @@ More information on Counterparty is available in the `specs <https://github.com/
 Table of Contents
 ------------------
 
+.. note::
+
+    Documentation on the ``counterpartyd`` API, and How to Burn has been moved to `http://counterpartyd.rtfd.org <http://counterpartyd.rtfd.org>`__.
+
+
 .. toctree::
    :maxdepth: 3
 
    SettingUpBitcoind
    UsingTheInstaller
    BuildingFromSource
-   API
    AdditionalTopics
-   HowToBurn
 
 
 Indices and tables
