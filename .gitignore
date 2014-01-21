@@ -1,8 +1,11 @@
 *.py[cod]
 env
+env.cwalletd
 docs/_build/*
 dist/counterpartyd
+dist/counterwalletd
 bin
+npm-debug.log
 
 # C extensions
 *.so

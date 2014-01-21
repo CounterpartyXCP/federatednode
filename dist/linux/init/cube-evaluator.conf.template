@@ -1,0 +1,21 @@
+#!upstart
+description "cube Collector"
+
+# When to start the service
+start on startup
+
+# When to stop the service
+stop on shutdown
+
+# Automatically restart process if crashed
+respawn
+
+pre-start script
+    # prepare environment
+    mkdir -p /var/log/cube
+    chown -R !RUN_AS_USER! /var/log/cube
+end script
+
+env USER=!RUN_AS_USER!
+#TODO: collect current settings from counterwalletd config and use that to set options in bin/evaluator-config.js
+exec start-stop-daemon --start --background --make-pidfile --pidfile /var/run/cube-evaluator.pid --chuid $USER --exec /usr/bin/node -- !CUBE_EVALUATOR_PATH! 2>&1 >> /var/log/cube/evaluator.log

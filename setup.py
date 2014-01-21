@@ -19,9 +19,12 @@ try: #ignore import errors on windows
 except ImportError:
     pass
 
-PYTHON_VER = None
+PYTHON3_VER = None
 DEFAULT_CONFIG = "[Default]\nbitcoind-rpc-connect=localhost\nbitcoind-rpc-port=8332\nbitcoind-rpc-user=rpc\nbitcoind-rpc-password=rpcpw1234\nrpc-host=localhost\nrpc-port=\nrpc-user=\nrpc-password=xcppw1234"
 DEFAULT_CONFIG_INSTALLER = "[Default]\nbitcoind-rpc-connect=BITCOIND_RPC_CONNECT\nbitcoind-rpc-port=BITCOIND_RPC_PORT\nbitcoind-rpc-user=BITCOIND_RPC_USER\nbitcoind-rpc-password=BITCOIND_RPC_PASSWORD\nrpc-host=RPC_HOST\nrpc-port=RPC_PORT\nrpc-user=RPC_USER\nrpc-password=RPC_PASSWORD"
+
+DEFAULT_CONFIG_COUNTERWALLETD = "[Default]\ncounterpartyd-rpc-host=localhost\ncounterpartyd-rpc-port=\ncounterpartyd-rpc-user=\ncounterpartyd-rpc-password=xcppw1234"
+DEFAULT_CONFIG_INSTALLER_COUNTERWALLETD = "[Default]\ncounterpartyd-rpc-host=RPC_HOST\ncounterpartyd-rpc-port=RPC_PORT\ncounterpartyd-rpc-user=RPC_USER\ncounterpartyd-rpc-password=RPC_PASSWORD"
 
 def which(filename):
     """docstring for which"""
@@ -92,20 +95,20 @@ def do_prerun_checks():
         logging.error("Please use `sudo` to run this script.")
         
     #establish python version
-    global PYTHON_VER
+    global PYTHON3_VER
     if os.name == "nt":
-        PYTHON_VER = "3.3"
+        PYTHON3_VER = "3.3"
     else:
         for ver in ["3.3", "3.2", "3.1"]:
             if which("python%s" % ver):
-                PYTHON_VER = ver
-                logging.info("Found Python version %s" % PYTHON_VER)
+                PYTHON3_VER = ver
+                logging.info("Found Python version %s" % PYTHON3_VER)
                 break
         else:
             logging.error("Cannot find your Python version in your path")
             sys.exit(1)
 
-def get_paths(is_build):
+def get_paths(is_build, with_counterwalletd):
     paths = {}
     paths['sys_python_path'] = os.path.dirname(sys.executable)
 
@@ -116,7 +119,7 @@ def get_paths(is_build):
     #find the location of the virtualenv command and make sure it exists
     if os.name == "posix":
         paths['virtualenv_path'] = "/usr/bin/virtualenv"
-        paths['virtualenv_args'] = "--system-site-packages --python=python%s" % PYTHON_VER
+        paths['virtualenv_args'] = "--system-site-packages --python=python%s" % PYTHON3_VER
     elif os.name == "nt":
         paths['virtualenv_path'] = os.path.join(paths['sys_python_path'], "Scripts", "virtualenv.exe")
         paths['virtualenv_args'] = "--system-site-packages"
@@ -135,31 +138,72 @@ def get_paths(is_build):
     #the pip executiable that we'll be using does not exist yet, but it will, once we've created the virtualenv
     paths['pip_path'] = os.path.join(paths['env_path'], "Scripts" if os.name == "nt" else "bin", "pip.exe" if os.name == "nt" else "pip")
     paths['python_path'] = os.path.join(paths['env_path'], "Scripts" if os.name == "nt" else "bin", "python.exe" if os.name == "nt" else "python3")
+
+    #for now, counterwalletd currently uses Python 2.7 due to gevent-socketio's lack of support for Python 3
+    #because of this, it needs its own virtual environment
+    if with_counterwalletd:
+        paths['virtualenv_args.cwalletd'] = "--system-site-packages --python=python2.7"
+        paths['env_path.cwalletd'] = os.path.join(paths['base_path'], "env.cwalletd") # home for the virtual environment
+        paths['pip_path.cwalletd'] = os.path.join(paths['env_path.cwalletd'], "Scripts" if os.name == "nt" else "bin", "pip.exe" if os.name == "nt" else "pip")
+        paths['python_path.cwalletd'] = os.path.join(paths['env_path.cwalletd'], "Scripts" if os.name == "nt" else "bin", "python.exe" if os.name == "nt" else "python")
     
     return paths
 
-def checkout_counterpartyd(paths, run_as_user):
+def checkout(paths, run_as_user, with_counterwalletd):
     logging.info("Checking out/updating counterpartyd from git...")
     counterpartyd_path = os.path.join(paths['dist_path'], "counterpartyd")
     if os.path.exists(counterpartyd_path):
         runcmd("cd \"%s\" && git pull origin master" % counterpartyd_path)
     else:
         runcmd("git clone https://github.com/PhantomPhreak/counterpartyd \"%s\"" % counterpartyd_path)
+        
+    if with_counterwalletd:
+        counterwalletd_path = os.path.join(paths['dist_path'], "counterwalletd")
+        if os.path.exists(counterwalletd_path):
+            runcmd("cd \"%s\" && git pull origin master" % counterwalletd_path)
+        else:
+            #TODO: check out counterwalletd under dist
+            #runcmd("git clone https://github.com/PhantomPhreak/counterpartyd \"%s\"" % counterwalletd_path)
+            pass
     
     if os.name != 'nt':
         runcmd("chown -R %s \"%s\"" % (run_as_user, counterpartyd_path))
     sys.path.insert(0, os.path.join(paths['dist_path'], "counterpartyd")) #can now import counterparty modules
 
-def install_dependencies(paths):
+def install_dependencies(paths, with_counterwalletd):
     if os.name == "posix" and platform.dist()[0] == "Ubuntu":
         ubuntu_release = platform.linux_distribution()[1]
         logging.info("UBUNTU LINUX %s: Installing Required Packages..." % ubuntu_release) 
         runcmd("sudo apt-get -y update")
+
+        if with_counterwalletd and ubuntu_release != "13.10":
+            logging.error("Only Ubuntu 13.10 supported for counterwalletd install.")
         
         #13.10 deps
         if ubuntu_release == "13.10":
             runcmd("sudo apt-get -y install software-properties-common python-software-properties git-core wget cx-freeze \
             python3 python3-setuptools python3-dev python3-pip build-essential python3-sphinx python-virtualenv python3-apsw")
+            
+            if with_counterwalletd:
+                #counterwalletd currently uses Python 2.7 due to gevent-socketio's lack of support for Python 3
+                runcmd("sudo apt-get -y install python python-dev python-setuptools python-pip python-sphinx python-zmq libzmq3 libzmq3-dev")
+                #delete the environment dir now, since we may need to install cube and we skip deleteting it 
+                # when making the virtualenv
+                runcmd("sudo rm -rf %s && sudo mkdir -p %s" % (paths['env_path.cwalletd'], paths['env_path.cwalletd']))
+                while True:
+                    db_locally = input("counterwalletd: Run mongo and cube locally? (y/n): ")
+                    if db_locally.lower() not in ('y', 'n'):
+                        logger.error("Please enter 'y' or 'n'")
+                    else:
+                        break
+                if db_locally.lower() == 'y':
+                    runcmd("sudo apt-get -y install npm mongodb mongodb-server")
+                    runcmd("sudo ln -sf /usr/bin/nodejs /usr/bin/node")
+                    runcmd("cd %s && sudo npm install cube@0.2.12" % (paths['env_path.cwalletd'],))
+                    #runcmd("cd %s && sudo npm install npm" % paths['env_path']) #install updated NPM into the dir
+                    #runcmd("cd %s && sudo %s install cube@0.2.12" % (paths['env_path'],
+                    #    os.path.join(paths['env_path'], "node_modules", "npm", "bin", "npm")))
+                    
         elif ubuntu_release == "12.04":
             #12.04 deps. 12.04 doesn't include python3-pip, so we need to use the workaround at http://stackoverflow.com/a/12262143
             runcmd("sudo apt-get -y install software-properties-common python-software-properties git-core wget cx-freeze \
@@ -194,28 +238,40 @@ def install_dependencies(paths):
         #now that pip is installed, install necessary deps outside of the virtualenv (e.g. for this script)
         runcmd("%s install appdirs==1.2.0" % (os.path.join(paths['sys_python_path'], "Scripts", "pip.exe")))
 
-def create_virtualenv(paths):
-    if paths['virtualenv_path'] is None or not os.path.exists(paths['virtualenv_path']):
-        logging.debug("ERROR: virtualenv missing (%s)" % (paths['virtualenv_path'],))
-        sys.exit(1)
-    
-    if os.path.exists(paths['env_path']):
-        logging.warning("Deleting existing virtualenv...")
-        _rmtree(paths['env_path'])
-    logging.info("Creating virtualenv at '%s' ..." % paths['env_path'])
-    runcmd("%s %s %s" % (paths['virtualenv_path'], paths['virtualenv_args'], paths['env_path']))
-    
-    #pip should now exist
-    if not os.path.exists(paths['pip_path']):
-        logging.error("pip does not exist at path '%s'" % paths['pip_path'])
-        sys.exit(1)
-    
-    #install packages from manifest via pip
-    runcmd("%s install -r %s" % (paths['pip_path'], os.path.join(paths['dist_path'], "reqs.txt")))
+def create_virtualenv(paths, with_counterwalletd):
+    def create_venv(env_path, pip_path, python_path, virtualenv_args, reqs_filename, delete_if_exists=True):
+        if paths['virtualenv_path'] is None or not os.path.exists(paths['virtualenv_path']):
+            logging.debug("ERROR: virtualenv missing (%s)" % (paths['virtualenv_path'],))
+            sys.exit(1)
+        
+        if delete_if_exists and os.path.exists(env_path):
+            logging.warning("Deleting existing virtualenv...")
+            _rmtree(env_path)
+        assert not os.path.exists(os.path.join(env_path, 'bin'))
+        logging.info("Creating virtualenv at '%s' ..." % env_path)
+        runcmd("%s %s %s" % (paths['virtualenv_path'], virtualenv_args, env_path))
+        
+        #pip should now exist
+        if not os.path.exists(pip_path):
+            logging.error("pip does not exist at path '%s'" % pip_path)
+            sys.exit(1)
+            
+        #install packages from manifest via pip
+        runcmd("%s install -r %s" % (pip_path, os.path.join(paths['dist_path'], reqs_filename)))
 
-def setup_startup(paths, run_as_user):
+    create_venv(paths['env_path'], paths['pip_path'], paths['python_path'], paths['virtualenv_args'], 'reqs.txt')    
+    if with_counterwalletd: #as counterwalletd uses python 2.x, it needs its own virtualenv
+        #also, since
+        create_venv(paths['env_path.cwalletd'], paths['pip_path.cwalletd'], paths['python_path.cwalletd'],
+            paths['virtualenv_args.cwalletd'], 'reqs.counterwalletd.txt', delete_if_exists=False)    
+
+def setup_startup(paths, run_as_user, with_counterwalletd):
     if os.name == "posix":
         runcmd("sudo ln -sf %s/run.py /usr/local/bin/counterpartyd" % paths['base_path'])
+        if with_counterwalletd:
+            #make a short script to launch counterwallet
+            runcmd('sudo echo -e "#!/bin/sh\\n%s/run.py counterwalletd" > /usr/local/bin/counterwalletd' % paths['base_path'])
+            runcmd("sudo chmod +x /usr/local/bin/counterwalletd")
 
     while True:
         start_choice = input("Start counterpartyd automatically on system startup? (y/n): ")
@@ -247,57 +303,72 @@ def setup_startup(paths, run_as_user):
         assert run_as_user
         runcmd("sudo cp -a %s/linux/init/counterpartyd.conf.template /etc/init/counterpartyd.conf" % paths['dist_path'])
         runcmd("sudo sed -r -i -e \"s/!RUN_AS_USER!/%s/g\" /etc/init/counterpartyd.conf" % run_as_user)
+        if with_counterwalletd:
+            runcmd("sudo cp -a %s/linux/init/cube-collector.conf.template /etc/init/cube-collector.conf" % paths['dist_path'])
+            runcmd("sudo sed -r -i -e \"s/!RUN_AS_USER!/%s/g\" /etc/init/cube-collector.conf" % run_as_user)
+            runcmd("sudo sed -r -i -e \"s/!CUBE_COLLECTOR_PATH!/%s/g\" /etc/init/cube-collector.conf" % (
+                os.path.join(paths['env_path.cwalletd'], 'node_modules', 'cube', 'bin', 'collector.js').replace('/', '\\/')))
+            runcmd("sudo cp -a %s/linux/init/cube-evaluator.conf.template /etc/init/cube-evaluator.conf" % paths['dist_path'])
+            runcmd("sudo sed -r -i -e \"s/!RUN_AS_USER!/%s/g\" /etc/init/cube-evaluator.conf" % run_as_user)
+            runcmd("sudo sed -r -i -e \"s/!CUBE_EVALUATOR_PATH!/%s/g\" /etc/init/cube-evaluator.conf" % ( 
+                os.path.join(paths['env_path.cwalletd'], 'node_modules', 'cube', 'bin', 'evaluator.js').replace('/', '\\/') ))
 
-def create_default_datadir_and_config(paths, run_as_user):
-    import appdirs #installed earlier
-    cfg_path = os.path.join(
-        appdirs.user_data_dir(appauthor='Counterparty', appname='counterpartyd', roaming=True) \
-            if os.name == "nt" else ("%s/.config/counterpartyd" % os.path.expanduser("~%s" % run_as_user)), 
-        "counterpartyd.conf")
-    data_dir = os.path.dirname(cfg_path)
-    
-    if not os.path.exists(data_dir):
-        os.makedirs(data_dir)
-    
-    if not os.path.exists(cfg_path):
-        logging.info("Creating new configuration file at: %s" % cfg_path)
-        #create a default config file
-        cfg = open(cfg_path, 'w')
-        cfg.write(DEFAULT_CONFIG)
-        cfg.close()
-    
-        if os.name != "nt": #set permissions on non-windows
-            uid = pwd.getpwnam(run_as_user).pw_uid
-            gid = grp.getgrnam(run_as_user).gr_gid    
-    
-            #set directory ownership
-            os.chown(data_dir, uid, gid)
-    
-            #set proper file ownership and mode
-            os.chown(cfg_path, uid, gid)
-            os.chmod(cfg_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP) #660
+def create_default_datadir_and_config(paths, run_as_user, with_counterwalletd):
+    def create_config(appname, default_config):
+        import appdirs #installed earlier
+        cfg_path = os.path.join(
+            appdirs.user_data_dir(appauthor='Counterparty', appname=appname, roaming=True) \
+                if os.name == "nt" else ("%s/.config/%s" % (os.path.expanduser("~%s" % run_as_user), appname)), 
+            "%s.conf" % appname)
+        data_dir = os.path.dirname(cfg_path)
+        
+        if not os.path.exists(data_dir):
+            os.makedirs(data_dir)
+        
+        if not os.path.exists(cfg_path):
+            logging.info("Creating new configuration file at: %s" % cfg_path)
+            #create a default config file
+            cfg = open(cfg_path, 'w')
+            cfg.write(default_config)
+            cfg.close()
+        
+            if os.name != "nt": #set permissions on non-windows
+                uid = pwd.getpwnam(run_as_user).pw_uid
+                gid = grp.getgrnam(run_as_user).gr_gid    
+        
+                #set directory ownership
+                os.chown(data_dir, uid, gid)
+        
+                #set proper file ownership and mode
+                os.chown(cfg_path, uid, gid)
+                os.chmod(cfg_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP) #660
+            else:
+                #on windows, open notepad to the config file to help out
+                import win32api
+                try:
+                    win32api.WinExec('NOTEPAD.exe "%s"' % cfg_path)
+                except:
+                    pass        
+        
+            logging.info("NEXT STEP: Edit the %s config file we created at '%s', according to the documentation" % (appname, cfg_path))
         else:
-            #on windows, open notepad to the config file to help out
-            import win32api
-            try:
-                win32api.WinExec('NOTEPAD.exe "%s"' % cfg_path)
-            except:
-                pass        
+            logging.info("%s config file already exists at: %s" % (appname, cfg_path))
     
-        logging.info("NEXT STEP: Edit the config file we created at '%s', according to the documentation" % cfg_path)
-    else:
-        logging.info("Config file already exists at: %s" % cfg_path)
+    create_config('counterpartyd', DEFAULT_CONFIG)
+    if with_counterwalletd:
+        create_config('counterwalletd', DEFAULT_CONFIG_COUNTERWALLETD)
 
-def do_build(paths):
+def do_build(paths, with_counterwalletd):
+    #TODO: finish windows build support for counterwalletd
     if os.name != "nt":
         logging.error("Building an installer only supported on Windows at this time.")
         sys.exit(1)
-
+        
     logging.debug("Cleaning any old build dirs...")
-    if os.path.exists(os.path.join(paths['bin_path'], "exe.win-amd64-%s" % PYTHON_VER)):
-        shutil.rmtree(os.path.join(paths['bin_path'], "exe.win-amd64-%s" % PYTHON_VER))
-    if os.path.exists(os.path.join(paths['bin_path'], "exe.win-i386-%s" % PYTHON_VER)):
-        shutil.rmtree(os.path.join(paths['bin_path'], "exe.win-i386-%s" % PYTHON_VER))
+    if os.path.exists(os.path.join(paths['bin_path'], "exe.win-amd64-%s" % PYTHON3_VER)):
+        shutil.rmtree(os.path.join(paths['bin_path'], "exe.win-amd64-%s" % PYTHON3_VER))
+    if os.path.exists(os.path.join(paths['bin_path'], "exe.win-i386-%s" % PYTHON3_VER)):
+        shutil.rmtree(os.path.join(paths['bin_path'], "exe.win-i386-%s" % PYTHON3_VER))
     if os.path.exists(os.path.join(paths['bin_path'], "build")):
         shutil.rmtree(os.path.join(paths['bin_path'], "build"))
 
@@ -305,8 +376,8 @@ def do_build(paths):
     runcmd("%s \"%s\" build -b \"%s\"" % (
         paths['python_path'], os.path.join(paths['dist_path'], "_cxfreeze_setup.py"), paths['bin_path']))
     #move the build dir to something more predictable so we can build an installer with it
-    arch = "amd64" if os.path.exists(os.path.join(paths['bin_path'], "exe.win-amd64-%s" % PYTHON_VER)) else "i386"
-    shutil.move(os.path.join(paths['bin_path'], "exe.win-%s-%s" % (arch, PYTHON_VER)), os.path.join(paths['bin_path'], "build"))
+    arch = "amd64" if os.path.exists(os.path.join(paths['bin_path'], "exe.win-amd64-%s" % PYTHON3_VER)) else "i386"
+    shutil.move(os.path.join(paths['bin_path'], "exe.win-%s-%s" % (arch, PYTHON3_VER)), os.path.join(paths['bin_path'], "build"))
     
     logging.info("Frozen executiable data created in %s" % os.path.join(paths['bin_path'], "build"))
     
@@ -314,6 +385,10 @@ def do_build(paths):
     cfg = open(os.path.join(os.path.join(paths['bin_path'], "build"), "counterpartyd.conf.default"), 'w')
     cfg.write(DEFAULT_CONFIG_INSTALLER)
     cfg.close()
+    if with_counterwalletd:
+        cfg = open(os.path.join(os.path.join(paths['bin_path'], "build"), "counterwalletd.conf.default"), 'w')
+        cfg.write(COUNTERWALLETD_DEFAULT_CONFIG_INSTALLER)
+        cfg.close()
     
     #find the location of makensis.exe (freaking windows...)
     if 'PROGRAMFILES(X86)' in os.environ:
@@ -348,8 +423,9 @@ def main():
 
     #parse any command line objects
     is_build = False
+    with_counterwalletd = False
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hb", ["build", "help"])
+        opts, args = getopt.getopt(sys.argv[1:], "hb", ["build", "help", "with-counterwalletd"])
     except getopt.GetoptError as err:
         usage()
         sys.exit(2)
@@ -357,31 +433,33 @@ def main():
     for o, a in opts:
         if o in ("-b", "--build"):
             is_build = True
+        elif o in ("--with-counterwalletd",):
+            with_counterwalletd = True
         elif o in ("-h", "--help"):
             usage()
             sys.exit()
         else:
             assert False, "Unhandled or unimplemented switch or option"
 
-    paths = get_paths(is_build)
+    paths = get_paths(is_build, with_counterwalletd)
 
     if is_build:
         logging.info("Building Counterparty...")
-        checkout_counterpartyd(paths, run_as_user)
-        install_dependencies(paths)
-        create_virtualenv(paths)
-        do_build(paths)
+        checkout(paths, run_as_user, with_counterwalletd)
+        install_dependencies(paths, with_counterwalletd)
+        create_virtualenv(paths, with_counterwalletd)
+        do_build(paths, with_counterwalletd)
     else: #install mode
         logging.info("Installing Counterparty from source%s..." % (
             (" for user '%s'" % run_as_user) if os.name != "nt" else '',))
-        checkout_counterpartyd(paths, run_as_user)
-        install_dependencies(paths)
-        create_virtualenv(paths)
-        setup_startup(paths, run_as_user)
+        checkout(paths, run_as_user, with_counterwalletd)
+        install_dependencies(paths, with_counterwalletd)
+        create_virtualenv(paths, with_counterwalletd)
+        setup_startup(paths, run_as_user, with_counterwalletd)
     
     logging.info("%s DONE. (It's time to kick ass, and chew bubblegum... and I'm all outta gum.)" % ("BUILD" if is_build else "SETUP"))
     if not is_build:
-        create_default_datadir_and_config(paths, run_as_user)
+        create_default_datadir_and_config(paths, run_as_user, with_counterwalletd)
 
 
 if __name__ == "__main__":

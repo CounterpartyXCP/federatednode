@@ -1,0 +1,30 @@
+
+#dependencies for counterwalletd
+#counterwalletd currently uses Python 2.7 due to gevent-socketio's lack of support for Python 3
+
+appdirs==1.2.0
+#helps locate OS-specific directories (user data dir, etc)
+
+prettytable==0.7.2
+
+python-dateutil==2.2
+
+requests==2.1.0
+
+cherrypy==3.2.4
+
+json-rpc==1.1
+
+pycoin==0.23
+
+pytest==2.5.1
+
+
+
+pymongo==2.6.3
+
+cube-client==0.2.0
+
+gevent==1.0
+
+gevent-socketio==0.3.5-rc2

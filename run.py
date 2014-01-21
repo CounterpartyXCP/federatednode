@@ -13,20 +13,30 @@ if os.name == "posix" and os.geteuid() == 0:
     sys.exit(1)
 
 run_tests = False
+run_counterwalletd = False
 args = sys.argv[1:]
 if len(sys.argv) >= 2 and sys.argv[1] == 'tests':
     run_tests = True
+    args = sys.argv[2:]
+elif len(sys.argv) >= 2 and sys.argv[1] == 'counterwalletd':
+    run_counterwalletd = True
     args = sys.argv[2:]
     
 base_path = os.path.dirname(os.path.realpath(sys.argv[0]))
 env_path = os.path.join(base_path, "env")
 dist_path = os.path.join(base_path, "dist")
 python_path = os.path.join(env_path, "Scripts" if os.name == "nt" else "bin", "python.exe" if os.name == "nt" else "python")
-pytest_path = os.path.join(env_path, "Scripts" if os.name == "nt" else "bin", "py.test.exe" if os.name == "nt" else "py.test")
-counterpartyd_path = os.path.join(dist_path, "counterpartyd", "counterpartyd.py")
-counterpartyd_tests_path = os.path.join(dist_path, "counterpartyd", "test", "test_.py")
 
-command = "%s %s %s" % (pytest_path if run_tests else python_path,
-    counterpartyd_tests_path if run_tests else counterpartyd_path, ' '.join(args))
-#print("Running: ", command)
+if run_tests:
+    pytest_path = os.path.join(env_path, "Scripts" if os.name == "nt" else "bin", "py.test.exe" if os.name == "nt" else "py.test")
+    counterpartyd_tests_path = os.path.join(dist_path, "counterpartyd", "test", "test_.py")
+    command = "%s %s %s" % (pytest_path, counterpartyd_tests_path, ' '.join(args))
+elif run_counterwalletd:
+    counterwalletd_env_path = os.path.join(base_path, "env.cwalletd")
+    counterwalletd_python_path = os.path.join(counterwalletd_env_path, "Scripts" if os.name == "nt" else "bin", "python.exe" if os.name == "nt" else "python")
+    counterwalletd_path = os.path.join(dist_path, "counterwalletd", "counterwalletd.py")
+    command = "%s %s %s" % (counterwalletd_python_path, counterwalletd_path, ' '.join(args))
+else: #run counterpartyd
+    counterpartyd_path = os.path.join(dist_path, "counterpartyd", "counterpartyd.py")
+    command = "%s %s %s" % (python_path, counterpartyd_path, ' '.join(args))
 os.system(command)
