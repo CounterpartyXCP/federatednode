@@ -11,6 +11,7 @@ import urllib
 import zipfile
 import platform
 import tempfile
+import subprocess
 import stat
 
 try: #ignore import errors on windows
@@ -23,8 +24,8 @@ PYTHON3_VER = None
 DEFAULT_CONFIG = "[Default]\nbitcoind-rpc-connect=localhost\nbitcoind-rpc-port=8332\nbitcoind-rpc-user=rpc\nbitcoind-rpc-password=rpcpw1234\nrpc-host=localhost\nrpc-port=\nrpc-user=\nrpc-password=xcppw1234"
 DEFAULT_CONFIG_INSTALLER = "[Default]\nbitcoind-rpc-connect=BITCOIND_RPC_CONNECT\nbitcoind-rpc-port=BITCOIND_RPC_PORT\nbitcoind-rpc-user=BITCOIND_RPC_USER\nbitcoind-rpc-password=BITCOIND_RPC_PASSWORD\nrpc-host=RPC_HOST\nrpc-port=RPC_PORT\nrpc-user=RPC_USER\nrpc-password=RPC_PASSWORD"
 
-DEFAULT_CONFIG_COUNTERWALLETD = "[Default]\ncounterpartyd-rpc-host=localhost\ncounterpartyd-rpc-port=\ncounterpartyd-rpc-user=\ncounterpartyd-rpc-password=xcppw1234"
-DEFAULT_CONFIG_INSTALLER_COUNTERWALLETD = "[Default]\ncounterpartyd-rpc-host=RPC_HOST\ncounterpartyd-rpc-port=RPC_PORT\ncounterpartyd-rpc-user=RPC_USER\ncounterpartyd-rpc-password=RPC_PASSWORD"
+DEFAULT_CONFIG_COUNTERWALLETD = "[Default]\nbitcoind-rpc-connect=localhost\nbitcoind-rpc-port=8332\nbitcoind-rpc-user=rpc\nbitcoind-rpc-password=rpcpw1234\ncounterpartyd-rpc-host=localhost\ncounterpartyd-rpc-port=\ncounterpartyd-rpc-user=\ncounterpartyd-rpc-password=xcppw1234"
+DEFAULT_CONFIG_INSTALLER_COUNTERWALLETD = "[Default]\nbitcoind-rpc-connect=localhost\nbitcoind-rpc-port=8332\nbitcoind-rpc-user=rpc\nbitcoind-rpc-password=rpcpw1234\ncounterpartyd-rpc-host=RPC_HOST\ncounterpartyd-rpc-port=RPC_PORT\ncounterpartyd-rpc-user=RPC_USER\ncounterpartyd-rpc-password=RPC_PASSWORD"
 
 def which(filename):
     """docstring for which"""
@@ -150,17 +151,24 @@ def get_paths(is_build, with_counterwalletd):
     return paths
 
 def checkout(paths, run_as_user, with_counterwalletd):
-    logging.info("Checking out/updating counterpartyd from git...")
+    #check what our current branch is
+    try:
+        branch = subprocess.check_output("git rev-parse --abbrev-ref HEAD".split(' ')).strip().decode('utf-8')
+        assert branch in ("master", "develop") 
+    except:
+        raise Exception("Cannot get current get branch. Please make sure you are running setup.py from your counterpartyd_build directory.")
+    
+    logging.info("Checking out/updating counterpartyd:%s from git..." % branch)
     counterpartyd_path = os.path.join(paths['dist_path'], "counterpartyd")
     if os.path.exists(counterpartyd_path):
-        runcmd("cd \"%s\" && git pull origin master" % counterpartyd_path)
+        runcmd("cd \"%s\" && git pull origin %s" % (counterpartyd_path, branch))
     else:
-        runcmd("git clone https://github.com/PhantomPhreak/counterpartyd \"%s\"" % counterpartyd_path)
+        runcmd("git clone -b %s https://github.com/PhantomPhreak/counterpartyd \"%s\"" % (branch, counterpartyd_path))
         
     if with_counterwalletd:
         counterwalletd_path = os.path.join(paths['dist_path'], "counterwalletd")
         if os.path.exists(counterwalletd_path):
-            runcmd("cd \"%s\" && git pull origin master" % counterwalletd_path)
+            runcmd("cd \"%s\" && git pull origin %s" % (counterwalletd_path, branch))
         else:
             #TODO: check out counterwalletd under dist
             #runcmd("git clone https://github.com/PhantomPhreak/counterpartyd \"%s\"" % counterwalletd_path)
