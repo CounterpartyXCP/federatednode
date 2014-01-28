@@ -15,13 +15,15 @@ cherrypy==3.2.4
 
 json-rpc==1.1
 
-pycoin==0.23
+pycoin==0.25
 
 pytest==2.5.1
 
 
 
 pymongo==2.6.3
+
+https://github.com/troveteam/python-simpledb/archive/cd98249a33cf105bf0a9cfd99dcf377816877dce.zip#egg=simpledb
 
 cube-client==0.2.0
 
