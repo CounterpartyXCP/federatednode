@@ -199,13 +199,13 @@ def install_dependencies(paths, with_counterwalletd):
                 # when making the virtualenv
                 runcmd("sudo rm -rf %s && sudo mkdir -p %s" % (paths['env_path.cwalletd'], paths['env_path.cwalletd']))
                 while True:
-                    db_locally = input("counterwalletd: Run mongo and cube locally? (y/n): ")
+                    db_locally = input("counterwalletd: Run mongo, redis and cube locally? (y/n): ")
                     if db_locally.lower() not in ('y', 'n'):
                         logger.error("Please enter 'y' or 'n'")
                     else:
                         break
                 if db_locally.lower() == 'y':
-                    runcmd("sudo apt-get -y install npm mongodb mongodb-server")
+                    runcmd("sudo apt-get -y install npm mongodb mongodb-server redis-server")
                     runcmd("sudo ln -sf /usr/bin/nodejs /usr/bin/node")
                     runcmd("cd %s && sudo npm install cube@0.2.12" % (paths['env_path.cwalletd'],))
                     #runcmd("cd %s && sudo npm install npm" % paths['env_path']) #install updated NPM into the dir
