@@ -3,7 +3,7 @@ import os
 from cx_Freeze import setup, Executable
 
 # Dependencies are automatically detected, but it might need fine tuning.
-build_exe_options = {"packages": ["prettytable",], "excludes": []}
+build_exe_options = {"packages": ["prettytable",], "excludes": ["tkinter",]}
 
 scriptPath = os.path.normpath(os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), "counterpartyd"))
 

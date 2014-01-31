@@ -98,7 +98,7 @@ def do_prerun_checks():
     #establish python version
     global PYTHON3_VER
     if os.name == "nt":
-        PYTHON3_VER = "3.3"
+        PYTHON3_VER = "3.2"
     else:
         for ver in ["3.3", "3.2", "3.1"]:
             if which("python%s" % ver):
