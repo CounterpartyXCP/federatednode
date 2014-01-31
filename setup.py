@@ -190,7 +190,7 @@ def install_dependencies(paths, with_counterwalletd):
         #13.10 deps
         if ubuntu_release == "13.10":
             runcmd("sudo apt-get -y install software-properties-common python-software-properties git-core wget cx-freeze \
-            python3 python3-setuptools python3-dev python3-pip build-essential python3-sphinx python-virtualenv python3-apsw")
+            python3 python3-setuptools python3-dev python3-pip build-essential python3-sphinx python-virtualenv python3-apsw python3-zmq")
             
             if with_counterwalletd:
                 #counterwalletd currently uses Python 2.7 due to gevent-socketio's lack of support for Python 3
@@ -199,13 +199,13 @@ def install_dependencies(paths, with_counterwalletd):
                 # when making the virtualenv
                 runcmd("sudo rm -rf %s && sudo mkdir -p %s" % (paths['env_path.cwalletd'], paths['env_path.cwalletd']))
                 while True:
-                    db_locally = input("counterwalletd: Run mongo and cube locally? (y/n): ")
+                    db_locally = input("counterwalletd: Run mongo, redis and cube locally? (y/n): ")
                     if db_locally.lower() not in ('y', 'n'):
                         logger.error("Please enter 'y' or 'n'")
                     else:
                         break
                 if db_locally.lower() == 'y':
-                    runcmd("sudo apt-get -y install npm mongodb mongodb-server")
+                    runcmd("sudo apt-get -y install npm mongodb mongodb-server redis-server")
                     runcmd("sudo ln -sf /usr/bin/nodejs /usr/bin/node")
                     runcmd("cd %s && sudo npm install cube@0.2.12" % (paths['env_path.cwalletd'],))
                     #runcmd("cd %s && sudo npm install npm" % paths['env_path']) #install updated NPM into the dir
@@ -220,9 +220,16 @@ def install_dependencies(paths, with_counterwalletd):
                 runcmd("sudo easy_install3 pip==1.4.1") #pip1.5 breaks things due to its use of wheel by default
                 #for some reason, it installs "pip" to /usr/local/bin, instead of "pip3"
                 runcmd("sudo mv /usr/local/bin/pip /usr/local/bin/pip3")
+            
+            ##ASPW
             #12.04 also has no python3-apsw module as well (unlike 13.10), so we need to do this one manually
             # Ubuntu 12.04 (Precise) ships with sqlite3 version 3.7.9 - the apsw version needs to match that exactly
             runcmd("sudo pip3 install https://github.com/rogerbinns/apsw/zipball/f5bf9e5e7617bc7ff2a5b4e1ea7a978257e08c95#egg=apsw")
+            
+            ##LIBZMQ
+            #12.04 has no python3-zmq module
+            runcmd("sudo apt-get -y install libzmq-dev")
+            runcmd("sudo easy_install3 pyzmq")
         else:
             logging.error("Unsupported Ubuntu version, please use 13.10 or 12.04 LTS")
             sys.exit(1)
