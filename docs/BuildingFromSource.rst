@@ -189,4 +189,4 @@ If successful, you will be provided the location of the resulting installer pack
 Mac OS X
 --------
 
-Mac OS support will be forthcoming.
+Mac OS support is forthcoming.
