@@ -287,6 +287,13 @@ def setup_startup(paths, run_as_user, with_counterwalletd):
             #make a short script to launch counterwallet
             runcmd('sudo echo -e "#!/bin/sh\\n%s/run.py counterwalletd" > /usr/local/bin/counterwalletd' % paths['base_path'])
             runcmd("sudo chmod +x /usr/local/bin/counterwalletd")
+    elif os.name == "nt":
+        #create a batch script
+        batch_contents = "echo off%sREM Launch counterpartyd (source build) under windows%s%s %s %%*" % (
+            os.linesep, os.linesep, os.path.join(paths['sys_python_path'], "python.exe"), os.path.join(paths['base_path'], "run.py"))
+        f = open("%s" % os.path.join(os.environ['WINDIR'], "counterpartyd.bat"), "w")
+        f.write(batch_contents)
+        f.close()
 
     while True:
         start_choice = input("Start counterpartyd automatically on system startup? (y/n): ")
