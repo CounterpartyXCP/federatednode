@@ -21,7 +21,7 @@ except ImportError:
     pass
 
 PYTHON3_VER = None
-DEFAULT_CONFIG = "[Default]\nbitcoind-rpc-connect=localhost\nbitcoind-rpc-port=8332\nbitcoind-rpc-user=rpc\nbitcoind-rpc-password=rpcpw1234\nrpc-host=localhost\nrpc-port=\nrpc-user=\nrpc-password=xcppw1234"
+DEFAULT_CONFIG = "[Default]\nbitcoind-rpc-connect=localhost\nbitcoind-rpc-port=8332\nbitcoind-rpc-user=rpc\nbitcoind-rpc-password=rpcpw1234\nrpc-host=localhost\nrpc-user=rpcuser\nrpc-password=xcppw1234"
 DEFAULT_CONFIG_INSTALLER = "[Default]\nbitcoind-rpc-connect=BITCOIND_RPC_CONNECT\nbitcoind-rpc-port=BITCOIND_RPC_PORT\nbitcoind-rpc-user=BITCOIND_RPC_USER\nbitcoind-rpc-password=BITCOIND_RPC_PASSWORD\nrpc-host=RPC_HOST\nrpc-port=RPC_PORT\nrpc-user=RPC_USER\nrpc-password=RPC_PASSWORD"
 
 DEFAULT_CONFIG_COUNTERWALLETD = "[Default]\nbitcoind-rpc-connect=localhost\nbitcoind-rpc-port=8332\nbitcoind-rpc-user=rpc\nbitcoind-rpc-password=rpcpw1234\ncounterpartyd-rpc-host=localhost\ncounterpartyd-rpc-port=\ncounterpartyd-rpc-user=\ncounterpartyd-rpc-password=xcppw1234"
@@ -199,13 +199,13 @@ def install_dependencies(paths, with_counterwalletd):
                 # when making the virtualenv
                 runcmd("sudo rm -rf %s && sudo mkdir -p %s" % (paths['env_path.cwalletd'], paths['env_path.cwalletd']))
                 while True:
-                    db_locally = input("counterwalletd: Run mongo and cube locally? (y/n): ")
+                    db_locally = input("counterwalletd: Run mongo, redis and cube locally? (y/n): ")
                     if db_locally.lower() not in ('y', 'n'):
                         logger.error("Please enter 'y' or 'n'")
                     else:
                         break
                 if db_locally.lower() == 'y':
-                    runcmd("sudo apt-get -y install npm mongodb mongodb-server")
+                    runcmd("sudo apt-get -y install npm mongodb mongodb-server redis-server")
                     runcmd("sudo ln -sf /usr/bin/nodejs /usr/bin/node")
                     runcmd("cd %s && sudo npm install cube@0.2.12" % (paths['env_path.cwalletd'],))
                     #runcmd("cd %s && sudo npm install npm" % paths['env_path']) #install updated NPM into the dir
@@ -247,9 +247,9 @@ def install_dependencies(paths, with_counterwalletd):
             runcmd("pushd %%TEMP%% && %s %s && popd" % (sys.executable,
                 os.path.join(paths['dist_path'], "windows", "ez_setup.py")))
         
-        #now easy_install is installed, install virtualenv, and sphinx for doc building
-        runcmd("%s virtualenv==1.10.1 pip==1.4.1 sphinx==1.2" % (os.path.join(paths['sys_python_path'], "Scripts", "easy_install.exe")))
-        
+        #now easy_install is installed, install virtualenv, and pip
+        runcmd("%s virtualenv==1.10.1 pip==1.4.1" % (os.path.join(paths['sys_python_path'], "Scripts", "easy_install.exe")))
+
         #now that pip is installed, install necessary deps outside of the virtualenv (e.g. for this script)
         runcmd("%s install appdirs==1.2.0" % (os.path.join(paths['sys_python_path'], "Scripts", "pip.exe")))
 
@@ -287,6 +287,13 @@ def setup_startup(paths, run_as_user, with_counterwalletd):
             #make a short script to launch counterwallet
             runcmd('sudo echo -e "#!/bin/sh\\n%s/run.py counterwalletd" > /usr/local/bin/counterwalletd' % paths['base_path'])
             runcmd("sudo chmod +x /usr/local/bin/counterwalletd")
+    elif os.name == "nt":
+        #create a batch script
+        batch_contents = "echo off%sREM Launch counterpartyd (source build) under windows%s%s %s %%*" % (
+            os.linesep, os.linesep, os.path.join(paths['sys_python_path'], "python.exe"), os.path.join(paths['base_path'], "run.py"))
+        f = open("%s" % os.path.join(os.environ['WINDIR'], "counterpartyd.bat"), "w")
+        f.write(batch_contents)
+        f.close()
 
     while True:
         start_choice = input("Start counterpartyd automatically on system startup? (y/n): ")

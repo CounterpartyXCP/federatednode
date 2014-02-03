@@ -58,7 +58,11 @@ Once you're sure it launches and runs fine, press CTRL-C to exit it, and then ru
 
     sudo service counterpartyd start
 
-You can then run any of ``counterpartyd’s`` other functions, like `the examples listed here <https://github.com/PhantomPhreak/counterpartyd#examples>`__.
+You can then open up another command window and run any of ``counterpartyd’s`` other functions, for example::
+
+    counterpartyd send --from=12WQTnVbzhJRswra4TvGxq1RyhUkmiVXXm --to=1QGZ4sCpvCgRizL5v4NniaKdZKzxBtVN3q --asset=XCP --quantity=5
+
+For more examples, see `this link <https://github.com/PhantomPhreak/counterpartyd#examples>`__.
 
 To run the ``counterpartyd`` testsuite::
 
@@ -103,8 +107,6 @@ Minimally required to build ``counterpartyd`` from source is the following:
   or `64-bit version <http://sourceforge.net/projects/pywin32/files/pywin32/Build%20218/pywin32-218.win-amd64-py3.2.exe/download>`__
 - APSW for Windows -- grab the `32-bit version <https://apsw.googlecode.com/files/apsw-3.8.2-r1.win32-py3.2.exe>`__
   or `64-bit version <https://apsw.googlecode.com/files/apsw-3.8.2-r1.win-amd64-py3.2.exe>`__
-- pyzmq for Windows -- grab the `32-bit version <https://github.com/downloads/zeromq/pyzmq/pyzmq-2.2.0.win32-py3.2.msi>`__
-  or `64-bit version <https://github.com/downloads/zeromq/pyzmq/pyzmq-2.2.0.win-amd64-py3.2.msi>`__
 - Git for Windows. Download `here <http://git-scm.com/download/win>`__ and install. Use the default installer
   options (except, select *"Run Git from the Windows Command Prompt"* on the appropriate screen)
 
@@ -145,15 +147,17 @@ Running from Source
 
 After installing, open a command window and run ``counterpartyd`` in the foreground via::
 
-    cd C:\counterpartyd_build
-    C:\Python32\python.exe run.py server
+    counterpartyd server
 
-You can then run any of ``counterpartyd’s`` other functions, like `the examples listed here <https://github.com/PhantomPhreak/counterpartyd#examples>`__.
+You can then open up another command window and run any of ``counterpartyd’s`` other functions, for example::
+
+    counterpartyd send --from=12WQTnVbzhJRswra4TvGxq1RyhUkmiVXXm --to=1QGZ4sCpvCgRizL5v4NniaKdZKzxBtVN3q --asset=XCP --quantity=5
+
+For more examples, see `this link <https://github.com/PhantomPhreak/counterpartyd#examples>`__.
 
 To run the ``counterpartyd`` testsuite::
 
-    cd C:\counterpartyd_build
-    run.py tests 
+    counterpartyd tests 
 
 
 Updating to the newest source
@@ -189,4 +193,4 @@ If successful, you will be provided the location of the resulting installer pack
 Mac OS X
 --------
 
-Mac OS support will be forthcoming.
+Mac OS support is forthcoming. (Pull requests to add such support are more than welcome!)
