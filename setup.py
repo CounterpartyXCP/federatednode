@@ -69,7 +69,7 @@ def _rmtree(path):
             rmgeneric(fullpath, f)    
 
 def usage():
-    print("SYNTAX: %s [-h] [--build]" % sys.argv[0])
+    print("SYNTAX: %s [-h] [--build] [--with-counterwalletd]" % sys.argv[0])
 
 def runcmd(command, abort_on_failure=True):
     logging.debug("RUNNING COMMAND: %s" % command)
