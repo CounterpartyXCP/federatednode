@@ -69,7 +69,12 @@ def _rmtree(path):
             rmgeneric(fullpath, f)    
 
 def usage():
-    print("SYNTAX: %s [-h] [--build]" % sys.argv[0])
+    print("SYNTAX: %s [-h] [--with-counterwalletd] [setup|build|update]" % sys.argv[0])
+    print("* The 'setup' command will setup and install counterpartyd as a source installation (including automated setup of its dependencies)")
+    print("* The 'build' command builds an installer package (Windows only, currently)")
+    print("* The 'update' command updates the git repo for both counterpartyd, counterpartyd_build, and counterwalletd (if --with-counterwalletd is specified)")
+    print("* 'setup' is chosen by default if neither the 'build', 'update', or 'setup' arguments are specified.")
+    print("* If you want to install counterwalletd along with counterpartyd, specify the --with-counterwalletd option")
 
 def runcmd(command, abort_on_failure=True):
     logging.debug("RUNNING COMMAND: %s" % command)
@@ -109,7 +114,7 @@ def do_prerun_checks():
             logging.error("Cannot find your Python version in your path")
             sys.exit(1)
 
-def get_paths(is_build, with_counterwalletd):
+def get_paths(with_counterwalletd):
     paths = {}
     paths['sys_python_path'] = os.path.dirname(sys.executable)
 
@@ -150,7 +155,7 @@ def get_paths(is_build, with_counterwalletd):
     
     return paths
 
-def checkout(paths, run_as_user, with_counterwalletd):
+def checkout(paths, run_as_user, with_counterwalletd, is_update):
     #check what our current branch is
     try:
         branch = subprocess.check_output("git rev-parse --abbrev-ref HEAD".split(' ')).strip().decode('utf-8')
@@ -164,6 +169,8 @@ def checkout(paths, run_as_user, with_counterwalletd):
         runcmd("cd \"%s\" && git pull origin %s" % (counterpartyd_path, branch))
     else:
         runcmd("git clone -b %s https://github.com/PhantomPhreak/counterpartyd \"%s\"" % (branch, counterpartyd_path))
+    if os.name != 'nt':
+        runcmd("chown -R %s \"%s\"" % (run_as_user, counterpartyd_path))
         
     if with_counterwalletd:
         counterwalletd_path = os.path.join(paths['dist_path'], "counterwalletd")
@@ -173,9 +180,12 @@ def checkout(paths, run_as_user, with_counterwalletd):
             #TODO: check out counterwalletd under dist
             #runcmd("git clone https://github.com/PhantomPhreak/counterpartyd \"%s\"" % counterwalletd_path)
             pass
+        if os.name != 'nt':
+            runcmd("chown -R %s \"%s\"" % (run_as_user, counterwalletd_path))
     
-    if os.name != 'nt':
-        runcmd("chown -R %s \"%s\"" % (run_as_user, counterpartyd_path))
+    if is_update: #update mode specified... update ourselves (counterpartyd_build) as well
+        runcmd("cd \"%s\" && git pull origin %s" % (paths['base_path'], branch))
+    
     sys.path.insert(0, os.path.join(paths['dist_path'], "counterpartyd")) #can now import counterparty modules
 
 def install_dependencies(paths, with_counterwalletd):
@@ -444,7 +454,7 @@ def main():
         assert run_as_user
 
     #parse any command line objects
-    is_build = False
+    command = None
     with_counterwalletd = False
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hb", ["build", "help", "with-counterwalletd"])
@@ -453,34 +463,48 @@ def main():
         sys.exit(2)
     mode = None
     for o, a in opts:
-        if o in ("-b", "--build"):
-            is_build = True
-        elif o in ("--with-counterwalletd",):
+        if o in ("--with-counterwalletd",):
             with_counterwalletd = True
         elif o in ("-h", "--help"):
             usage()
             sys.exit()
         else:
             assert False, "Unhandled or unimplemented switch or option"
+            
+    if len(args) not in [0, 1]:
+        usage()
+        sys.exit(2)
+        
+    if args and args[0] == "build":
+        command = "build"
+    elif args and args[0] == "update":
+        command = "update"
+    else: #either setup specified explicitly, or no command specified
+        command = "setup"
+    assert command in ["build", "update", "setup"]
 
-    paths = get_paths(is_build, with_counterwalletd)
+    paths = get_paths(with_counterwalletd)
 
-    if is_build:
+    if command == "build": #build counterpartyd installer (currently windows only)
         logging.info("Building Counterparty...")
-        checkout(paths, run_as_user, with_counterwalletd)
+        checkout(paths, run_as_user, with_counterwalletd, command == "update")
         install_dependencies(paths, with_counterwalletd)
         create_virtualenv(paths, with_counterwalletd)
         do_build(paths, with_counterwalletd)
-    else: #install mode
+    elif command == "update": #auto update from git
+        logging.info("Updating relevant Counterparty repos")
+        checkout(paths, run_as_user, with_counterwalletd, command == "update")
+    else: #setup mode
+        assert command == "setup"
         logging.info("Installing Counterparty from source%s..." % (
             (" for user '%s'" % run_as_user) if os.name != "nt" else '',))
-        checkout(paths, run_as_user, with_counterwalletd)
+        checkout(paths, run_as_user, with_counterwalletd, command == "update")
         install_dependencies(paths, with_counterwalletd)
         create_virtualenv(paths, with_counterwalletd)
         setup_startup(paths, run_as_user, with_counterwalletd)
     
-    logging.info("%s DONE. (It's time to kick ass, and chew bubblegum... and I'm all outta gum.)" % ("BUILD" if is_build else "SETUP"))
-    if not is_build:
+    logging.info("%s DONE. (It's time to kick ass, and chew bubblegum... and I'm all outta gum.)" % ("BUILD" if command == "build" else "SETUP"))
+    if command != "build":
         create_default_datadir_and_config(paths, run_as_user, with_counterwalletd)
 
 

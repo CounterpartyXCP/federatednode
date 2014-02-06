@@ -60,7 +60,7 @@ Once you're sure it launches and runs fine, press CTRL-C to exit it, and then ru
 
 You can then open up another command window and run any of ``counterpartyd’s`` other functions, for example::
 
-    counterpartyd send --from=12WQTnVbzhJRswra4TvGxq1RyhUkmiVXXm --to=1QGZ4sCpvCgRizL5v4NniaKdZKzxBtVN3q --asset=XCP --quantity=5
+    counterpartyd send --source=12WQTnVbzhJRswra4TvGxq1RyhUkmiVXXm --destination=1QGZ4sCpvCgRizL5v4NniaKdZKzxBtVN3q --asset=XCP --quantity=5
 
 For more examples, see `this link <https://github.com/PhantomPhreak/counterpartyd#examples>`__.
 
@@ -75,15 +75,14 @@ Updating to the newest source
 As the code is enhanced and improved on Github, you can refresh your local copy of the repositories like so::
 
     cd ~/counterpartyd_build
-    git pull origin master
-    cd ~/counterpartyd_build/dist/counterpartyd
-    git pull origin master
+    sudo python3 setup.py update
 
 If, upon running counterpartyd, you get a missing dependency or some other error, you can always rerun
 ``setup.py``, which will regenerate your dependencies listing to the libraries and versions as listed in
 `reqs.txt <https://github.com/xnova/counterpartyd_build/blob/master/dist/reqs.txt>`__::
 
-    sudo python3 ~/counterpartyd_build/setup.py
+    cd ~/counterpartyd_build
+    sudo python3 setup.py
 
 
 On Windows
@@ -129,7 +128,7 @@ Installing
     in your Windows directory). To allow for this, you must launch a command prompt **as administrator**. To do this
     under Windows 7, go to Start -> All Programs -> Accessories, then right click on Command Prompt and select "Run as administrator".
     More information on this is available from `this link <http://www.bleepingcomputer.com/tutorials/windows-elevated-command-prompt/>`__ (method 1 or 2 works fine).
-
+    
 After launching a DOS command window using the instructions in the note above, type the following commands::
 
     cd C:\
@@ -156,7 +155,7 @@ After installing, open a command window and run ``counterpartyd`` in the foregro
 
 You can then open up another command window and run any of ``counterpartyd’s`` other functions, for example::
 
-    counterpartyd send --from=12WQTnVbzhJRswra4TvGxq1RyhUkmiVXXm --to=1QGZ4sCpvCgRizL5v4NniaKdZKzxBtVN3q --asset=XCP --quantity=5
+    counterpartyd send --source=12WQTnVbzhJRswra4TvGxq1RyhUkmiVXXm --destination=1QGZ4sCpvCgRizL5v4NniaKdZKzxBtVN3q --asset=XCP --quantity=5
 
 For more examples, see `this link <https://github.com/PhantomPhreak/counterpartyd#examples>`__.
 
@@ -171,9 +170,7 @@ Updating to the newest source
 As the code is enhanced and improved on Github, you can refresh your local copy of the repositories like so::
 
     cd C:\counterpartyd_build
-    git pull origin master
-    cd C:\counterpartyd_build\dist\counterpartyd
-    git pull origin master
+    C:\Python32\python.exe setup.py update
 
 If, upon running counterpartyd, you get a missing dependency or some other error, you can always rerun
 ``setup.py``, which will regenerate your dependencies listing to the libraries and versions as listed in
@@ -190,7 +187,7 @@ Complete the instructions under **Prerequisites** above.
 Then, execute the following commands to build the installer package::
 
     cd C:\counterpartyd_build
-    C:\Python32\python.exe setup.py -b
+    C:\Python32\python.exe setup.py build
     
 If successful, you will be provided the location of the resulting installer package.
 
