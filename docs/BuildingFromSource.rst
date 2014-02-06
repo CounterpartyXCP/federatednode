@@ -123,9 +123,14 @@ If you want to be able to build the Counterpartyd installer, also download the f
 Installing
 ~~~~~~~~~~~
 
-Type ``<Windows Key>-R`` to open the run dialog, and enter "cmd.exe" to launch a command window.
+.. note::
 
-In the command window, type the following commands::
+    Our install script (setup.py) requires administrator access to run (so that it can create a counterpartyd.bat file
+    in your Windows directory). To allow for this, you must launch a command prompt **as administrator**. To do this
+    under Windows 7, go to Start -> All Programs -> Accessories, then right click on Command Prompt and select "Run as administrator".
+    More information on this is available from `this link <http://www.bleepingcomputer.com/tutorials/windows-elevated-command-prompt/>`__ (method 1 or 2 works fine).
+    
+After launching a DOS command window using the instructions in the note above, type the following commands::
 
     cd C:\
     git clone https://github.com/xnova/counterpartyd_build
