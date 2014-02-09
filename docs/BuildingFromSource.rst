@@ -40,7 +40,7 @@ will automatically start ``counterpartyd`` on startup.
 Creating a default config
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Follow the instructions listed under the **Config and Logging** section in :doc:`GettingStarted`.
+Follow the instructions listed under the **Config and Logging** section in :doc:`AdditionalTopics`.
 
 
 Running from Source
