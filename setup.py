@@ -437,7 +437,7 @@ def do_build(paths, with_counterwalletd):
     
     #move created .msi file to the bin dir
     from lib import config #counter party
-    installer_dest = os.path.join(paths['bin_path'], "counterpartyd-v%s-%s_install.exe" % (config.VERSION, arch))
+    installer_dest = os.path.join(paths['bin_path'], "counterpartyd-v%s-%s_install.exe" % (config.CLIENT_VERSION, arch))
     if os.path.exists(installer_dest):
         os.remove(installer_dest)
     shutil.move(os.path.join(paths['dist_path'], "windows", "counterpartyd_install.exe"), installer_dest)
