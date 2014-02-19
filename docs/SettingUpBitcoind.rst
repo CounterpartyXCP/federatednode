@@ -90,7 +90,7 @@ to install it (on Ubuntu, other distros will have similar instructions)::
     sudo apt-get update
     sudo apt-get install bitcoind
     mkdir -p ~/.bitcoin/
-    echo -e "rpcuser=rpc\nrpcpassword=rpcpw1234\nserver=1\ndaemon=1" > ~/.bitcoin/bitcoin.conf
+    echo -e "rpcuser=rpc\nrpcpassword=rpcpw1234\nserver=1\ndaemon=1\ntxindex=1" > ~/.bitcoin/bitcoin.conf
 
 Please then edit the ``~/.bitcoin/bitcoin.conf`` file and set the file to the contents specified above.
 
