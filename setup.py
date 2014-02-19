@@ -205,9 +205,7 @@ def install_dependencies(paths, with_counterwalletd):
             if with_counterwalletd:
                 #counterwalletd currently uses Python 2.7 due to gevent-socketio's lack of support for Python 3
                 runcmd("sudo apt-get -y install python python-dev python-setuptools python-pip python-sphinx python-zmq libzmq3 libzmq3-dev")
-                #delete the environment dir now, since we may need to install cube and we skip deleteting it 
-                # when making the virtualenv
-                runcmd("sudo rm -rf %s && sudo mkdir -p %s" % (paths['env_path.cwalletd'], paths['env_path.cwalletd']))
+                
                 while True:
                     db_locally = input("counterwalletd: Run mongo, redis and cube locally? (y/n): ")
                     if db_locally.lower() not in ('y', 'n'):
@@ -216,11 +214,6 @@ def install_dependencies(paths, with_counterwalletd):
                         break
                 if db_locally.lower() == 'y':
                     runcmd("sudo apt-get -y install npm mongodb mongodb-server redis-server")
-                    runcmd("sudo ln -sf /usr/bin/nodejs /usr/bin/node")
-                    runcmd("cd %s && sudo npm install cube@0.2.12" % (paths['env_path.cwalletd'],))
-                    #runcmd("cd %s && sudo npm install npm" % paths['env_path']) #install updated NPM into the dir
-                    #runcmd("cd %s && sudo %s install cube@0.2.12" % (paths['env_path'],
-                    #    os.path.join(paths['env_path'], "node_modules", "npm", "bin", "npm")))
                     
         elif ubuntu_release == "12.04":
             #12.04 deps. 12.04 doesn't include python3-pip, so we need to use the workaround at http://stackoverflow.com/a/12262143
@@ -286,7 +279,7 @@ def create_virtualenv(paths, with_counterwalletd):
 
     create_venv(paths['env_path'], paths['pip_path'], paths['python_path'], paths['virtualenv_args'], 'reqs.txt')    
     if with_counterwalletd: #as counterwalletd uses python 2.x, it needs its own virtualenv
-        #also, since
+        runcmd("sudo rm -rf %s && sudo mkdir -p %s" % (paths['env_path.cwalletd'], paths['env_path.cwalletd']))
         create_venv(paths['env_path.cwalletd'], paths['pip_path.cwalletd'], paths['python_path.cwalletd'],
             paths['virtualenv_args.cwalletd'], 'reqs.counterwalletd.txt', delete_if_exists=False)    
 
@@ -295,7 +288,7 @@ def setup_startup(paths, run_as_user, with_counterwalletd):
         runcmd("sudo ln -sf %s/run.py /usr/local/bin/counterpartyd" % paths['base_path'])
         if with_counterwalletd:
             #make a short script to launch counterwallet
-            runcmd('sudo echo -e "#!/bin/sh\\n%s/run.py counterwalletd" > /usr/local/bin/counterwalletd' % paths['base_path'])
+            runcmd('sudo echo -e "#!/bin/sh\\n%s/run.py counterwalletd \"$@\"" > /usr/local/bin/counterwalletd' % paths['base_path'])
             runcmd("sudo chmod +x /usr/local/bin/counterwalletd")
     elif os.name == "nt":
         #create a batch script
