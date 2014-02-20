@@ -200,7 +200,7 @@ def install_dependencies(paths, with_counterwalletd):
         #13.10 deps
         if ubuntu_release == "13.10":
             runcmd("sudo apt-get -y install software-properties-common python-software-properties git-core wget cx-freeze \
-            python3 python3-setuptools python3-dev python3-pip build-essential python3-sphinx python-virtualenv python3-apsw python3-zmq")
+            python3 python3-setuptools python3-dev python3-pip build-essential python3-sphinx python-virtualenv libsqlite3-dev python3-apsw python3-zmq")
             
             if with_counterwalletd:
                 #counterwalletd currently uses Python 2.7 due to gevent-socketio's lack of support for Python 3
@@ -218,7 +218,7 @@ def install_dependencies(paths, with_counterwalletd):
         elif ubuntu_release == "12.04":
             #12.04 deps. 12.04 doesn't include python3-pip, so we need to use the workaround at http://stackoverflow.com/a/12262143
             runcmd("sudo apt-get -y install software-properties-common python-software-properties git-core wget cx-freeze \
-            python3 python3-setuptools python3-dev build-essential python3-sphinx python-virtualenv")
+            python3 python3-setuptools python3-dev build-essential python3-sphinx python-virtualenv libsqlite3-dev")
             if not os.path.exists("/usr/local/bin/pip3"):
                 runcmd("sudo easy_install3 pip==1.4.1") #pip1.5 breaks things due to its use of wheel by default
                 #for some reason, it installs "pip" to /usr/local/bin, instead of "pip3"
@@ -238,7 +238,7 @@ def install_dependencies(paths, with_counterwalletd):
             sys.exit(1)
 
         #install sqlite utilities (not technically required, but nice to have)
-        runcmd("sudo apt-get -y install sqlite sqlite3 libsqlite3-dev libleveldb-dev")
+        runcmd("sudo apt-get -y install sqlite sqlite3 libleveldb-dev")
         
         #now that pip is installed, install necessary deps outside of the virtualenv (e.g. for this script)
         runcmd("sudo pip3 install appdirs==1.2.0")
