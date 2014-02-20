@@ -200,14 +200,12 @@ def install_dependencies(paths, with_counterwalletd):
         #13.10 deps
         if ubuntu_release == "13.10":
             runcmd("sudo apt-get -y install software-properties-common python-software-properties git-core wget cx-freeze \
-            python3 python3-setuptools python3-dev python3-pip build-essential python3-sphinx python-virtualenv python3-apsw python3-zmq")
+            python3 python3-setuptools python3-dev python3-pip build-essential python3-sphinx python-virtualenv libsqlite3-dev python3-apsw python3-zmq")
             
             if with_counterwalletd:
                 #counterwalletd currently uses Python 2.7 due to gevent-socketio's lack of support for Python 3
                 runcmd("sudo apt-get -y install python python-dev python-setuptools python-pip python-sphinx python-zmq libzmq3 libzmq3-dev")
-                #delete the environment dir now, since we may need to install cube and we skip deleteting it 
-                # when making the virtualenv
-                runcmd("sudo rm -rf %s && sudo mkdir -p %s" % (paths['env_path.cwalletd'], paths['env_path.cwalletd']))
+                
                 while True:
                     db_locally = input("counterwalletd: Run mongo, redis and cube locally? (y/n): ")
                     if db_locally.lower() not in ('y', 'n'):
@@ -216,16 +214,11 @@ def install_dependencies(paths, with_counterwalletd):
                         break
                 if db_locally.lower() == 'y':
                     runcmd("sudo apt-get -y install npm mongodb mongodb-server redis-server")
-                    runcmd("sudo ln -sf /usr/bin/nodejs /usr/bin/node")
-                    runcmd("cd %s && sudo npm install cube@0.2.12" % (paths['env_path.cwalletd'],))
-                    #runcmd("cd %s && sudo npm install npm" % paths['env_path']) #install updated NPM into the dir
-                    #runcmd("cd %s && sudo %s install cube@0.2.12" % (paths['env_path'],
-                    #    os.path.join(paths['env_path'], "node_modules", "npm", "bin", "npm")))
                     
         elif ubuntu_release == "12.04":
             #12.04 deps. 12.04 doesn't include python3-pip, so we need to use the workaround at http://stackoverflow.com/a/12262143
             runcmd("sudo apt-get -y install software-properties-common python-software-properties git-core wget cx-freeze \
-            python3 python3-setuptools python3-dev build-essential python3-sphinx python-virtualenv")
+            python3 python3-setuptools python3-dev build-essential python3-sphinx python-virtualenv libsqlite3-dev")
             if not os.path.exists("/usr/local/bin/pip3"):
                 runcmd("sudo easy_install3 pip==1.4.1") #pip1.5 breaks things due to its use of wheel by default
                 #for some reason, it installs "pip" to /usr/local/bin, instead of "pip3"
@@ -245,7 +238,7 @@ def install_dependencies(paths, with_counterwalletd):
             sys.exit(1)
 
         #install sqlite utilities (not technically required, but nice to have)
-        runcmd("sudo apt-get -y install sqlite sqlite3 libsqlite3-dev libleveldb-dev")
+        runcmd("sudo apt-get -y install sqlite sqlite3 libleveldb-dev")
         
         #now that pip is installed, install necessary deps outside of the virtualenv (e.g. for this script)
         runcmd("sudo pip3 install appdirs==1.2.0")
@@ -286,7 +279,7 @@ def create_virtualenv(paths, with_counterwalletd):
 
     create_venv(paths['env_path'], paths['pip_path'], paths['python_path'], paths['virtualenv_args'], 'reqs.txt')    
     if with_counterwalletd: #as counterwalletd uses python 2.x, it needs its own virtualenv
-        #also, since
+        runcmd("sudo rm -rf %s && sudo mkdir -p %s" % (paths['env_path.cwalletd'], paths['env_path.cwalletd']))
         create_venv(paths['env_path.cwalletd'], paths['pip_path.cwalletd'], paths['python_path.cwalletd'],
             paths['virtualenv_args.cwalletd'], 'reqs.counterwalletd.txt', delete_if_exists=False)    
 
@@ -295,7 +288,7 @@ def setup_startup(paths, run_as_user, with_counterwalletd):
         runcmd("sudo ln -sf %s/run.py /usr/local/bin/counterpartyd" % paths['base_path'])
         if with_counterwalletd:
             #make a short script to launch counterwallet
-            runcmd('sudo echo -e "#!/bin/sh\\n%s/run.py counterwalletd" > /usr/local/bin/counterwalletd' % paths['base_path'])
+            runcmd('sudo echo -e "#!/bin/sh\\n%s/run.py counterwalletd \"$@\"" > /usr/local/bin/counterwalletd' % paths['base_path'])
             runcmd("sudo chmod +x /usr/local/bin/counterwalletd")
     elif os.name == "nt":
         #create a batch script
