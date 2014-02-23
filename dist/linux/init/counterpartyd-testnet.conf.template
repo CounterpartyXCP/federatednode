@@ -1,0 +1,14 @@
+#!upstart
+description "counterpartyd (testnet)"
+
+# When to start the service
+start on startup
+
+# When to stop the service
+stop on shutdown
+
+# Automatically restart process if crashed
+respawn
+
+env USER=!RUN_AS_USER!
+exec start-stop-daemon --start --background --make-pidfile --pidfile /var/run/counterpartyd-testnet.pid --chuid $USER --exec /usr/local/bin/counterpartyd -- --data-dir=~/.config/counterpartyd-testnet --testnet server

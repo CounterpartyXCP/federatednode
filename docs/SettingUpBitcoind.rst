@@ -85,7 +85,7 @@ On Ubuntu Linux
 If not already installed (or running on a different machine), do the following
 to install it (on Ubuntu, other distros will have similar instructions)::
 
-    sudo apt-get install python-software-properties
+    sudo apt-get install software-properties-common python-software-properties
     sudo add-apt-repository ppa:bitcoin/bitcoin
     sudo apt-get update
     sudo apt-get install bitcoind

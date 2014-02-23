@@ -13,6 +13,8 @@ import platform
 import tempfile
 import subprocess
 import stat
+import string
+import random
 
 try: #ignore import errors on windows
     import pwd
@@ -22,9 +24,11 @@ except ImportError:
 
 PYTHON3_VER = None
 DEFAULT_CONFIG = "[Default]\nbitcoind-rpc-connect=localhost\nbitcoind-rpc-port=8332\nbitcoind-rpc-user=rpc\nbitcoind-rpc-password=rpcpw1234\nrpc-host=localhost\nrpc-user=rpcuser\nrpc-password=xcppw1234"
+DEFAULT_CONFIG_TESTNET = "[Default]\nbitcoind-rpc-connect=localhost\nbitcoind-rpc-port=18332\nbitcoind-rpc-user=rpc\nbitcoind-rpc-password=rpcpw1234\nrpc-host=localhost\nrpc-user=rpcuser\nrpc-password=xcppw1234\ntestnet=1"
 DEFAULT_CONFIG_INSTALLER = "[Default]\nbitcoind-rpc-connect=BITCOIND_RPC_CONNECT\nbitcoind-rpc-port=BITCOIND_RPC_PORT\nbitcoind-rpc-user=BITCOIND_RPC_USER\nbitcoind-rpc-password=BITCOIND_RPC_PASSWORD\nrpc-host=RPC_HOST\nrpc-port=RPC_PORT\nrpc-user=RPC_USER\nrpc-password=RPC_PASSWORD"
 
-DEFAULT_CONFIG_COUNTERWALLETD = "[Default]\nbitcoind-rpc-connect=localhost\nbitcoind-rpc-port=8332\nbitcoind-rpc-user=rpc\nbitcoind-rpc-password=rpcpw1234\ncounterpartyd-rpc-host=localhost\ncounterpartyd-rpc-port=\ncounterpartyd-rpc-user=\ncounterpartyd-rpc-password=xcppw1234"
+DEFAULT_CONFIG_COUNTERWALLETD = "[Default]\nbitcoind-rpc-connect=localhost\nbitcoind-rpc-port=8332\nbitcoind-rpc-user=rpc\nbitcoind-rpc-password=rpcpw1234\ncounterpartyd-rpc-host=localhost\ncounterpartyd-rpc-port=\ncounterpartyd-rpc-user=\ncounterpartyd-rpc-password=xcppw1234\nrpc-host=0.0.0.0\nsocketio-host=0.0.0.0\nsocketio-chat-host=0.0.0.0\nredis-enable-apicache=0"
+DEFAULT_CONFIG_COUNTERWALLETD_TESTNET = "[Default]\nbitcoind-rpc-connect=localhost\nbitcoind-rpc-port=18332\nbitcoind-rpc-user=rpc\nbitcoind-rpc-password=rpcpw1234\ncounterpartyd-rpc-host=localhost\ncounterpartyd-rpc-port=\ncounterpartyd-rpc-user=\ncounterpartyd-rpc-password=xcppw1234\nrpc-host=0.0.0.0\nsocketio-host=0.0.0.0\nsocketio-chat-host=0.0.0.0\nredis-enable-apicache=0\ntestnet=1"
 DEFAULT_CONFIG_INSTALLER_COUNTERWALLETD = "[Default]\nbitcoind-rpc-connect=localhost\nbitcoind-rpc-port=8332\nbitcoind-rpc-user=rpc\nbitcoind-rpc-password=rpcpw1234\ncounterpartyd-rpc-host=RPC_HOST\ncounterpartyd-rpc-port=RPC_PORT\ncounterpartyd-rpc-user=RPC_USER\ncounterpartyd-rpc-password=RPC_PASSWORD"
 
 def which(filename):
@@ -36,6 +40,15 @@ def which(filename):
         if os.path.isfile(candidate):
             candidates.append(candidate)
     return candidates
+
+def _get_app_cfg_paths(appname):
+    import appdirs #installed earlier
+    cfg_path = os.path.join(
+        appdirs.user_data_dir(appauthor='Counterparty', appname=appname, roaming=True) \
+            if os.name == "nt" else ("%s/.config/%s" % (os.path.expanduser("~%s" % run_as_user), appname)), 
+        "%s.conf" % appname)
+    data_dir = os.path.dirname(cfg_path)
+    return (data_dir, cfg_path)
 
 def _rmtree(path):
     """We use this function instead of the built-in shutil.rmtree because it unsets the windoze read-only/archive bit
@@ -69,7 +82,7 @@ def _rmtree(path):
             rmgeneric(fullpath, f)    
 
 def usage():
-    print("SYNTAX: %s [-h] [--with-counterwalletd] [setup|build|update]" % sys.argv[0])
+    print("SYNTAX: %s [-h] [--with-counterwalletd] [--with-testnet] [setup|build|update]" % sys.argv[0])
     print("* The 'setup' command will setup and install counterpartyd as a source installation (including automated setup of its dependencies)")
     print("* The 'build' command builds an installer package (Windows only, currently)")
     print("* The 'update' command updates the git repo for both counterpartyd, counterpartyd_build, and counterwalletd (if --with-counterwalletd is specified)")
@@ -188,7 +201,7 @@ def checkout(paths, run_as_user, with_counterwalletd, is_update):
     
     sys.path.insert(0, os.path.join(paths['dist_path'], "counterpartyd")) #can now import counterparty modules
 
-def install_dependencies(paths, with_counterwalletd):
+def install_dependencies(paths, with_counterwalletd, assume_yes):
     if os.name == "posix" and platform.dist()[0] == "Ubuntu":
         ubuntu_release = platform.linux_distribution()[1]
         logging.info("UBUNTU LINUX %s: Installing Required Packages..." % ubuntu_release) 
@@ -205,13 +218,15 @@ def install_dependencies(paths, with_counterwalletd):
             if with_counterwalletd:
                 #counterwalletd currently uses Python 2.7 due to gevent-socketio's lack of support for Python 3
                 runcmd("sudo apt-get -y install python python-dev python-setuptools python-pip python-sphinx python-zmq libzmq3 libzmq3-dev")
-                
-                while True:
-                    db_locally = input("counterwalletd: Run mongo, redis and cube locally? (y/n): ")
-                    if db_locally.lower() not in ('y', 'n'):
-                        logger.error("Please enter 'y' or 'n'")
-                    else:
-                        break
+                if assume_yes:
+                    db_locally = 'y'
+                else:
+                    while True:
+                        db_locally = input("counterwalletd: Run mongo and redis locally? (y/n): ")
+                        if db_locally.lower() not in ('y', 'n'):
+                            logger.error("Please enter 'y' or 'n'")
+                        else:
+                            break
                 if db_locally.lower() == 'y':
                     runcmd("sudo apt-get -y install npm mongodb mongodb-server redis-server")
                     
@@ -283,7 +298,7 @@ def create_virtualenv(paths, with_counterwalletd):
         create_venv(paths['env_path.cwalletd'], paths['pip_path.cwalletd'], paths['python_path.cwalletd'],
             paths['virtualenv_args.cwalletd'], 'reqs.counterwalletd.txt', delete_if_exists=False)    
 
-def setup_startup(paths, run_as_user, with_counterwalletd):
+def setup_startup(paths, run_as_user, with_counterwalletd, with_testnet, assume_yes):
     if os.name == "posix":
         runcmd("sudo ln -sf %s/run.py /usr/local/bin/counterpartyd" % paths['base_path'])
         if with_counterwalletd:
@@ -298,12 +313,15 @@ def setup_startup(paths, run_as_user, with_counterwalletd):
         f.write(batch_contents)
         f.close()
 
-    while True:
-        start_choice = input("Start counterpartyd automatically on system startup? (y/n): ")
-        if start_choice.lower() not in ('y', 'n'):
-            logger.error("Please enter 'y' or 'n'")
-        else:
-            break
+    if assume_yes:
+        start_choice = 'y'
+    else:
+        while True:
+            start_choice = input("Start counterpartyd automatically on system startup? (y/n): ")
+            if start_choice.lower() not in ('y', 'n'):
+                logger.error("Please enter 'y' or 'n'")
+            else:
+                break
     if start_choice.lower() == 'n':
         return
     
@@ -316,37 +334,38 @@ def setup_startup(paths, run_as_user, with_counterwalletd):
         SHGFP_TYPE_CURRENT= 0 # Want current, not default value
         buf = ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
         ctypes.windll.shell32.SHGetFolderPathW(0, CSIDL_PERSONAL, 0, SHGFP_TYPE_CURRENT, buf)
-        logging.debug("Installing startup shortcut to '%s'" % buf.value)
+        logging.debug("Installing startup shortcut(s) to '%s'" % buf.value)
         
         ws = win32com.client.Dispatch("wscript.shell")
         scut = ws.CreateShortcut(os.path.join(buf.value, 'run_counterpartyd.lnk'))
         scut.TargetPath = '"c:/Python32/python.exe"'
         scut.Arguments = os.path.join(paths['base_path'], 'run.py') + ' server'
-        scut.Save()        
+        scut.Save()
+        if with_testnet:
+            ws = win32com.client.Dispatch("wscript.shell")
+            scut = ws.CreateShortcut(os.path.join(buf.value, 'run_counterpartyd_testnet.lnk' % s))
+            scut.TargetPath = '"c:/Python32/python.exe"'
+            scut.Arguments = os.path.join(paths['base_path'], 'run.py') \
+                + (' --testnet --data-dir="%s" server' % data_dir, cfg_path = _get_app_cfg_paths('counterpartyd-testnet'))
+            scut.Save()
     else:
         logging.info("Setting up init scripts...")
         assert run_as_user
-        runcmd("sudo cp -a %s/linux/init/counterpartyd.conf.template /etc/init/counterpartyd.conf" % paths['dist_path'])
+        runcmd("sudo cp -af %s/linux/init/counterpartyd.conf.template /etc/init/counterpartyd.conf" % paths['dist_path'])
         runcmd("sudo sed -r -i -e \"s/!RUN_AS_USER!/%s/g\" /etc/init/counterpartyd.conf" % run_as_user)
+        if with_testnet:
+            runcmd("sudo cp -af %s/linux/init/counterpartyd-testnet.conf.template /etc/init/counterpartyd.conf" % paths['dist_path'])
+            runcmd("sudo sed -r -i -e \"s/!RUN_AS_USER!/%s/g\" /etc/init/counterpartyd-testnet.conf" % run_as_user)
         if with_counterwalletd:
-            runcmd("sudo cp -a %s/linux/init/cube-collector.conf.template /etc/init/cube-collector.conf" % paths['dist_path'])
-            runcmd("sudo sed -r -i -e \"s/!RUN_AS_USER!/%s/g\" /etc/init/cube-collector.conf" % run_as_user)
-            runcmd("sudo sed -r -i -e \"s/!CUBE_COLLECTOR_PATH!/%s/g\" /etc/init/cube-collector.conf" % (
-                os.path.join(paths['env_path.cwalletd'], 'node_modules', 'cube', 'bin', 'collector.js').replace('/', '\\/')))
-            runcmd("sudo cp -a %s/linux/init/cube-evaluator.conf.template /etc/init/cube-evaluator.conf" % paths['dist_path'])
-            runcmd("sudo sed -r -i -e \"s/!RUN_AS_USER!/%s/g\" /etc/init/cube-evaluator.conf" % run_as_user)
-            runcmd("sudo sed -r -i -e \"s/!CUBE_EVALUATOR_PATH!/%s/g\" /etc/init/cube-evaluator.conf" % ( 
-                os.path.join(paths['env_path.cwalletd'], 'node_modules', 'cube', 'bin', 'evaluator.js').replace('/', '\\/') ))
+            runcmd("sudo cp -af %s/linux/init/counterwalletd.conf.template /etc/init/counterwalletd.conf" % paths['dist_path'])
+            runcmd("sudo sed -r -i -e \"s/!RUN_AS_USER!/%s/g\" /etc/init/counterwalletd.conf" % run_as_user)
+            if with_testnet:
+                runcmd("sudo cp -af %s/linux/init/counterwalletd-testnet.conf.template /etc/init/counterwalletd-testnet.conf" % paths['dist_path'])
+                runcmd("sudo sed -r -i -e \"s/!RUN_AS_USER!/%s/g\" /etc/init/counterwalletd-testnet.conf" % run_as_user)
 
-def create_default_datadir_and_config(paths, run_as_user, with_counterwalletd):
+def create_default_datadir_and_config(paths, run_as_user, with_counterwalletd, with_testnet):
     def create_config(appname, default_config):
-        import appdirs #installed earlier
-        cfg_path = os.path.join(
-            appdirs.user_data_dir(appauthor='Counterparty', appname=appname, roaming=True) \
-                if os.name == "nt" else ("%s/.config/%s" % (os.path.expanduser("~%s" % run_as_user), appname)), 
-            "%s.conf" % appname)
-        data_dir = os.path.dirname(cfg_path)
-        
+        data_dir, cfg_path = _get_app_cfg_paths(appname)
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
         
@@ -380,8 +399,12 @@ def create_default_datadir_and_config(paths, run_as_user, with_counterwalletd):
             logging.info("%s config file already exists at: %s" % (appname, cfg_path))
     
     create_config('counterpartyd', DEFAULT_CONFIG)
+    if with_testnet:
+        create_config('counterpartyd-testnet', DEFAULT_CONFIG_TESTNET)
     if with_counterwalletd:
         create_config('counterwalletd', DEFAULT_CONFIG_COUNTERWALLETD)
+        if with_testnet:
+            create_config('counterwalletd-testnet', DEFAULT_CONFIG_COUNTERWALLETD_TESTNET)
 
 def do_build(paths, with_counterwalletd):
     #TODO: finish windows build support for counterwalletd
@@ -449,8 +472,10 @@ def main():
     #parse any command line objects
     command = None
     with_counterwalletd = False
+    with_testnet = False
+    assume_yes = False #headless operation
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hb", ["build", "help", "with-counterwalletd"])
+        opts, args = getopt.getopt(sys.argv[1:], "hby", ["build", "help", "with-counterwalletd", "with-testnet"])
     except getopt.GetoptError as err:
         usage()
         sys.exit(2)
@@ -458,9 +483,13 @@ def main():
     for o, a in opts:
         if o in ("--with-counterwalletd",):
             with_counterwalletd = True
+        elif o in ("--with-testnet",):
+            with_testnet = True
         elif o in ("-h", "--help"):
             usage()
             sys.exit()
+        elif o in ("-y"):
+            assume_yes = True
         else:
             assert False, "Unhandled or unimplemented switch or option"
             
@@ -481,7 +510,7 @@ def main():
     if command == "build": #build counterpartyd installer (currently windows only)
         logging.info("Building Counterparty...")
         checkout(paths, run_as_user, with_counterwalletd, command == "update")
-        install_dependencies(paths, with_counterwalletd)
+        install_dependencies(paths, with_counterwalletd, assume_yes)
         create_virtualenv(paths, with_counterwalletd)
         do_build(paths, with_counterwalletd)
     elif command == "update": #auto update from git
@@ -492,13 +521,13 @@ def main():
         logging.info("Installing Counterparty from source%s..." % (
             (" for user '%s'" % run_as_user) if os.name != "nt" else '',))
         checkout(paths, run_as_user, with_counterwalletd, command == "update")
-        install_dependencies(paths, with_counterwalletd)
+        install_dependencies(paths, with_counterwalletd, assume_yes)
         create_virtualenv(paths, with_counterwalletd)
-        setup_startup(paths, run_as_user, with_counterwalletd)
+        setup_startup(paths, run_as_user, with_counterwalletd, with_testnet, assume_yes)
     
     logging.info("%s DONE. (It's time to kick ass, and chew bubblegum... and I'm all outta gum.)" % ("BUILD" if command == "build" else "SETUP"))
     if command != "build":
-        create_default_datadir_and_config(paths, run_as_user, with_counterwalletd)
+        create_default_datadir_and_config(paths, run_as_user, with_counterwalletd, with_testnet)
 
 
 if __name__ == "__main__":

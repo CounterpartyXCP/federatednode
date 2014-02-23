@@ -109,7 +109,7 @@ run ``counterpartyd`` with its ``--datadir`` parameter to point to a directory w
 This means, that like with ``bitcoind``, you may have two separate ``counterpartyd`` data directories, each with
 their own configuration file and database. The difference
 between the configuration files in each datadir will be that the one for your "testnet" ``counterpartyd`` will simply
-specify ``rpc-port=18332``, while the one for your "mainnet" ``counterpartyd`` will specify ``rpc-port=18332``.
+specify ``rpc-port=18332``, while the one for your "mainnet" ``counterpartyd`` will specify ``rpc-port=8332``.
 
 
 Linux
