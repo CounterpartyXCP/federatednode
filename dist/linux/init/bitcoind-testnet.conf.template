@@ -11,5 +11,5 @@ respawn limit 10 60 # 10 times in 60 seconds
 script
 USER=!RUN_AS_USER!
 USER_HOME=$(eval echo ~${USER})
-start-stop-daemon --start -c $USER --pidfile $USER_HOME/.bitcoin-testnet/bitcoind.pid --startas /usr/bin/bitcoind -- -daemon=0 -testnet -datadir=~/.bitcoin-testnet
+start-stop-daemon --start -c $USER --pidfile $USER_HOME/.bitcoin-testnet/bitcoind.pid --exec /usr/bin/bitcoind -- -daemon=0 -testnet -datadir=$USER_HOME/.bitcoin-testnet
 end script

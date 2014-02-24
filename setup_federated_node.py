@@ -5,7 +5,8 @@ Sets up an Ubuntu 13.10 x64 server to be a counterwallet federated node.
 NOTE: The system should be properly secured before running this script.
 
 To Use:
-curl -s https://raw.github.com/xnova/counterpartyd_build/master/setup_federated_node.py | sudo bash
+master: wget -qO setup_federated_node.py https://raw.github.com/xnova/counterpartyd_build/master/setup_federated_node.py && sudo python3 setup_federated_node.py
+develop: wget -qO setup_federated_node.py https://raw.github.com/xnova/counterpartyd_build/develop/setup_federated_node.py && sudo python3 setup_federated_node.py -b develop
 
 TODO: This is admittedly a (bit of a) hack. In the future, take this kind of functionality out to a .deb with
       a postinst script to do all of this, possibly.

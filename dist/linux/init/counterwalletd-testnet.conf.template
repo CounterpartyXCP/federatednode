@@ -13,6 +13,6 @@ respawn
 script
 USER=!RUN_AS_USER!
 USER_HOME=$(eval echo ~${USER})
-start-stop-daemon --start --pidfile $USER_HOME/.config/counterwalletd-testnet/counterwalletd.pid --chuid $USER --exec /usr/local/bin/counterwalletd -- --data-dir=~/.config/counterwalletd-testnet --testnet
+start-stop-daemon --start --pidfile $USER_HOME/.config/counterwalletd-testnet/counterwalletd.pid --chuid $USER --exec /usr/local/bin/counterwalletd -- --data-dir=$USER_HOME/.config/counterwalletd-testnet --testnet
 end script
 
