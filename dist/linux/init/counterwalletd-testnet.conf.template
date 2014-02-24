@@ -11,5 +11,6 @@ stop on shutdown
 respawn
 
 env USER=!RUN_AS_USER!
-exec start-stop-daemon --start --background --pidfile ~$USER/.config/counterwalletd-testnet/counterwalletd.pid --chuid $USER --exec /usr/local/bin/counterwalletd -- --data-dir=~/.config/counterwalletd-testnet --testnet
+env USER_HOME=$(eval echo ~${USER})
+exec start-stop-daemon --start --background --pidfile $USER_HOME/.config/counterwalletd-testnet/counterwalletd.pid --chuid $USER --exec /usr/local/bin/counterwalletd -- --data-dir=~/.config/counterwalletd-testnet --testnet
 
