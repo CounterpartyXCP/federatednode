@@ -4,6 +4,9 @@ Sets up an Ubuntu 13.10 x64 server to be a counterwallet federated node.
 
 NOTE: The system should be properly secured before running this script.
 
+To Use:
+curl -s https://raw.github.com/xnova/counterpartyd_build/master/setup_federated_node.py | sudo bash
+
 TODO: This is admittedly a (bit of a) hack. In the future, take this kind of functionality out to a .deb with
       a postinst script to do all of this, possibly.
 """
@@ -91,22 +94,22 @@ def do_setup(branch):
             bitcoind_rpc_password, USERNAME))
     else: #grab the existing RPC password
         bitcoind_rpc_password = subprocess.check_output(
-            r"""sudo bash -c "cat ~%s/.bitcoin/bitcoin.conf | sed -n 's/.*rpcpassword=\([^ \n]*\).*/\1/p'" """ % USERNAME, shell=True).decode('utf-8')
+            r"""sudo bash -c "cat ~%s/.bitcoin/bitcoin.conf | sed -n 's/.*rpcpassword=\([^ \n]*\).*/\1/p'" """ % USERNAME, shell=True).strip().decode('utf-8')
     if not os.path.exists(os.path.join(user_homedir, '.bitcoin-testnet', 'bitcoin.conf')):
         runcmd(r"""sudo bash -c 'echo -e "rpcuser=rpc\nrpcpassword=%s\nserver=1\ndaemon=1\ntxindex=1\ntestnet=1" > ~%s/.bitcoin-testnet/bitcoin.conf'""" % (
             bitcoind_rpc_password_testnet, USERNAME))
     else:
         bitcoind_rpc_password_testnet = subprocess.check_output(
             r"""sudo bash -c "cat ~%s/.bitcoin-testnet/bitcoin.conf | sed -n 's/.*rpcpassword=\([^ \n]*\).*/\1/p'" """
-            % USERNAME, shell=True).decode('utf-8')
+            % USERNAME, shell=True).strip().decode('utf-8')
     
     #Check out counterpartyd-build repo under this user's home dir and use that for the build
     if os.path.exists(os.path.expanduser("~%s/counterpartyd_build" % USERNAME)):
-        runcmd("cd ~%s/counterpartyd_build && git pull origin %s" % (USERNAME, branch))
+        runcmd("cd ~%s/counterpartyd_build && sudo git pull origin %s" % (USERNAME, branch))
     else:
         runcmd("sudo git clone -b %s https://github.com/xnova/counterpartyd_build.git ~%s/counterpartyd_build" % (branch, USERNAME))
     runcmd("sudo chown -R %s:%s ~%s/counterpartyd_build" % (USERNAME, USERNAME, USERNAME))
-    base_path = os.path.expanduser("%s/counterpartyd_build" % USERNAME)
+    base_path = os.path.expanduser("~%s/counterpartyd_build" % USERNAME)
     dist_path = os.path.join(base_path, "dist")
 
     #Set up bitcoind startup scripts (will be disabled later from autostarting on system startup if necessary)
@@ -122,22 +125,22 @@ def do_setup(branch):
     runcmd("sudo ~%s/counterpartyd_build/setup.py -y --with-counterwalletd --with-testnet --for-user=%s" % (USERNAME, USERNAME))
     
     #modify the default stored bitcoind passwords in counterparty.conf and counterwallet.conf
-    runcmd(r"""sudo sed -r -i -e "s/^bitcoind\-rpc\-password=.*?$/bitcoind-rpc-password=%s/g" ~%s/.config/counterpartyd/counterpartyd.conf""" % (
+    runcmd(r"""sudo sed -rie "s/^bitcoind\-rpc\-password=.*?$/bitcoind-rpc-password=%s/g" ~%s/.config/counterpartyd/counterpartyd.conf""" % (
         bitcoind_rpc_password, USERNAME))
-    runcmd(r"""sudo sed -r -i -e "s/^bitcoind\-rpc\-password=.*?$/bitcoind-rpc-password=%s/g" ~%s/.config/counterpartyd-testnet/counterpartyd.conf""" % (
+    runcmd(r"""sudo sed -rie "s/^bitcoind\-rpc\-password=.*?$/bitcoind-rpc-password=%s/g" ~%s/.config/counterpartyd-testnet/counterpartyd.conf""" % (
         bitcoind_rpc_password_testnet, USERNAME))
-    runcmd(r"""sudo sed -r -i -e "s/^bitcoind\-rpc\-password=.*?$/bitcoind-rpc-password=%s/g" ~%s/.config/counterwalletd/counterwalletd.conf""" % (
+    runcmd(r"""sudo sed -rie "s/^bitcoind\-rpc\-password=.*?$/bitcoind-rpc-password=%s/g" ~%s/.config/counterwalletd/counterwalletd.conf""" % (
         bitcoind_rpc_password, USERNAME))
-    runcmd(r"""sudo sed -r -i -e "s/^bitcoind\-rpc\-password=.*?$/bitcoind-rpc-password=%s/g" ~%s/.config/counterwalletd-testnet/counterwalletd.conf""" % (
+    runcmd(r"""sudo sed -rie "s/^bitcoind\-rpc\-password=.*?$/bitcoind-rpc-password=%s/g" ~%s/.config/counterwalletd-testnet/counterwalletd.conf""" % (
         bitcoind_rpc_password_testnet, USERNAME))
     #modify the counterpartyd API rpc password in both counterpartyd and counterwalletd
-    runcmd(r"""sudo sed -r -i -e "s/^rpc\-password=.*?$/rpc-password=%s/g" ~%s/.config/counterpartyd/counterpartyd.conf""" % (
+    runcmd(r"""sudo sed -rie "s/^rpc\-password=.*?$/rpc-password=%s/g" ~%s/.config/counterpartyd/counterpartyd.conf""" % (
         counterpartyd_rpc_password, USERNAME))
-    runcmd(r"""sudo sed -r -i -e "s/^rpc\-password=.*?$/rpc-password=%s/g" ~%s/.config/counterpartyd-testnet/counterpartyd.conf""" % (
+    runcmd(r"""sudo sed -rie "s/^rpc\-password=.*?$/rpc-password=%s/g" ~%s/.config/counterpartyd-testnet/counterpartyd.conf""" % (
         counterpartyd_rpc_password_testnet, USERNAME))
-    runcmd(r"""sudo sed -r -i -e "s/^counterpartyd\-rpc\-password=.*?$/counterpartyd-rpc-password=%s/g" ~%s/.config/counterwalletd/counterwalletd.conf""" % (
+    runcmd(r"""sudo sed -rie "s/^counterpartyd\-rpc\-password=.*?$/counterpartyd-rpc-password=%s/g" ~%s/.config/counterwalletd/counterwalletd.conf""" % (
         counterpartyd_rpc_password, USERNAME))
-    runcmd(r"""sudo sed -r -i -e "s/^counterpartyd\-rpc\-password=.*?$/counterpartyd-rpc-password=%s/g" ~%s/.config/counterwalletd-testnet/counterwalletd.conf""" % (
+    runcmd(r"""sudo sed -rie "s/^counterpartyd\-rpc\-password=.*?$/counterpartyd-rpc-password=%s/g" ~%s/.config/counterwalletd-testnet/counterwalletd.conf""" % (
         counterpartyd_rpc_password_testnet, USERNAME))
     
     #disable upstart scripts from autostarting on system boot if necessary
