@@ -4,9 +4,12 @@ description "bitcoind (mainnet)"
 start on startup
 stop on shutdown
 oom never
+
 respawn
 respawn limit 10 60 # 10 times in 60 seconds
 
-env USER=!RUN_AS_USER!
-env USER_HOME=$(eval echo ~${USER})
-exec start-stop-daemon --start -c $USER --pidfile $USER_HOME/.bitcoin/bitcoind.pid --startas /usr/bin/bitcoind -- -daemon=0
+script
+USER=!RUN_AS_USER!
+USER_HOME=$(eval echo ~${USER})
+start-stop-daemon --start -c $USER --pidfile $USER_HOME/.bitcoin/bitcoind.pid --startas /usr/bin/bitcoind -- -daemon=0
+end script

@@ -10,6 +10,8 @@ stop on shutdown
 # Automatically restart process if crashed
 respawn
 
-env USER=!RUN_AS_USER!
-env USER_HOME=$(eval echo ~${USER})
-exec start-stop-daemon --start --background --pidfile $USER_HOME/.config/counterpartyd-testnet/counterpartyd.pid --chuid $USER --exec /usr/local/bin/counterpartyd -- --data-dir=~/.config/counterpartyd-testnet --testnet server
+script
+USER=!RUN_AS_USER!
+USER_HOME=$(eval echo ~${USER})
+start-stop-daemon --start --pidfile $USER_HOME/.config/counterpartyd-testnet/counterpartyd.pid --chuid $USER --exec /usr/local/bin/counterpartyd -- --data-dir=~/.config/counterpartyd-testnet --testnet server
+end script

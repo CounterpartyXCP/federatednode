@@ -10,7 +10,9 @@ stop on shutdown
 # Automatically restart process if crashed
 respawn
 
-env USER=!RUN_AS_USER!
-env USER_HOME=$(eval echo ~${USER})
-exec start-stop-daemon --start --background --pidfile $USER_HOME/.config/counterwalletd-testnet/counterwalletd.pid --chuid $USER --exec /usr/local/bin/counterwalletd -- --data-dir=~/.config/counterwalletd-testnet --testnet
+script
+USER=!RUN_AS_USER!
+USER_HOME=$(eval echo ~${USER})
+start-stop-daemon --start --pidfile $USER_HOME/.config/counterwalletd-testnet/counterwalletd.pid --chuid $USER --exec /usr/local/bin/counterwalletd -- --data-dir=~/.config/counterwalletd-testnet --testnet
+end script
 
