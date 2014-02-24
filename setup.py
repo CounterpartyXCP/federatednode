@@ -23,12 +23,12 @@ except ImportError:
     pass
 
 PYTHON3_VER = None
-DEFAULT_CONFIG = "[Default]\nbitcoind-rpc-connect=localhost\nbitcoind-rpc-port=8332\nbitcoind-rpc-user=rpc\nbitcoind-rpc-password=rpcpw1234\nrpc-host=localhost\nrpc-user=rpcuser\nrpc-password=xcppw1234"
-DEFAULT_CONFIG_TESTNET = "[Default]\nbitcoind-rpc-connect=localhost\nbitcoind-rpc-port=18332\nbitcoind-rpc-user=rpc\nbitcoind-rpc-password=rpcpw1234\nrpc-host=localhost\nrpc-user=rpcuser\nrpc-password=xcppw1234\ntestnet=1"
+DEFAULT_CONFIG = "[Default]\nbitcoind-rpc-connect=localhost\nbitcoind-rpc-port=8332\nbitcoind-rpc-user=rpc\nbitcoind-rpc-password=rpcpw1234\nrpc-host=localhost\nrpc-port=4000\nrpc-user=rpc\nrpc-password=xcppw1234"
+DEFAULT_CONFIG_TESTNET = "[Default]\nbitcoind-rpc-connect=localhost\nbitcoind-rpc-port=18332\nbitcoind-rpc-user=rpc\nbitcoind-rpc-password=rpcpw1234\nrpc-host=localhost\nrpc-port=14000\nrpc-user=rpc\nrpc-password=xcppw1234\ntestnet=1"
 DEFAULT_CONFIG_INSTALLER = "[Default]\nbitcoind-rpc-connect=BITCOIND_RPC_CONNECT\nbitcoind-rpc-port=BITCOIND_RPC_PORT\nbitcoind-rpc-user=BITCOIND_RPC_USER\nbitcoind-rpc-password=BITCOIND_RPC_PASSWORD\nrpc-host=RPC_HOST\nrpc-port=RPC_PORT\nrpc-user=RPC_USER\nrpc-password=RPC_PASSWORD"
 
-DEFAULT_CONFIG_COUNTERWALLETD = "[Default]\nbitcoind-rpc-connect=localhost\nbitcoind-rpc-port=8332\nbitcoind-rpc-user=rpc\nbitcoind-rpc-password=rpcpw1234\ncounterpartyd-rpc-host=localhost\ncounterpartyd-rpc-port=\ncounterpartyd-rpc-user=\ncounterpartyd-rpc-password=xcppw1234\nrpc-host=0.0.0.0\nsocketio-host=0.0.0.0\nsocketio-chat-host=0.0.0.0\nredis-enable-apicache=0"
-DEFAULT_CONFIG_COUNTERWALLETD_TESTNET = "[Default]\nbitcoind-rpc-connect=localhost\nbitcoind-rpc-port=18332\nbitcoind-rpc-user=rpc\nbitcoind-rpc-password=rpcpw1234\ncounterpartyd-rpc-host=localhost\ncounterpartyd-rpc-port=\ncounterpartyd-rpc-user=\ncounterpartyd-rpc-password=xcppw1234\nrpc-host=0.0.0.0\nsocketio-host=0.0.0.0\nsocketio-chat-host=0.0.0.0\nredis-enable-apicache=0\ntestnet=1"
+DEFAULT_CONFIG_COUNTERWALLETD = "[Default]\nbitcoind-rpc-connect=localhost\nbitcoind-rpc-port=8332\nbitcoind-rpc-user=rpc\nbitcoind-rpc-password=rpcpw1234\ncounterpartyd-rpc-host=localhost\ncounterpartyd-rpc-port=4000\ncounterpartyd-rpc-user=rpc\ncounterpartyd-rpc-password=xcppw1234\nrpc-host=0.0.0.0\nsocketio-host=0.0.0.0\nsocketio-chat-host=0.0.0.0\nredis-enable-apicache=1"
+DEFAULT_CONFIG_COUNTERWALLETD_TESTNET = "[Default]\nbitcoind-rpc-connect=localhost\nbitcoind-rpc-port=18332\nbitcoind-rpc-user=rpc\nbitcoind-rpc-password=rpcpw1234\ncounterpartyd-rpc-host=localhost\ncounterpartyd-rpc-port=14000\ncounterpartyd-rpc-user=rpc\ncounterpartyd-rpc-password=xcppw1234\nrpc-host=0.0.0.0\nsocketio-host=0.0.0.0\nsocketio-chat-host=0.0.0.0\nredis-enable-apicache=0\ntestnet=1"
 DEFAULT_CONFIG_INSTALLER_COUNTERWALLETD = "[Default]\nbitcoind-rpc-connect=localhost\nbitcoind-rpc-port=8332\nbitcoind-rpc-user=rpc\nbitcoind-rpc-password=rpcpw1234\ncounterpartyd-rpc-host=RPC_HOST\ncounterpartyd-rpc-port=RPC_PORT\ncounterpartyd-rpc-user=RPC_USER\ncounterpartyd-rpc-password=RPC_PASSWORD"
 
 def which(filename):
@@ -41,12 +41,12 @@ def which(filename):
             candidates.append(candidate)
     return candidates
 
-def _get_app_cfg_paths(appname):
+def _get_app_cfg_paths(appname, run_as_user):
     import appdirs #installed earlier
     cfg_path = os.path.join(
         appdirs.user_data_dir(appauthor='Counterparty', appname=appname, roaming=True) \
             if os.name == "nt" else ("%s/.config/%s" % (os.path.expanduser("~%s" % run_as_user), appname)), 
-        "%s.conf" % appname)
+        "%s.conf" % appname.replace('-testnet', ''))
     data_dir = os.path.dirname(cfg_path)
     return (data_dir, cfg_path)
 
@@ -171,8 +171,8 @@ def get_paths(with_counterwalletd):
 def checkout(paths, run_as_user, with_counterwalletd, is_update):
     #check what our current branch is
     try:
-        branch = subprocess.check_output("git rev-parse --abbrev-ref HEAD".split(' ')).strip().decode('utf-8')
-        assert branch in ("master", "develop") 
+        branch = subprocess.check_output(("cd %s && git rev-parse --abbrev-ref HEAD" % paths['base_path']), shell=True).strip().decode('utf-8')
+        assert branch in ("master", "develop") #the two that we support for now
     except:
         raise Exception("Cannot get current get branch. Please make sure you are running setup.py from your counterpartyd_build directory.")
     
@@ -190,8 +190,7 @@ def checkout(paths, run_as_user, with_counterwalletd, is_update):
         if os.path.exists(counterwalletd_path):
             runcmd("cd \"%s\" && git pull origin %s" % (counterwalletd_path, branch))
         else:
-            #TODO: check out counterwalletd under dist
-            #runcmd("git clone https://github.com/PhantomPhreak/counterpartyd \"%s\"" % counterwalletd_path)
+            runcmd("git clone -b %s https://github.com/xnova/counterwalletd \"%s\"" % (branch, counterwalletd_path))
             pass
         if os.name != 'nt':
             runcmd("chown -R %s \"%s\"" % (run_as_user, counterwalletd_path))
@@ -303,7 +302,7 @@ def setup_startup(paths, run_as_user, with_counterwalletd, with_testnet, assume_
         runcmd("sudo ln -sf %s/run.py /usr/local/bin/counterpartyd" % paths['base_path'])
         if with_counterwalletd:
             #make a short script to launch counterwallet
-            runcmd('sudo echo -e "#!/bin/sh\\n%s/run.py counterwalletd \"$@\"" > /usr/local/bin/counterwalletd' % paths['base_path'])
+            runcmd(r'''sudo echo -e '#!/bin/sh\n%s/run.py counterwalletd "$@"' > /usr/local/bin/counterwalletd''' % paths['base_path'])
             runcmd("sudo chmod +x /usr/local/bin/counterwalletd")
     elif os.name == "nt":
         #create a batch script
@@ -346,26 +345,26 @@ def setup_startup(paths, run_as_user, with_counterwalletd, with_testnet, assume_
             scut = ws.CreateShortcut(os.path.join(buf.value, 'run_counterpartyd_testnet.lnk' % s))
             scut.TargetPath = '"c:/Python32/python.exe"'
             scut.Arguments = os.path.join(paths['base_path'], 'run.py') \
-                + (' --testnet --data-dir="%s" server' % data_dir, cfg_path = _get_app_cfg_paths('counterpartyd-testnet'))
+                + (' --testnet --data-dir="%s" server' % data_dir, _get_app_cfg_paths('counterpartyd-testnet', run_as_user))
             scut.Save()
     else:
         logging.info("Setting up init scripts...")
         assert run_as_user
         runcmd("sudo cp -af %s/linux/init/counterpartyd.conf.template /etc/init/counterpartyd.conf" % paths['dist_path'])
-        runcmd("sudo sed -r -i -e \"s/!RUN_AS_USER!/%s/g\" /etc/init/counterpartyd.conf" % run_as_user)
+        runcmd("sudo sed -r -i -e \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterpartyd.conf" % run_as_user)
         if with_testnet:
-            runcmd("sudo cp -af %s/linux/init/counterpartyd-testnet.conf.template /etc/init/counterpartyd.conf" % paths['dist_path'])
-            runcmd("sudo sed -r -i -e \"s/!RUN_AS_USER!/%s/g\" /etc/init/counterpartyd-testnet.conf" % run_as_user)
+            runcmd("sudo cp -af %s/linux/init/counterpartyd-testnet.conf.template /etc/init/counterpartyd-testnet.conf" % paths['dist_path'])
+            runcmd("sudo sed -r -i -e \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterpartyd-testnet.conf" % run_as_user)
         if with_counterwalletd:
             runcmd("sudo cp -af %s/linux/init/counterwalletd.conf.template /etc/init/counterwalletd.conf" % paths['dist_path'])
-            runcmd("sudo sed -r -i -e \"s/!RUN_AS_USER!/%s/g\" /etc/init/counterwalletd.conf" % run_as_user)
+            runcmd("sudo sed -r -i -e \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterwalletd.conf" % run_as_user)
             if with_testnet:
                 runcmd("sudo cp -af %s/linux/init/counterwalletd-testnet.conf.template /etc/init/counterwalletd-testnet.conf" % paths['dist_path'])
-                runcmd("sudo sed -r -i -e \"s/!RUN_AS_USER!/%s/g\" /etc/init/counterwalletd-testnet.conf" % run_as_user)
+                runcmd("sudo sed -r -i -e \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterwalletd-testnet.conf" % run_as_user)
 
 def create_default_datadir_and_config(paths, run_as_user, with_counterwalletd, with_testnet):
     def create_config(appname, default_config):
-        data_dir, cfg_path = _get_app_cfg_paths(appname)
+        data_dir, cfg_path = _get_app_cfg_paths(appname, run_as_user)
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
         
@@ -394,9 +393,9 @@ def create_default_datadir_and_config(paths, run_as_user, with_counterwalletd, w
                 except:
                     pass        
         
-            logging.info("NEXT STEP: Edit the %s config file we created at '%s', according to the documentation" % (appname, cfg_path))
+            logging.info("NOTE: %s config file has been created at '%s'" % (appname, cfg_path))
         else:
-            logging.info("%s config file already exists at: %s" % (appname, cfg_path))
+            logging.info("%s config file already exists at: '%s'" % (appname, cfg_path))
     
     create_config('counterpartyd', DEFAULT_CONFIG)
     if with_testnet:
@@ -466,7 +465,7 @@ def main():
 
     run_as_user = None
     if os.name != "nt":
-        run_as_user = os.environ["SUDO_USER"]
+        run_as_user = os.environ["SUDO_USER"] #default value, can be overridden via the --for-user= switch
         assert run_as_user
 
     #parse any command line objects
@@ -475,7 +474,7 @@ def main():
     with_testnet = False
     assume_yes = False #headless operation
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hby", ["build", "help", "with-counterwalletd", "with-testnet"])
+        opts, args = getopt.getopt(sys.argv[1:], "hby", ["build", "help", "with-counterwalletd", "with-testnet", "for-user="])
     except getopt.GetoptError as err:
         usage()
         sys.exit(2)
@@ -485,6 +484,17 @@ def main():
             with_counterwalletd = True
         elif o in ("--with-testnet",):
             with_testnet = True
+        elif o in ("--for-user",):
+            assert os.name != "nt" #not supported
+            #allow overriding run_as_user
+            try: #make sure user exists
+                assert(a)
+                pwd.getpwnam(a)
+            except:
+                logging.error(("User '%s' does not appear to exist" % a) if a else 'You must specify a username')
+                sys.exit(2)
+            else:
+                run_as_user = a
         elif o in ("-h", "--help"):
             usage()
             sys.exit()

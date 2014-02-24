@@ -10,7 +10,7 @@ respawn limit 10 60 # 10 times in 60 seconds
 
 script
 user=!RUN_AS_USER!
-pidfile=/var/run/bitcoind-testnet.pid
+pidfile=/var/run/bitcoind.pid
 # Don't change anything below here unless you know what you're doing
 [[ -e $pidfile && ! -d "/proc/$(cat $pidfile)" ]] && rm $pidfile
 [[ -e $pidfile && "$(cat /proc/$(cat $pidfile)/cmdline)" != $cmd* ]] && rm $pidfile
