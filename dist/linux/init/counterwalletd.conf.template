@@ -11,4 +11,4 @@ stop on shutdown
 respawn
 
 env USER=!RUN_AS_USER!
-exec start-stop-daemon --start --background --make-pidfile --pidfile /var/run/counterwalletd.pid --chuid $USER --exec /usr/local/bin/counterwalletd
+exec start-stop-daemon --start --background --pidfile ~$USER/.config/counterwalletd/counterwalletd.pid --chuid $USER --exec /usr/local/bin/counterwalletd

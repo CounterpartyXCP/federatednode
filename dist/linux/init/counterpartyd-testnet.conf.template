@@ -11,4 +11,4 @@ stop on shutdown
 respawn
 
 env USER=!RUN_AS_USER!
-exec start-stop-daemon --start --background --make-pidfile --pidfile /var/run/counterpartyd-testnet.pid --chuid $USER --exec /usr/local/bin/counterpartyd -- --data-dir=~/.config/counterpartyd-testnet --testnet server
+exec start-stop-daemon --start --background --pidfile ~$USER/.config/counterpartyd-testnet/counterpartyd.pid --chuid $USER --exec /usr/local/bin/counterpartyd -- --data-dir=~/.config/counterpartyd-testnet --testnet server

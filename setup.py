@@ -82,7 +82,7 @@ def _rmtree(path):
             rmgeneric(fullpath, f)    
 
 def usage():
-    print("SYNTAX: %s [-h] [--with-counterwalletd] [--with-testnet] [setup|build|update]" % sys.argv[0])
+    print("SYNTAX: %s [-h] [--with-counterwalletd] [--with-testnet] [--for-user=] [setup|build|update]" % sys.argv[0])
     print("* The 'setup' command will setup and install counterpartyd as a source installation (including automated setup of its dependencies)")
     print("* The 'build' command builds an installer package (Windows only, currently)")
     print("* The 'update' command updates the git repo for both counterpartyd, counterpartyd_build, and counterwalletd (if --with-counterwalletd is specified)")
