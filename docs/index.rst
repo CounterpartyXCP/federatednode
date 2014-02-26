@@ -53,6 +53,7 @@ Table of Contents
    UsingTheInstaller
    BuildingFromSource
    AdditionalTopics
+   SettingUpAFederatedNode
 
 
 Indices and tables

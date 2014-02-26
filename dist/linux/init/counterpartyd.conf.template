@@ -9,6 +9,7 @@ stop on shutdown
 
 # Automatically restart process if crashed
 respawn
+respawn limit 10 60 # 10 times in 60 seconds
 
 script
 USER=!RUN_AS_USER!

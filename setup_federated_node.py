@@ -4,10 +4,6 @@ Sets up an Ubuntu 13.10 x64 server to be a counterwallet federated node.
 
 NOTE: The system should be properly secured before running this script.
 
-To Use:
-master: wget -qO setup_federated_node.py https://raw.github.com/xnova/counterpartyd_build/master/setup_federated_node.py && sudo python3 setup_federated_node.py
-develop: wget -qO setup_federated_node.py https://raw.github.com/xnova/counterpartyd_build/develop/setup_federated_node.py && sudo python3 setup_federated_node.py -b develop
-
 TODO: This is admittedly a (bit of a) hack. In the future, take this kind of functionality out to a .deb with
       a postinst script to do all of this, possibly.
 """
@@ -45,6 +41,13 @@ def runcmd(command, abort_on_failure=True):
     if abort_on_failure and ret != 0:
         logging.error("Command failed: '%s'" % command)
         sys.exit(1) 
+        
+def git_repo_clone(branch, repo_dir, repo_url):
+    if os.path.exists(os.path.expanduser("~%s/%s" % (USERNAME, repo_dir))):
+        runcmd("cd ~%s/%s && sudo git pull origin %s" % (USERNAME, repo_dir, branch))
+    else:
+        runcmd("sudo git clone -b %s %s ~%s/%s" % (branch, repo_url, USERNAME, repo_dir))
+    runcmd("sudo chown -R %s:%s ~%s/%s" % (USERNAME, USERNAME, USERNAME, repo_dir))
 
 def do_prerun_checks():
     #make sure this is running on a supported OS
@@ -61,7 +64,7 @@ def do_prerun_checks():
     if os.name == "posix" and "SUDO_USER" not in os.environ:
         logging.error("Please use `sudo` to run this script.")
 
-def do_setup(branch):
+def do_base_setup(branch, base_path, dist_path):
     user_homedir = os.path.expanduser("~" + USERNAME)
     bitcoind_rpc_password = pass_generator()
     bitcoind_rpc_password_testnet = pass_generator()
@@ -105,13 +108,7 @@ def do_setup(branch):
             % USERNAME, shell=True).strip().decode('utf-8')
     
     #Check out counterpartyd-build repo under this user's home dir and use that for the build
-    if os.path.exists(os.path.expanduser("~%s/counterpartyd_build" % USERNAME)):
-        runcmd("cd ~%s/counterpartyd_build && sudo git pull origin %s" % (USERNAME, branch))
-    else:
-        runcmd("sudo git clone -b %s https://github.com/xnova/counterpartyd_build.git ~%s/counterpartyd_build" % (branch, USERNAME))
-    runcmd("sudo chown -R %s:%s ~%s/counterpartyd_build" % (USERNAME, USERNAME, USERNAME))
-    base_path = os.path.expanduser("~%s/counterpartyd_build" % USERNAME)
-    dist_path = os.path.join(base_path, "dist")
+    git_repo_clone(branch, "counterpartyd_build", "https://github.com/xnova/counterpartyd_build.git")
 
     #Set up bitcoind startup scripts (will be disabled later from autostarting on system startup if necessary)
     runcmd("sudo cp -af %s/linux/init/bitcoind.conf.template /etc/init/bitcoind.conf" % dist_path)
@@ -163,7 +160,94 @@ def do_setup(branch):
         USERNAME, USERNAME, USERNAME, USERNAME, USERNAME))
     runcmd("sudo chown -R %s:%s ~%s/.bitcoin-testnet ~%s/.config/counterpartyd-testnet ~%s/.config/counterwalletd-testnet" % (
         USERNAME, USERNAME, USERNAME, USERNAME, USERNAME))
+
+def do_nginx_setup(base_path, dist_path):
+    #Build and install nginx (openresty) on Ubuntu
+    #Most of these build commands from http://brian.akins.org/blog/2013/03/19/building-openresty-on-ubuntu/
+    OPENRESTY_VER = "1.5.8.1"
+
+    #install deps
+    runcmd("sudo apt-get -y install make ruby1.9.1 ruby1.9.1-dev git-core libpcre3-dev libxslt1-dev libgd2-xpm-dev libgeoip-dev unzip zip build-essential")
+    runcmd("sudo gem install fpm")
+    #grab openresty and compile
+    runcmd("sudo rm -rf /tmp/openresty /tmp/ngx_openresty-* /tmp/nginx-openresty.tar.gz /tmp/nginx-openresty*.deb")
+    runcmd('''wget -O /tmp/nginx-openresty.tar.gz http://openresty.org/download/ngx_openresty-%s.tar.gz''' % OPENRESTY_VER)
+    runcmd("tar -C /tmp -zxvf /tmp/nginx-openresty.tar.gz")
+    runcmd('''cd /tmp/ngx_openresty-%s && ./configure \
+--with-luajit \
+--sbin-path=/usr/sbin/nginx \
+--conf-path=/etc/nginx/nginx.conf \
+--error-log-path=/var/log/nginx/error.log \
+--http-client-body-temp-path=/var/lib/nginx/body \
+--http-fastcgi-temp-path=/var/lib/nginx/fastcgi \
+--http-log-path=/var/log/nginx/access.log \
+--http-proxy-temp-path=/var/lib/nginx/proxy \
+--http-scgi-temp-path=/var/lib/nginx/scgi \
+--http-uwsgi-temp-path=/var/lib/nginx/uwsgi \
+--lock-path=/var/lock/nginx.lock \
+--pid-path=/var/run/nginx.pid \
+--with-http_dav_module \
+--with-http_flv_module \
+--with-http_geoip_module \
+--with-http_gzip_static_module \
+--with-http_realip_module \
+--with-http_stub_status_module \
+--with-http_ssl_module \
+--with-http_sub_module \
+--with-http_xslt_module \
+--with-ipv6 \
+--with-sha1=/usr/include/openssl \
+--with-md5=/usr/include/openssl \
+--with-http_stub_status_module \
+--with-http_secure_link_module \
+--with-http_sub_module && make''' % OPENRESTY_VER)
+    #set up the build environment
+    runcmd('''cd /tmp/ngx_openresty-%s && make install DESTDIR=/tmp/openresty \
+&& mkdir -p /tmp/openresty/var/lib/nginx \
+&& install -m 0755 -D %s/linux/nginx/nginx.init /tmp/openresty/etc/init.d/nginx \
+&& install -m 0755 -D %s/linux/nginx/nginx.conf /tmp/openresty/etc/nginx/nginx.conf \
+&& install -m 0755 -D %s/linux/nginx/counterwallet.conf /tmp/openresty/etc/nginx/sites-enabled/counterwallet.conf \
+&& install -m 0755 -D %s/linux/nginx/nginx.logrotate /tmp/openresty/etc/logrotate.d/nginx''' % (
+    OPENRESTY_VER, dist_path, dist_path, dist_path, dist_path))
+    #package it up using fpm
+    runcmd('''cd /tmp && fpm -s dir -t deb -n nginx-openresty -v %s --iteration 1 -C /tmp/openresty \
+--description "openresty %s" \
+--conflicts nginx \
+--conflicts nginx-common \
+-d libxslt1.1 \
+-d libgeoip1 \
+-d geoip-database \
+-d libpcre3 \
+--config-files /etc/nginx/nginx.conf \
+--config-files /etc/nginx/sites-enabled/counterwallet.conf \
+--config-files /etc/nginx/fastcgi.conf.default \
+--config-files /etc/nginx/win-utf \
+--config-files /etc/nginx/fastcgi_params \
+--config-files /etc/nginx/nginx.conf \
+--config-files /etc/nginx/koi-win \
+--config-files /etc/nginx/nginx.conf.default \
+--config-files /etc/nginx/mime.types.default \
+--config-files /etc/nginx/koi-utf \
+--config-files /etc/nginx/uwsgi_params \
+--config-files /etc/nginx/uwsgi_params.default \
+--config-files /etc/nginx/fastcgi_params.default \
+--config-files /etc/nginx/mime.types \
+--config-files /etc/nginx/scgi_params.default \
+--config-files /etc/nginx/scgi_params \
+--config-files /etc/nginx/fastcgi.conf \
+etc usr var''' % (OPENRESTY_VER, OPENRESTY_VER))
+    #now install the .deb package that was created (along with its deps)
+    runcmd("sudo apt-get install libxslt1.1 libgeoip1 geoip-database libpcre3")
+    runcmd("sudo dpkg -i /tmp/nginx-openresty_%s-1_amd64.deb" % OPENRESTY_VER)
+    #clean up after ourselves
+    runcmd("sudo rm -rf /tmp/openresty /tmp/ngx_openresty-* /tmp/nginx-openresty.tar.gz /tmp/nginx-openresty*.deb")
+    runcmd("sudo update-rc.d nginx defaults")
     
+def do_counterwallet_setup(branch):
+    #check out counterwallet from git
+    git_repo_clone(branch, "counterwallet", "https://github.com/xnova/counterwallet.git")
+    runcmd("sudo ~%s/counterwallet/build.py" % (USERNAME,)) #link files, instead of copying (for now at least)
+    runcmd("sudo chown -R %s:%s ~%s/counterwallet" % (USERNAME, USERNAME, USERNAME))
 
 def main():
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s|%(levelname)s: %(message)s')
@@ -189,8 +273,14 @@ def main():
             assert False, "Unhandled or unimplemented switch or option"
     
     logging.info("Working with branch: %s" % branch)
-    do_setup(branch)        
-    logging.info("Counterwallet Federated Node Build Complete. Please reboot to start installed services.")
+    base_path = os.path.expanduser("~%s/counterpartyd_build" % USERNAME)
+    dist_path = os.path.join(base_path, "dist")
+    
+    #do_setup(branch, base_path, dist_path)
+    #do_nginx_setup(base_path, dist_path)
+    do_counterwallet_setup(branch)
+    
+    logging.info("Counterwallet Federated Node Build Complete.")
 
 
 if __name__ == "__main__":
