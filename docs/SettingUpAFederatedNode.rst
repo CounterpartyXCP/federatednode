@@ -1,4 +1,4 @@
-Setting up a Federated Node for Counterwallet
+Setting up a Counterwallet Federated Node
 ==============================================
 
 .. note::
@@ -24,15 +24,15 @@ in aggregate, user requests are effectively load-balanced across available serve
 The nodes used by Counterwallet in this way are referred to as Federated Nodes, because they are self-contained and
 independent, but (though special "multiAPI" functionality client-side) work together to provide services to Counterwallet users.  
 
-**multiAPIConsensus for Action/Write (create_) Operations**
+**multiAPIConsensus for Action/Write (``create_``) Operations**
 
 Based on this multiAPI capability, the wallet itself consults more than one of these Federated Nodes via consensus especially
-for all create_-type operations. For example, if you send XCP, counterpartyd on each server is still composing and sending
+for all ``create_``-type operations. For example, if you send XCP, counterpartyd on each server is still composing and sending
 back the unsigned raw transaction, but for data security, it compares the results returned from all servers, and will 
 only sign and broadcast (both client-side) if all the results match). This is known as *multiAPIConsensus*.
 
 The goal here is to have a federated net of semi-trusted backend servers not tied to any one country, provider, network or
-operator/admin. Through requiring consensus on the unsigned transactions returned for all create_ operations, 'semi-trust'
+operator/admin. Through requiring consensus on the unsigned transactions returned for all ``create_`` operations, 'semi-trust'
 on a single server basis leads to an overall trustworthy network. Worst case, if backend server is hacked and owned
 (and the counterpartyd code modified), then you may get some invalid read results, but it won't be rewriting your XCP send
 destination address, for example. The attackers would have to hack the code on every single server in the same exact
@@ -41,7 +41,7 @@ way, undetected, to do that.
 multiAPIConsensus actually helps discover any potential "hacked" servers as well, since a returned consensus set with
 a divergent result will be rejected by the client, and thus trigger an examination of the root cause by the team.
 
-**multiAPIFailover for Read API (get_) Operations**
+**multiAPIFailover for Read API (``get_``) Operations**
 
 *multiAPIFailover* functionality is currently used for all read API operations. In this model, the first Federated Node
 on the shuffled list is called for the data, and if it returns an error or the request times out, the second one on the

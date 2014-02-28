@@ -43,7 +43,7 @@ Table of Contents
 
 .. note::
 
-    Documentation on the ``counterpartyd`` API, and How to Burn has been moved to `http://counterpartyd.rtfd.org <http://counterpartyd.rtfd.org>`__.
+    Documentation on the ``counterpartyd`` API exists at `http://counterpartyd.rtfd.org <http://counterpartyd.rtfd.org>`__.
 
 
 .. toctree::

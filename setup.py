@@ -1,6 +1,9 @@
 #! /usr/bin/env python3
 """
 Counterparty setup script - works under Ubuntu Linux and Windows at the present moment
+
+TODO: On Linux, update to use fpm to package the files in a .deb, .rpm, etc archive, with the depenencies listed.
+This should make installation/uninstallation more straight-forward.
 """
 import os
 import sys

@@ -42,12 +42,12 @@ def runcmd(command, abort_on_failure=True):
         logging.error("Command failed: '%s'" % command)
         sys.exit(1) 
         
-def git_repo_clone(branch, repo_dir, repo_url):
+def git_repo_clone(branch, repo_dir, repo_url, run_as_user):
     if os.path.exists(os.path.expanduser("~%s/%s" % (USERNAME, repo_dir))):
         runcmd("cd ~%s/%s && sudo git pull origin %s" % (USERNAME, repo_dir, branch))
     else:
         runcmd("sudo git clone -b %s %s ~%s/%s" % (branch, repo_url, USERNAME, repo_dir))
-    runcmd("sudo chown -R %s:%s ~%s/%s" % (USERNAME, USERNAME, USERNAME, repo_dir))
+    runcmd("sudo chown -R %s:%s ~%s/%s" % (run_as_user, USERNAME, USERNAME, repo_dir))
 
 def do_prerun_checks():
     #make sure this is running on a supported OS
@@ -64,7 +64,7 @@ def do_prerun_checks():
     if os.name == "posix" and "SUDO_USER" not in os.environ:
         logging.error("Please use `sudo` to run this script.")
 
-def do_base_setup(branch, base_path, dist_path):
+def do_base_setup(run_as_user, branch, base_path, dist_path):
     user_homedir = os.path.expanduser("~" + USERNAME)
     bitcoind_rpc_password = pass_generator()
     bitcoind_rpc_password_testnet = pass_generator()
@@ -108,7 +108,7 @@ def do_base_setup(branch, base_path, dist_path):
             % USERNAME, shell=True).strip().decode('utf-8')
     
     #Check out counterpartyd-build repo under this user's home dir and use that for the build
-    git_repo_clone(branch, "counterpartyd_build", "https://github.com/xnova/counterpartyd_build.git")
+    git_repo_clone(branch, "counterpartyd_build", "https://github.com/xnova/counterpartyd_build.git", run_as_user)
 
     #Set up bitcoind startup scripts (will be disabled later from autostarting on system startup if necessary)
     runcmd("sudo cp -af %s/linux/init/bitcoind.conf.template /etc/init/bitcoind.conf" % dist_path)
@@ -161,7 +161,7 @@ def do_base_setup(branch, base_path, dist_path):
     runcmd("sudo chown -R %s:%s ~%s/.bitcoin-testnet ~%s/.config/counterpartyd-testnet ~%s/.config/counterwalletd-testnet" % (
         USERNAME, USERNAME, USERNAME, USERNAME, USERNAME))
 
-def do_nginx_setup(base_path, dist_path):
+def do_nginx_setup(run_as_user, base_path, dist_path):
     #Build and install nginx (openresty) on Ubuntu
     #Most of these build commands from http://brian.akins.org/blog/2013/03/19/building-openresty-on-ubuntu/
     OPENRESTY_VER = "1.5.8.1"
@@ -243,15 +243,16 @@ etc usr var''' % (OPENRESTY_VER, OPENRESTY_VER))
     runcmd("sudo rm -rf /tmp/openresty /tmp/ngx_openresty-* /tmp/nginx-openresty.tar.gz /tmp/nginx-openresty*.deb")
     runcmd("sudo update-rc.d nginx defaults")
     
-def do_counterwallet_setup(branch):
+def do_counterwallet_setup(run_as_user, branch):
     #check out counterwallet from git
-    git_repo_clone(branch, "counterwallet", "https://github.com/xnova/counterwallet.git")
+    git_repo_clone(branch, "counterwallet", "https://github.com/xnova/counterwallet.git", run_as_user)
     runcmd("sudo ~%s/counterwallet/build.py" % (USERNAME,)) #link files, instead of copying (for now at least)
-    runcmd("sudo chown -R %s:%s ~%s/counterwallet" % (USERNAME, USERNAME, USERNAME))
 
 def main():
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s|%(levelname)s: %(message)s')
     do_prerun_checks()
+    run_as_user = os.environ["SUDO_USER"]
+    assert run_as_user
 
     #parse any command line objects
     branch = "master"
@@ -276,9 +277,9 @@ def main():
     base_path = os.path.expanduser("~%s/counterpartyd_build" % USERNAME)
     dist_path = os.path.join(base_path, "dist")
     
-    #do_setup(branch, base_path, dist_path)
-    #do_nginx_setup(base_path, dist_path)
-    do_counterwallet_setup(branch)
+    do_setup(run_as_user, branch, base_path, dist_path)
+    do_nginx_setup(run_as_user, base_path, dist_path)
+    do_counterwallet_setup(run_as_user, branch)
     
     logging.info("Counterwallet Federated Node Build Complete.")
 
