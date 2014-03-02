@@ -1,0 +1,10 @@
+!RUN_AS_USER_HOMEDIR!/insight-api/insight*.log {
+        daily
+        missingok
+        rotate 52
+        compress
+        delaycompress
+        notifempty
+        create 640 root adm
+        sharedscripts
+}

@@ -1,0 +1,23 @@
+#!upstart
+description "insight (testnet)"
+
+start on startup
+stop on shutdown
+oom never
+
+respawn
+respawn limit 10 60 # 10 times in 60 seconds
+
+script
+USER=!RUN_AS_USER!
+USER_HOME=$(eval echo ~${USER})
+chown -R $USER $USER_HOME
+export INSIGHT_NETWORK=testnet
+export BITCOIND_DATADIR=$USER_HOME/.bitcoin-testnet
+export BITCOIND_USER=`cat $USER_HOME/.bitcoin-testnet/bitcoin.conf | sed -n 's/.*rpcuser=\([^ \n]*\).*/\1/p'`
+export BITCOIND_PASS=`cat $USER_HOME/.bitcoin-testnet/bitcoin.conf | sed -n 's/.*rpcpassword=\([^ \n]*\).*/\1/p'`
+#BITCOIND_HOST -- use the default (localhost)
+#BITCOIND_PORT -- use the default (18332)
+#BITCOIND_P2P_PORT -- use the default (18333)
+start-stop-daemon --start -c $USER --background --pidfile $USER_HOME/insight-api/insight-testnet.pid --make-pidfile --exec /usr/bin/node -- $USER_HOME/insight-api/insight.js 2>&1 >> $USER_HOME/insight-api/insight-testnet.log
+end script

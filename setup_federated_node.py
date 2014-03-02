@@ -65,31 +65,30 @@ def do_prerun_checks():
         logging.error("Please use `sudo` to run this script.")
 
 def do_base_setup(run_as_user, branch, base_path, dist_path):
-    user_homedir = os.path.expanduser("~" + USERNAME)
-    bitcoind_rpc_password = pass_generator()
-    bitcoind_rpc_password_testnet = pass_generator()
-    counterpartyd_rpc_password = pass_generator()
-    counterpartyd_rpc_password_testnet = pass_generator()
-    
-    while True:
-        run_mode = input("Run as (t)estnet node, (m)ainnet node, or (b)oth? (t/m/b): ")
-        if run_mode.lower() not in ('t', 'm', 'b'):
-            logging.error("Please enter 't' or 'm' or 'b'")
-        else:
-            break
-    
-    #Install bitcoind
-    runcmd("sudo apt-get -y install git-core software-properties-common python-software-properties")
-    runcmd("sudo add-apt-repository -y ppa:bitcoin/bitcoin")
+    """This creates the xcp user and checks out the counterpartyd_build system from git"""
+    #install some necessary base deps
     runcmd("sudo apt-get update")
-    runcmd("sudo apt-get -y install bitcoind")
-    
-    #Create xcp user (to run bitcoind, counterpartyd, counterwalletd)
+    runcmd("sudo apt-get -y install git-core software-properties-common python-software-properties npm")
+
+    #Create xcp user (to run bitcoind, counterpartyd, counterwalletd) if not already made
     try:
         pwd.getpwnam(USERNAME)
     except:
         logging.info("Creating user '%s' ..." % USERNAME)
         runcmd("sudo adduser --system --disabled-password --shell /bin/bash --group %s" % USERNAME)
+    #Check out counterpartyd-build repo under this user's home dir and use that for the build
+    git_repo_clone(branch, "counterpartyd_build", "https://github.com/xnova/counterpartyd_build.git", run_as_user)
+
+def do_bitcoind_setup(run_as_user, branch, base_path, dist_path):
+    """Installs and configures bitcoind"""
+    user_homedir = os.path.expanduser("~" + USERNAME)
+    bitcoind_rpc_password = pass_generator()
+    bitcoind_rpc_password_testnet = pass_generator()
+    
+    #Install bitcoind
+    runcmd("sudo add-apt-repository -y ppa:bitcoin/bitcoin")
+    runcmd("sudo apt-get update")
+    runcmd("sudo apt-get -y install bitcoind")
 
     #Do basic inital bitcoin config (for both testnet and mainnet)
     runcmd("sudo mkdir -p ~%s/.bitcoin ~%s/.bitcoin-testnet" % (USERNAME, USERNAME))
@@ -107,21 +106,24 @@ def do_base_setup(run_as_user, branch, base_path, dist_path):
             r"""sudo bash -c "cat ~%s/.bitcoin-testnet/bitcoin.conf | sed -n 's/.*rpcpassword=\([^ \n]*\).*/\1/p'" """
             % USERNAME, shell=True).strip().decode('utf-8')
     
-    #Check out counterpartyd-build repo under this user's home dir and use that for the build
-    git_repo_clone(branch, "counterpartyd_build", "https://github.com/xnova/counterpartyd_build.git", run_as_user)
-
     #Set up bitcoind startup scripts (will be disabled later from autostarting on system startup if necessary)
     runcmd("sudo cp -af %s/linux/init/bitcoind.conf.template /etc/init/bitcoind.conf" % dist_path)
     runcmd("sudo sed -rie \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/bitcoind.conf" % USERNAME)
     runcmd("sudo cp -af %s/linux/init/bitcoind-testnet.conf.template /etc/init/bitcoind-testnet.conf" % dist_path)
     runcmd("sudo sed -rie \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/bitcoind-testnet.conf" % USERNAME)
+    return bitcoind_rpc_password, bitcoind_rpc_password_testnet
 
+def do_counterparty_setup(run_as_user, branch, base_path, dist_path, run_mode, bitcoind_rpc_password, bitcoind_rpc_password_testnet):
+    """Installs and configures counterpartyd and counterwalletd"""
+    counterpartyd_rpc_password = pass_generator()
+    counterpartyd_rpc_password_testnet = pass_generator()
+    
     #Run setup.py (as the XCP user, who runs it sudoed) to install and set up counterpartyd, counterwalletd
     # as -y is specified, this will auto install counterwalletd full node (mongo and redis) as well as setting
     # counterpartyd/counterwalletd to start up at startup for both mainnet and testnet (we will override this as necessary
     # based on run_mode later in this function)
     runcmd("sudo ~%s/counterpartyd_build/setup.py -y --with-counterwalletd --with-testnet --for-user=%s" % (USERNAME, USERNAME))
-    
+
     #modify the default stored bitcoind passwords in counterparty.conf and counterwallet.conf
     runcmd(r"""sudo sed -rie "s/^bitcoind\-rpc\-password=.*?$/bitcoind-rpc-password=%s/g" ~%s/.config/counterpartyd/counterpartyd.conf""" % (
         bitcoind_rpc_password, USERNAME))
@@ -131,6 +133,7 @@ def do_base_setup(run_as_user, branch, base_path, dist_path):
         bitcoind_rpc_password, USERNAME))
     runcmd(r"""sudo sed -rie "s/^bitcoind\-rpc\-password=.*?$/bitcoind-rpc-password=%s/g" ~%s/.config/counterwalletd-testnet/counterwalletd.conf""" % (
         bitcoind_rpc_password_testnet, USERNAME))
+    
     #modify the counterpartyd API rpc password in both counterpartyd and counterwalletd
     runcmd(r"""sudo sed -rie "s/^rpc\-password=.*?$/rpc-password=%s/g" ~%s/.config/counterpartyd/counterpartyd.conf""" % (
         counterpartyd_rpc_password, USERNAME))
@@ -160,6 +163,33 @@ def do_base_setup(run_as_user, branch, base_path, dist_path):
         USERNAME, USERNAME, USERNAME, USERNAME, USERNAME))
     runcmd("sudo chown -R %s:%s ~%s/.bitcoin-testnet ~%s/.config/counterpartyd-testnet ~%s/.config/counterwalletd-testnet" % (
         USERNAME, USERNAME, USERNAME, USERNAME, USERNAME))
+
+def do_insight_setup(run_as_user, base_path, dist_path):
+    """This installs and configures insight"""
+    user_homedir = os.path.expanduser("~" + USERNAME)
+
+    runcmd("GYP_DIR=`python -c 'import gyp, os; print os.path.dirname(gyp.__file__)'` sudo mv ${GYP_DIR} ${GYP_DIR}_bkup")
+    #^ fix for https://github.com/TooTallNate/node-gyp/issues/363
+    runcmd("git clone https://github.com/bitpay/insight-api.git ~%s/insight-api" % USERNAME)
+    runcmd("cd ~%s/insight-api && npm install" % USERNAME)
+    #Set up insight startup scripts (will be disabled later from autostarting on system startup if necessary)
+    runcmd("sudo cp -af %s/linux/init/insight.conf.template /etc/init/insight.conf" % dist_path)
+    runcmd("sudo sed -rie \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/insight.conf" % USERNAME)
+    runcmd("sudo cp -af %s/linux/init/insight-testnet.conf.template /etc/init/insight-testnet.conf" % dist_path)
+    runcmd("sudo sed -rie \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/insight-testnet.conf" % USERNAME)
+    #install logrotate file
+    runcmd("sudo cp -af %s/linux/logrotate/insight /etc/logrotate.d/insight" % dist_path)
+    runcmd("sudo sed -rie \"s/\!RUN_AS_USER_HOMEDIR\!/%s/g\" /etc/logrotate.d/insight" % user_homedir.replace('/', '\/'))
+    
+    #disable upstart scripts from autostarting on system boot if necessary
+    if run_mode == 't': #disable mainnet daemons from autostarting
+        runcmd(r"""sudo bash -c "echo 'manual' >> /etc/init/insight.override" """)
+    else:
+        runcmd("sudo rm -f /etc/init/insight.override")
+    if run_mode == 'm': #disable testnet daemons from autostarting
+        runcmd(r"""sudo bash -c "echo 'manual' >> /etc/init/insight-testnet.override" """)
+    else:
+        runcmd("sudo rm -f /etc/init/insight-testnet.override")
 
 def do_nginx_setup(run_as_user, base_path, dist_path):
     #Build and install nginx (openresty) on Ubuntu
@@ -207,7 +237,7 @@ def do_nginx_setup(run_as_user, base_path, dist_path):
 && install -m 0755 -D %s/linux/nginx/nginx.init /tmp/openresty/etc/init.d/nginx \
 && install -m 0755 -D %s/linux/nginx/nginx.conf /tmp/openresty/etc/nginx/nginx.conf \
 && install -m 0755 -D %s/linux/nginx/counterwallet.conf /tmp/openresty/etc/nginx/sites-enabled/counterwallet.conf \
-&& install -m 0755 -D %s/linux/nginx/nginx.logrotate /tmp/openresty/etc/logrotate.d/nginx''' % (
+&& install -m 0755 -D %s/linux/logrotate/nginx /tmp/openresty/etc/logrotate.d/nginx''' % (
     OPENRESTY_VER, dist_path, dist_path, dist_path, dist_path))
     #package it up using fpm
     runcmd('''cd /tmp && fpm -s dir -t deb -n nginx-openresty -v %s --iteration 1 -C /tmp/openresty \
@@ -277,11 +307,28 @@ def main():
     base_path = os.path.expanduser("~%s/counterpartyd_build" % USERNAME)
     dist_path = os.path.join(base_path, "dist")
     
-    do_setup(run_as_user, branch, base_path, dist_path)
+    run_mode = None
+    while True:
+        run_mode = input("Run as (t)estnet node, (m)ainnet node, or (b)oth? (t/m/b): ")
+        if run_mode.lower() not in ('t', 'm', 'b'):
+            logging.error("Please enter 't' or 'm' or 'b'")
+        else:
+            break
+    
+    do_base_setup(run_as_user, branch, base_path, dist_path)
+    
+    bitcoind_rpc_password, bitcoind_rpc_password_testnet \
+        = do_bitcoind_setup(run_as_user, branch, base_path, dist_path)
+    
+    do_counterparty_setup(run_as_user, branch, base_path, dist_path, run_mode, bitcoind_rpc_password, bitcoind_rpc_password_testnet)
+    
+    do_insight_setup(run_as_user, base_path, dist_path)
+    
     do_nginx_setup(run_as_user, base_path, dist_path)
+    
     do_counterwallet_setup(run_as_user, branch)
     
-    logging.info("Counterwallet Federated Node Build Complete.")
+    logging.info("Counterwallet Federated Node Build Complete (whew).")
 
 
 if __name__ == "__main__":

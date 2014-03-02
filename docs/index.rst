@@ -53,6 +53,7 @@ Table of Contents
    UsingTheInstaller
    BuildingFromSource
    AdditionalTopics
+   SettingUpInsight
    SettingUpAFederatedNode
 
 

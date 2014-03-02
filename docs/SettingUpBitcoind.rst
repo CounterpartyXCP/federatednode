@@ -8,13 +8,12 @@ Setting up bitcoind
 	  :doc:`Additional Topics <AdditionalTopics>`.
 
 ``counterpartyd`` communicates with the Bitcoin reference client (``bitcoind``). Normally, you'll run ``bitcoind``
-on the same computer as your instance of ``counterpartyd`` runs on. However, you can also use a ``bitcoind``
+on the same computer as your instance of ``counterpartyd`` runs on. However, you can also use a ``bitcoind`` instance
 sitting on a different server entirely.
 
 This step is necessary whether you're :doc:`building counterpartyd from source <BuildingFromSource>` or
 using the :doc:`installer package <UsingTheInstaller>`.
 
-At this time, third-party RPC interfaces such as Blockchain.info's are not supported.
 
 On Windows
 -----------

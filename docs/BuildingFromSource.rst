@@ -11,86 +11,11 @@ Linux users, as well as Windows users that want to develop/enhance ``counterpart
 use the binary installer).
 
 
-On Linux
------------
-
-Prerequisites
-~~~~~~~~~~~~~
-
-Currently, Ubuntu Linux (Server or Desktop) **12.04 LTS** and **13.10** are supported.
-
-Support for other distributions is a future task.
-
-
-Installing
-~~~~~~~~~~~
-
-**As the user you want to run** ``counterpartyd`` **as**, launch a terminal window, and type the following::
-
-    sudo apt-get -y update
-    sudo apt-get -y install git-core python3
-    git clone https://github.com/xnova/counterpartyd_build ~/counterpartyd_build
-    cd ~/counterpartyd_build
-    sudo python3 setup.py
-
-The ``setup.py`` script will install necessary dependencies, check out the newest version of ``counterpartyd``
-itself from git, create the python environment for ``counterpartyd``, and install an upstart script that
-will automatically start ``counterpartyd`` on startup.
-
-
-Creating a default config
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Follow the instructions listed under the **Config and Logging** section in :doc:`AdditionalTopics`.
-
-
-Running from Source
-~~~~~~~~~~~~~~~~~~~
-
-After installing and creating the necessary basic config, run ``counterpartyd`` in the foreground to make sure
-everything works fine::
-
-    counterpartyd server
-    
-(The above assumes ``/usr/local/bin`` is in your PATH, which is where the ``counterpartyd`` symlink (which just
-points to the ``run.py`` script) is placed. If not, run ``/usr/local/bin/counterpartyd`` instead.
-
-Once you're sure it launches and runs fine, press CTRL-C to exit it, and then run ``counterpartyd`` as a background process via::
-
-    sudo service counterpartyd start
-
-You can then open up another command window and run any of ``counterpartyd’s`` other functions, for example::
-
-    counterpartyd send --source=12WQTnVbzhJRswra4TvGxq1RyhUkmiVXXm --destination=1QGZ4sCpvCgRizL5v4NniaKdZKzxBtVN3q --asset=XCP --quantity=5
-
-For more examples, see `this link <https://github.com/PhantomPhreak/counterpartyd#examples>`__.
-
-To run the ``counterpartyd`` testsuite::
-
-    counterpartyd tests
-
-
-Updating to the newest source
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-As the code is enhanced and improved on Github, you can refresh your local copy of the repositories like so::
-
-    cd ~/counterpartyd_build
-    sudo python3 setup.py update
-
-If, upon running counterpartyd, you get a missing dependency or some other error, you can always rerun
-``setup.py``, which will regenerate your dependencies listing to the libraries and versions as listed in
-`reqs.txt <https://github.com/xnova/counterpartyd_build/blob/master/dist/reqs.txt>`__::
-
-    cd ~/counterpartyd_build
-    sudo python3 setup.py
-
-
 On Windows
 -----------
 
 Prerequisites
-~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 
 .. note::
 
@@ -107,7 +32,8 @@ Minimally required to build ``counterpartyd`` from source is the following:
   or `64-bit version <http://sourceforge.net/projects/pywin32/files/pywin32/Build%20218/pywin32-218.win-amd64-py3.2.exe/download>`__
 - APSW for Windows -- grab the `32-bit version <https://apsw.googlecode.com/files/apsw-3.8.2-r1.win32-py3.2.exe>`__
   or `64-bit version <https://apsw.googlecode.com/files/apsw-3.8.2-r1.win-amd64-py3.2.exe>`__
-- Git for Windows. Download `here <http://git-scm.com/download/win>`__ and install. Use the default installer
+- Git for Windows (should have already been downloaded for the ``insight`` setup).
+  Download `here <http://git-scm.com/download/win>`__ and install. Use the default installer
   options (except, select *"Run Git from the Windows Command Prompt"* on the appropriate screen)
 
 If you want to be able to build the Counterpartyd installer, also download the following:
@@ -121,7 +47,7 @@ If you want to be able to build the Counterpartyd installer, also download the f
 
 
 Installing
-~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^
 
 .. note::
 
@@ -148,7 +74,7 @@ Upon the successful completion of this script, you can now run ``counterpartyd``
 
 
 Running from Source
-~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^
 
 After installing, open a command window and run ``counterpartyd`` in the foreground via::
 
@@ -166,7 +92,7 @@ To run the ``counterpartyd`` testsuite::
 
 
 Updating to the newest source
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 As the code is enhanced and improved on Github, you can refresh your local copy of the repositories like so::
 
@@ -182,7 +108,7 @@ If, upon running counterpartyd, you get a missing dependency or some other error
 
 
 Building your own Installer
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Complete the instructions under **Prerequisites** above.
 Then, execute the following commands to build the installer package::
@@ -191,6 +117,81 @@ Then, execute the following commands to build the installer package::
     C:\Python32\python.exe setup.py build
     
 If successful, you will be provided the location of the resulting installer package.
+
+
+On Linux
+-----------
+
+Prerequisites
+^^^^^^^^^^^^^^^^^^^^^^
+
+Currently, Ubuntu Linux (Server or Desktop) **12.04 LTS** and **13.10** are supported.
+
+Support for other distributions is a future task.
+
+
+Installing
+^^^^^^^^^^^^^^^^^^^^^^
+
+**As the user you want to run** ``counterpartyd`` **as**, launch a terminal window, and type the following::
+
+    sudo apt-get -y update
+    sudo apt-get -y install git-core python3
+    git clone https://github.com/xnova/counterpartyd_build ~/counterpartyd_build
+    cd ~/counterpartyd_build
+    sudo python3 setup.py
+
+The ``setup.py`` script will install necessary dependencies, check out the newest version of ``counterpartyd``
+itself from git, create the python environment for ``counterpartyd``, and install an upstart script that
+will automatically start ``counterpartyd`` on startup.
+
+
+Creating a default config
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Follow the instructions listed under the **Config and Logging** section in :doc:`AdditionalTopics`.
+
+
+Running from Source
+^^^^^^^^^^^^^^^^^^^^^^
+
+After installing and creating the necessary basic config, run ``counterpartyd`` in the foreground to make sure
+everything works fine::
+
+    counterpartyd server
+    
+(The above assumes ``/usr/local/bin`` is in your PATH, which is where the ``counterpartyd`` symlink (which just
+points to the ``run.py`` script) is placed. If not, run ``/usr/local/bin/counterpartyd`` instead.
+
+Once you're sure it launches and runs fine, press CTRL-C to exit it, and then run ``counterpartyd`` as a background process via::
+
+    sudo service counterpartyd start
+
+You can then open up another command window and run any of ``counterpartyd’s`` other functions, for example::
+
+    counterpartyd send --source=12WQTnVbzhJRswra4TvGxq1RyhUkmiVXXm --destination=1QGZ4sCpvCgRizL5v4NniaKdZKzxBtVN3q --asset=XCP --quantity=5
+
+For more examples, see `this link <https://github.com/PhantomPhreak/counterpartyd#examples>`__.
+
+To run the ``counterpartyd`` testsuite::
+
+    counterpartyd tests
+
+
+Updating to the newest source
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+As the code is enhanced and improved on Github, you can refresh your local copy of the repositories like so::
+
+    cd ~/counterpartyd_build
+    sudo python3 setup.py update
+
+If, upon running counterpartyd, you get a missing dependency or some other error, you can always rerun
+``setup.py``, which will regenerate your dependencies listing to the libraries and versions as listed in
+`reqs.txt <https://github.com/xnova/counterpartyd_build/blob/master/dist/reqs.txt>`__::
+
+    cd ~/counterpartyd_build
+    sudo python3 setup.py
 
 
 Mac OS X

@@ -99,8 +99,8 @@ Some notes:
 Node Setup
 -----------
 
-Once the server is provisioned and secured as above, you will need to set it up as a Federated Node. We have an automated
-installation script for this::
+Once the server is provisioned and secured as above, you will need to set it up as a Federated Node. We have an
+installation script for this, that is fully automated **and installs ALL dependencies, including ``bitcoind`` and ``insight``**::
 
     wget -qO setup_federated_node.py https://raw.github.com/xnova/counterpartyd_build/master/setup_federated_node.py
     sudo python3 setup_federated_node.py
@@ -109,7 +109,7 @@ installation script for this::
     wget -qO setup_federated_node.py https://raw.github.com/xnova/counterpartyd_build/develop/setup_federated_node.py
     sudo python3 setup_federated_node.py -b develop
 
-The script is fully automated. Once done, reboot the box for the new services to start.
+Once done, reboot the box for the new services to start.
 
 
 Getting a SSL Certificate
