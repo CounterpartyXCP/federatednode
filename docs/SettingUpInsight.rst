@@ -1,4 +1,4 @@
-Setting up bitcoind
+Setting up insight
 ====================
 
 .. info::

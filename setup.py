@@ -207,19 +207,19 @@ def install_dependencies(paths, with_counterwalletd, assume_yes):
     if os.name == "posix" and platform.dist()[0] == "Ubuntu":
         ubuntu_release = platform.linux_distribution()[1]
         logging.info("UBUNTU LINUX %s: Installing Required Packages..." % ubuntu_release) 
-        runcmd("sudo apt-get -y update")
+        runcmd("apt-get -y update")
 
         if with_counterwalletd and ubuntu_release != "13.10":
             logging.error("Only Ubuntu 13.10 supported for counterwalletd install.")
         
         #13.10 deps
         if ubuntu_release == "13.10":
-            runcmd("sudo apt-get -y install software-properties-common python-software-properties git-core wget cx-freeze \
+            runcmd("apt-get -y install software-properties-common python-software-properties git-core wget cx-freeze \
             python3 python3-setuptools python3-dev python3-pip build-essential python3-sphinx python-virtualenv libsqlite3-dev python3-apsw python3-zmq")
             
             if with_counterwalletd:
                 #counterwalletd currently uses Python 2.7 due to gevent-socketio's lack of support for Python 3
-                runcmd("sudo apt-get -y install python python-dev python-setuptools python-pip python-sphinx python-zmq libzmq3 libzmq3-dev")
+                runcmd("apt-get -y install python python-dev python-setuptools python-pip python-sphinx python-zmq libzmq3 libzmq3-dev")
                 if assume_yes:
                     db_locally = 'y'
                 else:
@@ -230,35 +230,35 @@ def install_dependencies(paths, with_counterwalletd, assume_yes):
                         else:
                             break
                 if db_locally.lower() == 'y':
-                    runcmd("sudo apt-get -y install npm mongodb mongodb-server redis-server")
+                    runcmd("apt-get -y install npm mongodb mongodb-server redis-server")
                     
         elif ubuntu_release == "12.04":
             #12.04 deps. 12.04 doesn't include python3-pip, so we need to use the workaround at http://stackoverflow.com/a/12262143
-            runcmd("sudo apt-get -y install software-properties-common python-software-properties git-core wget cx-freeze \
+            runcmd("apt-get -y install software-properties-common python-software-properties git-core wget cx-freeze \
             python3 python3-setuptools python3-dev build-essential python3-sphinx python-virtualenv libsqlite3-dev")
             if not os.path.exists("/usr/local/bin/pip3"):
-                runcmd("sudo easy_install3 pip==1.4.1") #pip1.5 breaks things due to its use of wheel by default
+                runcmd("easy_install3 pip==1.4.1") #pip1.5 breaks things due to its use of wheel by default
                 #for some reason, it installs "pip" to /usr/local/bin, instead of "pip3"
-                runcmd("sudo mv /usr/local/bin/pip /usr/local/bin/pip3")
+                runcmd("mv /usr/local/bin/pip /usr/local/bin/pip3")
             
             ##ASPW
             #12.04 also has no python3-apsw module as well (unlike 13.10), so we need to do this one manually
             # Ubuntu 12.04 (Precise) ships with sqlite3 version 3.7.9 - the apsw version needs to match that exactly
-            runcmd("sudo pip3 install https://github.com/rogerbinns/apsw/zipball/f5bf9e5e7617bc7ff2a5b4e1ea7a978257e08c95#egg=apsw")
+            runcmd("pip3 install https://github.com/rogerbinns/apsw/zipball/f5bf9e5e7617bc7ff2a5b4e1ea7a978257e08c95#egg=apsw")
             
             ##LIBZMQ
             #12.04 has no python3-zmq module
-            runcmd("sudo apt-get -y install libzmq-dev")
-            runcmd("sudo easy_install3 pyzmq")
+            runcmd("apt-get -y install libzmq-dev")
+            runcmd("easy_install3 pyzmq")
         else:
             logging.error("Unsupported Ubuntu version, please use 13.10 or 12.04 LTS")
             sys.exit(1)
 
         #install sqlite utilities (not technically required, but nice to have)
-        runcmd("sudo apt-get -y install sqlite sqlite3 libleveldb-dev")
+        runcmd("apt-get -y install sqlite sqlite3 libleveldb-dev")
         
         #now that pip is installed, install necessary deps outside of the virtualenv (e.g. for this script)
-        runcmd("sudo pip3 install appdirs==1.2.0")
+        runcmd("pip3 install appdirs==1.2.0")
     elif os.name == 'nt':
         logging.info("WINDOWS: Installing Required Packages...")
         if not os.path.exists(os.path.join(paths['sys_python_path'], "Scripts", "easy_install.exe")):
@@ -296,17 +296,17 @@ def create_virtualenv(paths, with_counterwalletd):
 
     create_venv(paths['env_path'], paths['pip_path'], paths['python_path'], paths['virtualenv_args'], 'reqs.txt')    
     if with_counterwalletd: #as counterwalletd uses python 2.x, it needs its own virtualenv
-        runcmd("sudo rm -rf %s && sudo mkdir -p %s" % (paths['env_path.cwalletd'], paths['env_path.cwalletd']))
+        runcmd("rm -rf %s && mkdir -p %s" % (paths['env_path.cwalletd'], paths['env_path.cwalletd']))
         create_venv(paths['env_path.cwalletd'], paths['pip_path.cwalletd'], paths['python_path.cwalletd'],
             paths['virtualenv_args.cwalletd'], 'reqs.counterwalletd.txt', delete_if_exists=False)    
 
 def setup_startup(paths, run_as_user, with_counterwalletd, with_testnet, assume_yes):
     if os.name == "posix":
-        runcmd("sudo ln -sf %s/run.py /usr/local/bin/counterpartyd" % paths['base_path'])
+        runcmd("ln -sf %s/run.py /usr/local/bin/counterpartyd" % paths['base_path'])
         if with_counterwalletd:
             #make a short script to launch counterwallet
-            runcmd(r'''sudo echo -e '#!/bin/sh\n%s/run.py counterwalletd "$@"' > /usr/local/bin/counterwalletd''' % paths['base_path'])
-            runcmd("sudo chmod +x /usr/local/bin/counterwalletd")
+            runcmd(r'''echo -e '#!/bin/sh\n%s/run.py counterwalletd "$@"' > /usr/local/bin/counterwalletd''' % paths['base_path'])
+            runcmd("chmod +x /usr/local/bin/counterwalletd")
     elif os.name == "nt":
         #create a batch script
         batch_contents = "echo off%sREM Launch counterpartyd (source build) under windows%s%s %s %%*" % (
@@ -353,17 +353,17 @@ def setup_startup(paths, run_as_user, with_counterwalletd, with_testnet, assume_
     else:
         logging.info("Setting up init scripts...")
         assert run_as_user
-        runcmd("sudo cp -af %s/linux/init/counterpartyd.conf.template /etc/init/counterpartyd.conf" % paths['dist_path'])
-        runcmd("sudo sed -r -i -e \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterpartyd.conf" % run_as_user)
+        runcmd("cp -af %s/linux/init/counterpartyd.conf.template /etc/init/counterpartyd.conf" % paths['dist_path'])
+        runcmd("sed -r -i -e \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterpartyd.conf" % run_as_user)
         if with_testnet:
-            runcmd("sudo cp -af %s/linux/init/counterpartyd-testnet.conf.template /etc/init/counterpartyd-testnet.conf" % paths['dist_path'])
-            runcmd("sudo sed -r -i -e \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterpartyd-testnet.conf" % run_as_user)
+            runcmd("cp -af %s/linux/init/counterpartyd-testnet.conf.template /etc/init/counterpartyd-testnet.conf" % paths['dist_path'])
+            runcmd("sed -r -i -e \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterpartyd-testnet.conf" % run_as_user)
         if with_counterwalletd:
-            runcmd("sudo cp -af %s/linux/init/counterwalletd.conf.template /etc/init/counterwalletd.conf" % paths['dist_path'])
-            runcmd("sudo sed -r -i -e \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterwalletd.conf" % run_as_user)
+            runcmd("cp -af %s/linux/init/counterwalletd.conf.template /etc/init/counterwalletd.conf" % paths['dist_path'])
+            runcmd("sed -r -i -e \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterwalletd.conf" % run_as_user)
             if with_testnet:
-                runcmd("sudo cp -af %s/linux/init/counterwalletd-testnet.conf.template /etc/init/counterwalletd-testnet.conf" % paths['dist_path'])
-                runcmd("sudo sed -r -i -e \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterwalletd-testnet.conf" % run_as_user)
+                runcmd("cp -af %s/linux/init/counterwalletd-testnet.conf.template /etc/init/counterwalletd-testnet.conf" % paths['dist_path'])
+                runcmd("sed -r -i -e \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterwalletd-testnet.conf" % run_as_user)
 
 def create_default_datadir_and_config(paths, run_as_user, with_counterwalletd, with_testnet):
     def create_config(appname, default_config):
