@@ -43,6 +43,14 @@ def runcmd(command, abort_on_failure=True):
         sys.exit(1) 
         
 def git_repo_clone(branch, repo_dir, repo_url, run_as_user):
+    if branch == 'AUTO':
+        try:
+            branch = subprocess.check_output("cd %s && git rev-parse --abbrev-ref HEAD" % (
+                os.path.expanduser("~%s/%s" % (USERNAME, repo_dir))), shell=True).strip().decode('utf-8')
+        except:
+            raise Exception("Cannot get current get branch for %s." % repo_dir)
+    logging.info("Checking out/updating %s:%s from git..." % (repo_dir, branch))
+    
     if os.path.exists(os.path.expanduser("~%s/%s" % (USERNAME, repo_dir))):
         runcmd("cd ~%s/%s && git pull origin %s" % (USERNAME, repo_dir, branch))
     else:
@@ -316,10 +324,36 @@ def main():
         else:
             assert False, "Unhandled or unimplemented switch or option"
 
+    base_path = os.path.expanduser("~%s/counterpartyd_build" % USERNAME)
+    dist_path = os.path.join(base_path, "dist")
+
+    #Detect if we should ask the user if they just want to update the source and not do a rebuild
+    do_rebuild = None
+    try:
+        pwd.getpwnam(USERNAME) #hacky check ...as this user is created by the script
+    except:
+        pass
+    else: #setup has already been run at least once
+        while True:
+            do_rebuild = input("It appears this setup has been run already. (r)ebuild node, or just refresh from (g)it? (r/G): ")
+            do_rebuild = do_rebuild.lower()
+            if do_rebuild not in ('r', 'g', ''):
+                logging.error("Please enter 'r' or 'g'")
+            else:
+                if do_rebuild == '': do_rebuild = 'g'
+                break
+    if do_rebuild == 'g': #just refresh counterpartyd, counterwalletd, and counterwallet from github
+        runcmd("%s/setup.py --with-counterwalletd --for-user=xcp update" % base_path)
+        assert(os.path.exists(os.path.expanduser("~%s/counterwallet" % USERNAME)))
+        git_repo_clone("AUTO", "counterwallet", "https://github.com/xnova/counterwallet.git", run_as_user)
+        sys.exit(0) #all done
+
+    #If here, a) federated node has not been set up yet or b) the user wants a rebuild
     branch = None
     while True:
         branch = input("Build from branch (m)aster or (d)evelop? (M/d): ")
-        if branch.lower() not in ('m', 'd', ''):
+        branch = branch.lower()
+        if branch not in ('m', 'd', ''):
             logging.error("Please enter 'm' or 'd'")
         else:
             if branch == '': branch = 'm'
@@ -328,12 +362,10 @@ def main():
     elif branch == 'd': branch = 'develop'
     logging.info("Working with branch: %s" % branch)
 
-    base_path = os.path.expanduser("~%s/counterpartyd_build" % USERNAME)
-    dist_path = os.path.join(base_path, "dist")
-    
     run_mode = None
     while True:
         run_mode = input("Run as (t)estnet node, (m)ainnet node, or (b)oth? (t/m/B): ")
+        run_mode = run_mode.lower()
         if run_mode.lower() not in ('t', 'm', 'b', ''):
             logging.error("Please enter 't' or 'm' or 'b'")
         else:

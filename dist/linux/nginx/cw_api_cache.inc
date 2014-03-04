@@ -1,9 +1,3 @@
-# don't cache API non-POST requests
-if ($request_method != POST)
-{
-  return 550;
-}
-
 # Check if local memcached server can answer this request
 default_type text/html;
 
