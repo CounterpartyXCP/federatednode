@@ -76,7 +76,13 @@ def do_base_setup(run_as_user, branch, base_path, dist_path):
     """This creates the xcp user and checks out the counterpartyd_build system from git"""
     #install some necessary base deps
     runcmd("apt-get update")
-    runcmd("apt-get -y install git-core software-properties-common python-software-properties npm")
+    runcmd("apt-get -y install git-core software-properties-common python-software-properties build-essential")
+    runcmd("apt-get update")
+    #node-gyp building for insight has ...issues out of the box on Ubuntu... use Chris Lea's nodejs build instead, which is newer
+    runcmd("apt-get -y remove nodejs npm")
+    runcmd("add-apt-repository -y ppa:chris-lea/node.js")
+    runcmd("apt-get update")
+    runcmd("apt-get -y install nodejs") #includes npm
 
     #Create xcp user (to run bitcoind, counterpartyd, counterwalletd) if not already made
     try:
@@ -264,7 +270,7 @@ def do_nginx_setup(run_as_user, base_path, dist_path):
 && install -m 0755 -D %s/linux/nginx/cw_api_cache.inc /tmp/openresty/etc/nginx/sites-enabled/cw_api_cache.inc \
 && install -m 0755 -D %s/linux/nginx/cw_socketio.inc /tmp/openresty/etc/nginx/sites-enabled/cw_socketio.inc \
 && install -m 0755 -D %s/linux/logrotate/nginx /tmp/openresty/etc/logrotate.d/nginx''' % (
-    OPENRESTY_VER, dist_path, dist_path, dist_path, dist_path))
+    OPENRESTY_VER, dist_path, dist_path, dist_path, dist_path, dist_path, dist_path, dist_path))
     #package it up using fpm
     runcmd('''cd /tmp && fpm -s dir -t deb -n nginx-openresty -v %s --iteration 1 -C /tmp/openresty \
 --description "openresty %s" \

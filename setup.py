@@ -230,7 +230,7 @@ def install_dependencies(paths, with_counterwalletd, assume_yes):
                         else:
                             break
                 if db_locally.lower() == 'y':
-                    runcmd("apt-get -y install npm mongodb mongodb-server redis-server")
+                    runcmd("apt-get -y install mongodb mongodb-server redis-server")
                     
         elif ubuntu_release == "12.04":
             #12.04 deps. 12.04 doesn't include python3-pip, so we need to use the workaround at http://stackoverflow.com/a/12262143

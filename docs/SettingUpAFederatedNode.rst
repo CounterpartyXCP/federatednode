@@ -104,12 +104,8 @@ installation script for this, that is fully automated **and installs ALL depende
 
     wget -qO setup_federated_node.py https://raw.github.com/xnova/counterpartyd_build/master/setup_federated_node.py
     sudo python3 setup_federated_node.py
-    
-    #or, if running the develop branch:
-    wget -qO setup_federated_node.py https://raw.github.com/xnova/counterpartyd_build/develop/setup_federated_node.py
-    sudo python3 setup_federated_node.py -b develop
 
-Once done, reboot the box for the new services to start.
+Then just follow the on-screen prompts, and once done, reboot the box for the new services to start.
 
 
 Getting a SSL Certificate
@@ -136,8 +132,8 @@ Then restart nginx::
     sudo service nginx restart
 
 
-Getting Your Node Listed
----------------------------
+Getting Your Federated Node Listed
+------------------------------------
 
 Contact `dev@counterwallet.co <dev@counterwallet.co>`__, we will examine your server setup and place you on the 
 Federated Node list in Counterwallet if everything checks out.
