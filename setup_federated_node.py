@@ -79,7 +79,7 @@ def do_base_setup(run_as_user, branch, base_path, dist_path):
     runcmd("apt-get -y install git-core software-properties-common python-software-properties build-essential")
     runcmd("apt-get update")
     #node-gyp building for insight has ...issues out of the box on Ubuntu... use Chris Lea's nodejs build instead, which is newer
-    runcmd("apt-get -y remove nodejs npm")
+    runcmd("apt-get -y remove nodejs npm gyp")
     runcmd("add-apt-repository -y ppa:chris-lea/node.js")
     runcmd("apt-get update")
     runcmd("apt-get -y install nodejs") #includes npm
