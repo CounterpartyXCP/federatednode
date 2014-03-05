@@ -190,9 +190,9 @@ def do_counterparty_setup(run_as_user, branch, base_path, dist_path, run_mode, b
 
     #change ownership
     runcmd("chown -R %s:%s ~%s/.bitcoin ~%s/.config/counterpartyd ~%s/.config/counterwalletd" % (
-        run_as_user, USERNAME, USERNAME, USERNAME, USERNAME))
+        USERNAME, USERNAME, USERNAME, USERNAME, USERNAME))
     runcmd("chown -R %s:%s ~%s/.bitcoin-testnet ~%s/.config/counterpartyd-testnet ~%s/.config/counterwalletd-testnet" % (
-        run_as_user, USERNAME, USERNAME, USERNAME, USERNAME))
+        USERNAME, USERNAME, USERNAME, USERNAME, USERNAME))
 
 def do_insight_setup(run_as_user, base_path, dist_path, run_mode):
     """This installs and configures insight"""
