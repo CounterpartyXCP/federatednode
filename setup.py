@@ -305,7 +305,9 @@ def setup_startup(paths, run_as_user, with_counterwalletd, with_testnet, assume_
         runcmd("ln -sf %s/run.py /usr/local/bin/counterpartyd" % paths['base_path'])
         if with_counterwalletd:
             #make a short script to launch counterwallet
-            runcmd(r'''echo -e '#!/bin/sh\n%s/run.py counterwalletd "$@"' > /usr/local/bin/counterwalletd''' % paths['base_path'])
+            f = open("/usr/local/bin/counterwalletd", 'w')
+            f.write("#!/bin/sh\n%s/run.py counterwalletd \"$@\"" % paths['base_path'])
+            f.close()
             runcmd("chmod +x /usr/local/bin/counterwalletd")
     elif os.name == "nt":
         #create a batch script

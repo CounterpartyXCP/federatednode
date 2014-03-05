@@ -102,10 +102,25 @@ Node Setup
 Once the server is provisioned and secured as above, you will need to set it up as a Federated Node. We have an
 installation script for this, that is fully automated **and installs ALL dependencies, including ``bitcoind`` and ``insight``**::
 
-    wget -qO setup_federated_node.py https://raw.github.com/xnova/counterpartyd_build/master/setup_federated_node.py
+    cd && wget -qO setup_federated_node.py https://raw.github.com/xnova/counterpartyd_build/master/setup_federated_node.py
     sudo python3 setup_federated_node.py
 
-Then just follow the on-screen prompts, and once done, reboot the box for the new services to start.
+Then just follow the on-screen prompts, and once done, start up ``bitcoind`` daemon(s)::
+
+    sudo service bitcoind start
+    sudo service bitcoind-testnet start
+    
+    sudo tail -f ~xcp/.bitcoin/debug.log 
+
+Watching the debug log, wait for the blockchain sync to complete. Once done, launch the ``insight`` daemon(s)::
+
+    sudo service insight start
+    sudo service insight-testnet start
+    
+    sudo tail -f ~xcp/insight-api/insight.log 
+
+Then, watching this log, wait for the insight sync to finish. After this, reboot the box for the new services to start
+(which will include ``counterpartyd`` and ``counterwalletd``).
 
 
 Getting a SSL Certificate

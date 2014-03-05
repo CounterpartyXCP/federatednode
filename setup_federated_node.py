@@ -181,11 +181,21 @@ def do_counterparty_setup(run_as_user, branch, base_path, dist_path, run_mode, b
     else:
         runcmd("rm -f /etc/init/counterpartyd-testnet.override /etc/init/counterwalletd-testnet.override")
     
+    #append insight enablement params to counterpartyd's configs
+    for cfgFilename in [
+        os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterpartyd", "counterpartyd.conf"),
+        os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterpartyd-testnet", "counterpartyd.conf") ]:
+        f = open(cfgFilename)
+        content = f.read()
+        if 'insight-enable' not in content:
+            f.write(content + '\ninsight-enable=1')
+        f.close()
+
     #change ownership
     runcmd("chown -R %s:%s ~%s/.bitcoin ~%s/.config/counterpartyd ~%s/.config/counterwalletd" % (
-        USERNAME, USERNAME, USERNAME, USERNAME, USERNAME))
+        run_as_user, USERNAME, USERNAME, USERNAME, USERNAME))
     runcmd("chown -R %s:%s ~%s/.bitcoin-testnet ~%s/.config/counterpartyd-testnet ~%s/.config/counterwalletd-testnet" % (
-        USERNAME, USERNAME, USERNAME, USERNAME, USERNAME))
+        run_as_user, USERNAME, USERNAME, USERNAME, USERNAME))
 
 def do_insight_setup(run_as_user, base_path, dist_path, run_mode):
     """This installs and configures insight"""
@@ -209,6 +219,8 @@ def do_insight_setup(run_as_user, base_path, dist_path, run_mode):
     #install logrotate file
     runcmd("cp -af %s/linux/logrotate/insight /etc/logrotate.d/insight" % dist_path)
     runcmd("sed -rie \"s/\!RUN_AS_USER_HOMEDIR\!/%s/g\" /etc/logrotate.d/insight" % user_homedir.replace('/', '\/'))
+
+    runcmd("chown -R %s:%s ~%s/insight-api" % (run_as_user, USERNAME, USERNAME))
     
     #disable upstart scripts from autostarting on system boot if necessary
     if run_mode == 't': #disable mainnet daemons from autostarting
