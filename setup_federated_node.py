@@ -181,12 +181,19 @@ def do_counterparty_setup(run_as_user, branch, base_path, dist_path, run_mode, b
     else:
         runcmd("rm -f /etc/init/counterpartyd-testnet.override /etc/init/counterwalletd-testnet.override")
     
-    #append insight enablement params to counterpartyd configs (testnet config already has it)
-    f = open(os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterpartyd", "counterpartyd.conf"), 'a+')
-    content = f.read()
-    if 'insight-enable' not in content:
-        f.write('\ninsight-enable=1')
-    f.close()
+    #append insight enablement params to counterpartyd's configs
+    for cfgFilename in [
+        os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterpartyd", "counterpartyd.conf"),
+        os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterpartyd-testnet", "counterpartyd.conf") ]:
+        f = open(cfgFilename, 'a+')
+        content = f.read()
+        if 'insight-enable' not in content:
+            f.write('\ninsight-enable=1')
+        if 'api-num-threads' not in content:
+            f.write('\napi-num-threads=100')
+        if 'api-request-queue-size' not in content:
+            f.write('\napi-request-queue-size=500')
+        f.close()
 
     #change ownership
     runcmd("chown -R %s:%s ~%s/.bitcoin ~%s/.config/counterpartyd ~%s/.config/counterwalletd" % (
