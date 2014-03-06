@@ -126,6 +126,10 @@ def do_bitcoind_setup(run_as_user, branch, base_path, dist_path, run_mode):
     runcmd("cp -af %s/linux/init/bitcoind-testnet.conf.template /etc/init/bitcoind-testnet.conf" % dist_path)
     runcmd("sed -rie \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/bitcoind-testnet.conf" % USERNAME)
     
+    #install logrotate file
+    runcmd("cp -af %s/linux/logrotate/bitcoind /etc/logrotate.d/bitcoind" % dist_path)
+    runcmd("sed -rie \"s/\!RUN_AS_USER_HOMEDIR\!/%s/g\" /etc/logrotate.d/bitcoind" % user_homedir.replace('/', '\/'))
+    
     #disable upstart scripts from autostarting on system boot if necessary
     if run_mode == 't': #disable mainnet daemons from autostarting
         runcmd(r"""bash -c "echo 'manual' >> /etc/init/bitcoind.override" """)
