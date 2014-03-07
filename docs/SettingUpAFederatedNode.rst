@@ -3,17 +3,16 @@ Setting up a Counterwallet Federated Node
 
 .. note::
 
-    This document is intended for system and network administrators who would like to set up their own Counterwallet
-    node to add to the Counterwallet federated backend network. This is not something that end users will ever need to do.
-    
-    If you would like to host a Federated Node, please contact `dev@counterwallet.co <dev@counterwallet.co>`__
-    **before** doing so to get pre-approved. Pre-approval will be granted on a case-by-case basis and depend on a
-    variety of factors, such as trustworthyness, network and server infrastructure capabilities, level of comittment,
-    country of residence, and more.
+    The Counterparty team itself operates the primary Counterwallet website. However, as Counterwallet is open source
+    software, it is possible to host your own Counterwallet-derived site, or host your own Counterwallet servers
+    to use from your own Counterparty wallet implementation. 
+
+    That being said, this document is intended for system administrators and developers who would like to do this.
+    Suffice it to say, this is not something that normal end users will ever need to do.
     
 
-Introduction
--------------
+Introduction & Theory
+----------------------
 
 Counterwallet (the primary Counterparty web-wallet implementation), can work against one or more back-end servers.
 Each backend server runs ``bitcoind``, ``counterpartyd``, and ``counterwalletd``, and exists as a fully self-contained
@@ -67,19 +66,19 @@ funds would not be at risk before the hacked server could be discovered and remo
 Node Provisioning
 ------------------
 
-To set up a Federated Node, we require the following:
+Here are the recommendations and/or requirements when setting up a Counterwallet server:
 
-**Server Hardware/Network:**
+**Server Hardware/Network Recommendations:**
 
-- Xeon E5+ or similar-class processor
-- 64GB+ RAM (ECC)
+- Xeon E3+ or similar-class processor
+- 16GB+ RAM (ECC)
 - 2x SSD 120GB+ drives in RAID-0 (mirrored) configuration
 - Hosted in a secure data center with physical security and access controls
-- DDOS protection (1gbps absolute minimum) required, via reverse proxy, GRE tunnel, or other means
+- DDOS protection recommended if you will be offering your service to others
 
 **Server Software:**
 
-- Ubuntu 13.10 64-bit
+- Ubuntu 13.10 64-bit required
 
 **Server Security:**
 
@@ -93,13 +92,14 @@ Some notes:
 - Utilize ``fail2ban``, ``psad``, ``chkrootkit`` and ``rkhunter``
 - Utilize modified ``sysctl`` settings for improved security and DDOS protection 
 - Only one or two trusted individuals should have access to the box. All root access through ``sudo``.
-- The system should have a proper hostname (e.g. counterwallet.myorganization.org), and your DNS provider should be DDOS resistant. 
+- The system should have a proper hostname (e.g. counterwallet.myorganization.org), and your DNS provider should be DDOS resistant
+- System timezone should be set to UTC 
 
 
 Node Setup
 -----------
 
-Once the server is provisioned and secured as above, you will need to set it up as a Federated Node. We have an
+Once the server is provisioned and secured as above, you will need to install all of the necessary software. We have an
 installation script for this, that is fully automated **and installs ALL dependencies, including ``bitcoind`` and ``insight``**::
 
     cd && wget -qO setup_federated_node.py https://raw.github.com/xnova/counterpartyd_build/master/setup_federated_node.py
@@ -126,9 +126,10 @@ Then, watching this log, wait for the insight sync to finish. After this, reboot
 Getting a SSL Certificate
 --------------------------
 
-By default, the system is set up to use a self-signed SSL certificate. If you'd like your server to be listed as a
-Counterwallet Federated Node, you will need to purchase a SSL certificate. Once you have that certificate, create an
-Nginx-compatible ``.pem`` file, and place that at ``/etc/ssl/certs/counterwallet.pem``. Then, place your SSL private key
+By default, the system is set up to use a self-signed SSL certificate. If you are hosting your services for others, 
+you should get your own SSL certificate from your DNS registrar (so that your users don't see a certificate warning when
+they visit your site). Once you have that certificate, create a
+nginx-compatible ``.pem`` file, and place that at ``/etc/ssl/certs/counterwallet.pem``. Then, place your SSL private key
 at ``/etc/ssl/private/counterwallet.key``.
 
 After doing this, edit the ``/etc/nginx/sites-enabled/counterwallet.conf`` file. Comment out the two development
@@ -147,15 +148,10 @@ Then restart nginx::
     sudo service nginx restart
 
 
-Getting Your Federated Node Listed
+Connecting with Counterwallet
 ------------------------------------
 
-Contact `dev@counterwallet.co <dev@counterwallet.co>`__, we will examine your server setup and place you on the 
-Federated Node list in Counterwallet if everything checks out.
-
-In order to keep your Federated Node in the list, you will need to:
-
-- Remain in good standing as an honest member of the community
-- Maintain your server and server infrastructure
-- Install any necessary updates you are notified about in a timely manner
-- Demonstrate a high level of uptime and availability
+For now, to run Counterwallet against your new servers, you will need to modify the `counterwallet.js <https://github.com/xnova/counterwallet/blob/develop/src/js/counterwallet.js>`__ file.
+Search for the line that sets ``counterwalletd_urls`` for production mode (``!IS_DEV``) and modify to use your own hostnames.
+Note that we recommend that you use hostnames so that the API communications can be SSL encrypted (since it appears that
+IP address-based SSL certificates are being phased out).
