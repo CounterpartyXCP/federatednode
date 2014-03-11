@@ -356,16 +356,16 @@ def setup_startup(paths, run_as_user, with_counterwalletd, with_testnet, assume_
         logging.info("Setting up init scripts...")
         assert run_as_user
         runcmd("cp -af %s/linux/init/counterpartyd.conf.template /etc/init/counterpartyd.conf" % paths['dist_path'])
-        runcmd("sed -r -i -e \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterpartyd.conf" % run_as_user)
+        runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterpartyd.conf" % run_as_user)
         if with_testnet:
             runcmd("cp -af %s/linux/init/counterpartyd-testnet.conf.template /etc/init/counterpartyd-testnet.conf" % paths['dist_path'])
-            runcmd("sed -r -i -e \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterpartyd-testnet.conf" % run_as_user)
+            runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterpartyd-testnet.conf" % run_as_user)
         if with_counterwalletd:
             runcmd("cp -af %s/linux/init/counterwalletd.conf.template /etc/init/counterwalletd.conf" % paths['dist_path'])
-            runcmd("sed -r -i -e \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterwalletd.conf" % run_as_user)
+            runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterwalletd.conf" % run_as_user)
             if with_testnet:
                 runcmd("cp -af %s/linux/init/counterwalletd-testnet.conf.template /etc/init/counterwalletd-testnet.conf" % paths['dist_path'])
-                runcmd("sed -r -i -e \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterwalletd-testnet.conf" % run_as_user)
+                runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterwalletd-testnet.conf" % run_as_user)
 
 def create_default_datadir_and_config(paths, run_as_user, with_counterwalletd, with_testnet):
     def create_config(appname, default_config):

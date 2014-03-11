@@ -1,0 +1,54 @@
+%YAML 1.2
+---
+Application:
+  license_key: !LICENSE_KEY!
+  wake_interval: 60
+  #newrelic_api_timeout: 10
+  #proxy: http://localhost:8080
+
+  mongodb:
+    name: !HOSTNAME!-mongo
+    host: localhost
+    port: 27017
+    databases:
+      - counterwalletd
+      - counterwalletd_testnet
+
+  nginx:
+    name: !HOSTNAME!-nginx
+    scheme: https
+    host: localhost
+    port: 443
+    verify_ssl_cert: false
+    path: /nginx_stub_status
+
+  redis:
+    - name: !HOSTNAME!-redis
+      host: localhost
+      port: 6379
+      db_count: 2
+
+Daemon:
+  user: xcp
+  pidfile: /var/run/newrelic/newrelic_plugin_agent.pid
+
+Logging:
+  formatters:
+    verbose:
+      format: '%(levelname) -10s %(asctime)s %(process)-6d %(processName) -15s %(threadName)-10s %(name) -45s %(funcName) -25s L%(lineno)-6d: %(message)s'
+  handlers:
+    file:
+      class : logging.handlers.RotatingFileHandler
+      formatter: verbose
+      filename: /var/log/newrelic/newrelic_plugin_agent.log
+      maxBytes: 10485760
+      backupCount: 3
+  loggers:
+    newrelic_plugin_agent:
+      level: INFO
+      propagate: True
+      handlers: [console, file]
+    requests:
+      level: ERROR
+      propagate: True
+      handlers: [console, file]

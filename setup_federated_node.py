@@ -122,13 +122,13 @@ def do_bitcoind_setup(run_as_user, branch, base_path, dist_path, run_mode):
     
     #Set up bitcoind startup scripts (will be disabled later from autostarting on system startup if necessary)
     runcmd("cp -af %s/linux/init/bitcoind.conf.template /etc/init/bitcoind.conf" % dist_path)
-    runcmd("sed -rie \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/bitcoind.conf" % USERNAME)
+    runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/bitcoind.conf" % USERNAME)
     runcmd("cp -af %s/linux/init/bitcoind-testnet.conf.template /etc/init/bitcoind-testnet.conf" % dist_path)
-    runcmd("sed -rie \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/bitcoind-testnet.conf" % USERNAME)
+    runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/bitcoind-testnet.conf" % USERNAME)
     
     #install logrotate file
     runcmd("cp -af %s/linux/logrotate/bitcoind /etc/logrotate.d/bitcoind" % dist_path)
-    runcmd("sed -rie \"s/\!RUN_AS_USER_HOMEDIR\!/%s/g\" /etc/logrotate.d/bitcoind" % user_homedir.replace('/', '\/'))
+    runcmd("sed -ri \"s/\!RUN_AS_USER_HOMEDIR\!/%s/g\" /etc/logrotate.d/bitcoind" % user_homedir.replace('/', '\/'))
     
     #disable upstart scripts from autostarting on system boot if necessary
     if run_mode == 't': #disable mainnet daemons from autostarting
@@ -154,23 +154,23 @@ def do_counterparty_setup(run_as_user, branch, base_path, dist_path, run_mode, b
     runcmd("~%s/counterpartyd_build/setup.py -y --with-counterwalletd --with-testnet --for-user=%s" % (USERNAME, USERNAME))
 
     #modify the default stored bitcoind passwords in counterpartyd.conf and counterwalletd.conf
-    runcmd(r"""sed -rie "s/^bitcoind\-rpc\-password=.*?$/bitcoind-rpc-password=%s/g" ~%s/.config/counterpartyd/counterpartyd.conf""" % (
+    runcmd(r"""sed -ri "s/^bitcoind\-rpc\-password=.*?$/bitcoind-rpc-password=%s/g" ~%s/.config/counterpartyd/counterpartyd.conf""" % (
         bitcoind_rpc_password, USERNAME))
-    runcmd(r"""sed -rie "s/^bitcoind\-rpc\-password=.*?$/bitcoind-rpc-password=%s/g" ~%s/.config/counterpartyd-testnet/counterpartyd.conf""" % (
+    runcmd(r"""sed -ri "s/^bitcoind\-rpc\-password=.*?$/bitcoind-rpc-password=%s/g" ~%s/.config/counterpartyd-testnet/counterpartyd.conf""" % (
         bitcoind_rpc_password_testnet, USERNAME))
-    runcmd(r"""sed -rie "s/^bitcoind\-rpc\-password=.*?$/bitcoind-rpc-password=%s/g" ~%s/.config/counterwalletd/counterwalletd.conf""" % (
+    runcmd(r"""sed -ri "s/^bitcoind\-rpc\-password=.*?$/bitcoind-rpc-password=%s/g" ~%s/.config/counterwalletd/counterwalletd.conf""" % (
         bitcoind_rpc_password, USERNAME))
-    runcmd(r"""sed -rie "s/^bitcoind\-rpc\-password=.*?$/bitcoind-rpc-password=%s/g" ~%s/.config/counterwalletd-testnet/counterwalletd.conf""" % (
+    runcmd(r"""sed -ri "s/^bitcoind\-rpc\-password=.*?$/bitcoind-rpc-password=%s/g" ~%s/.config/counterwalletd-testnet/counterwalletd.conf""" % (
         bitcoind_rpc_password_testnet, USERNAME))
     
     #modify the counterpartyd API rpc password in both counterpartyd and counterwalletd
-    runcmd(r"""sed -rie "s/^rpc\-password=.*?$/rpc-password=%s/g" ~%s/.config/counterpartyd/counterpartyd.conf""" % (
+    runcmd(r"""sed -ri "s/^rpc\-password=.*?$/rpc-password=%s/g" ~%s/.config/counterpartyd/counterpartyd.conf""" % (
         counterpartyd_rpc_password, USERNAME))
-    runcmd(r"""sed -rie "s/^rpc\-password=.*?$/rpc-password=%s/g" ~%s/.config/counterpartyd-testnet/counterpartyd.conf""" % (
+    runcmd(r"""sed -ri "s/^rpc\-password=.*?$/rpc-password=%s/g" ~%s/.config/counterpartyd-testnet/counterpartyd.conf""" % (
         counterpartyd_rpc_password_testnet, USERNAME))
-    runcmd(r"""sed -rie "s/^counterpartyd\-rpc\-password=.*?$/counterpartyd-rpc-password=%s/g" ~%s/.config/counterwalletd/counterwalletd.conf""" % (
+    runcmd(r"""sed -ri "s/^counterpartyd\-rpc\-password=.*?$/counterpartyd-rpc-password=%s/g" ~%s/.config/counterwalletd/counterwalletd.conf""" % (
         counterpartyd_rpc_password, USERNAME))
-    runcmd(r"""sed -rie "s/^counterpartyd\-rpc\-password=.*?$/counterpartyd-rpc-password=%s/g" ~%s/.config/counterwalletd-testnet/counterwalletd.conf""" % (
+    runcmd(r"""sed -ri "s/^counterpartyd\-rpc\-password=.*?$/counterpartyd-rpc-password=%s/g" ~%s/.config/counterwalletd-testnet/counterwalletd.conf""" % (
         counterpartyd_rpc_password_testnet, USERNAME))
     
     #disable upstart scripts from autostarting on system boot if necessary
@@ -221,12 +221,12 @@ def do_insight_setup(run_as_user, base_path, dist_path, run_mode):
     runcmd("cd ~%s/insight-api && npm install" % USERNAME)
     #Set up insight startup scripts (will be disabled later from autostarting on system startup if necessary)
     runcmd("cp -af %s/linux/init/insight.conf.template /etc/init/insight.conf" % dist_path)
-    runcmd("sed -rie \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/insight.conf" % USERNAME)
+    runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/insight.conf" % USERNAME)
     runcmd("cp -af %s/linux/init/insight-testnet.conf.template /etc/init/insight-testnet.conf" % dist_path)
-    runcmd("sed -rie \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/insight-testnet.conf" % USERNAME)
+    runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/insight-testnet.conf" % USERNAME)
     #install logrotate file
     runcmd("cp -af %s/linux/logrotate/insight /etc/logrotate.d/insight" % dist_path)
-    runcmd("sed -rie \"s/\!RUN_AS_USER_HOMEDIR\!/%s/g\" /etc/logrotate.d/insight" % user_homedir.replace('/', '\/'))
+    runcmd("sed -ri \"s/\!RUN_AS_USER_HOMEDIR\!/%s/g\" /etc/logrotate.d/insight" % user_homedir.replace('/', '\/'))
 
     runcmd("chown -R %s:%s ~%s/insight-api" % (run_as_user, USERNAME, USERNAME))
     
@@ -265,12 +265,9 @@ def do_nginx_setup(run_as_user, base_path, dist_path):
 --http-uwsgi-temp-path=/var/lib/nginx/uwsgi \
 --lock-path=/var/lock/nginx.lock \
 --pid-path=/var/run/nginx.pid \
---with-http_dav_module \
---with-http_flv_module \
 --with-http_geoip_module \
 --with-http_gzip_static_module \
 --with-http_realip_module \
---with-http_stub_status_module \
 --with-http_ssl_module \
 --with-http_sub_module \
 --with-http_xslt_module \
@@ -329,6 +326,90 @@ def do_counterwallet_setup(run_as_user, branch):
     #check out counterwallet from git
     git_repo_clone(branch, "counterwallet", "https://github.com/xnova/counterwallet.git", run_as_user)
     runcmd("~%s/counterwallet/build.py" % (USERNAME,)) #link files, instead of copying (for now at least)
+
+def do_newrelic_setup(run_as_user, base_path, dist_path, run_mode):
+    NR_PREFS_LICENSE_KEY_PATH = "/etc/newrelic/LICENSE_KEY"
+    NR_PREFS_HOSTNAME_PATH = "/etc/newrelic/HOSTNAME"
+    
+    #try to find existing license key
+    nr_license_key = None
+    if os.path.exists(NR_PREFS_LICENSE_KEY_PATH):
+        nr_license_key = open(NR_PREFS_LICENSE_KEY_PATH).read().strip()
+    else:
+        while True:
+            nr_license_key = input("Enter New Relic license key (or blank to not setup New Relic): ") #gather license key
+            nr_license_key = nr_license_key.strip()
+            if not nr_license_key:
+                return #skipping new relic
+            nr_license_key_confirm = input("You entererd '%s', is that right? (Y/n): " % nr_license_key)
+            nr_license_key_confirm = nr_license_key_confirm.lower()
+            if nr_license_key_confirm not in ('y', 'n', ''):
+                logging.error("Please enter 'y' or 'n'")
+            else:
+                if nr_license_key_confirm in ['', 'y']: break
+        open(NR_PREFS_LICENSE_KEY_PATH, 'w').write(nr_license_key)
+    assert nr_license_key
+    logging.info("NewRelic license key: %s" % nr_license_key)
+
+    #try to find existing app prefix
+    nr_hostname = None
+    if os.path.exists(NR_PREFS_HOSTNAME_PATH):
+        nr_hostname = open(NR_PREFS_HOSTNAME_PATH).read().strip()
+    else:
+        while True:
+            nr_hostname = input("Enter newrelic hostname/app prefix (e.g. 'cw01'): ") #gather app prefix
+            nr_hostname = nr_hostname.strip()
+            nr_hostname_confirm = input("You entererd '%s', is that right? (Y/n): " % nr_hostname)
+            nr_hostname_confirm = nr_hostname_confirm.lower()
+            if nr_hostname_confirm not in ('y', 'n', ''):
+                logging.error("Please enter 'y' or 'n'")
+            else:
+                if nr_hostname_confirm in ['', 'y']: break
+        open(NR_PREFS_HOSTNAME_PATH, 'w').write(nr_hostname)
+    assert nr_hostname
+    logging.info("NewRelic hostname/app prefix: %s" % nr_hostname)
+
+    #install some deps...
+    runcmd("sudo apt-get -y install libyaml-dev")
+    
+    #install/setup python agent for both counterpartyd and counterwalletd
+    #counterpartyd
+    runcmd("%s/env/bin/pip install newrelic" % base_path)
+    runcmd("cp -af %s/linux/newrelic/nr_counterpartyd.ini.template /etc/newrelic/nr_counterpartyd.ini" % dist_path)
+    runcmd("sed -ri \"s/\!LICENSE_KEY\!/%s/g\" /etc/newrelic/nr_counterpartyd.ini" % nr_license_key)
+    runcmd("sed -ri \"s/\!HOSTNAME\!/%s/g\" /etc/newrelic/nr_counterpartyd.ini" % nr_hostname)
+    #counterwalletd
+    runcmd("%s/env.cwalletd/bin/pip install newrelic" % base_path)
+    runcmd("cp -af %s/linux/newrelic/nr_counterwalletd.ini.template /etc/newrelic/nr_counterwalletd.ini" % dist_path)
+    runcmd("sed -ri \"s/\!LICENSE_KEY\!/%s/g\" /etc/newrelic/nr_counterwalletd.ini" % nr_license_key)
+    runcmd("sed -ri \"s/\!HOSTNAME\!/%s/g\" /etc/newrelic/nr_counterwalletd.ini" % nr_hostname)
+    #install init scripts (overwrite the existing ones for now at least)
+    runcmd("cp -af %s/linux/newrelic/init/nr-counterpartyd.conf /etc/init/counterpartyd.conf" % dist_path) #overwrite
+    runcmd("cp -af %s/linux/newrelic/init/nr-counterwalletd.conf /etc/init/counterwalletd.conf" % dist_path) #overwrite
+    runcmd("cp -af %s/linux/newrelic/init/nr-counterpartyd-testnet.conf /etc/init/counterpartyd-testnet.conf" % dist_path) #overwrite
+    runcmd("cp -af %s/linux/newrelic/init/nr-counterwalletd-testnet.conf /etc/init/counterwalletd-testnet.conf" % dist_path) #overwrite
+    #upstart enablement (overrides) should be fine as established in do_counterparty_setup...
+
+    #install/setup server agent
+    runcmd("add-apt-repository \"deb http://apt.newrelic.com/debian/ newrelic non-free\"")
+    runcmd("wget -O- https://download.newrelic.com/548C16BF.gpg | apt-key add -")
+    runcmd("apt-get update")
+    runcmd("apt-get -y install newrelic-sysmond")
+    runcmd("cp -af %s/linux/newrelic/nrsysmond.cfg.template /etc/newrelic/nrsysmond.cfg" % dist_path)
+    runcmd("sed -ri \"s/\!LICENSE_KEY\!/%s/g\" /etc/newrelic/nrsysmond.cfg" % nr_license_key)
+    runcmd("sed -ri \"s/\!HOSTNAME\!/%s/g\" /etc/newrelic/nrsysmond.cfg" % nr_hostname)
+    runcmd("/etc/init.d/newrelic-sysmond restart")
+    
+    #install/setup meetme agent (mongo, redis, nginx)
+    runcmd("pip install newrelic-plugin-agent pymongo")
+    runcmd("mkdir -p /etc/newrelic /var/log/newrelic /var/run/newrelic")
+    runcmd("chown xcp /etc/newrelic /var/log/newrelic /var/run/newrelic")
+    runcmd("cp -af %s/linux/newrelic/newrelic_plugin_agent.cfg.template /etc/newrelic/newrelic_plugin_agent.cfg" % dist_path)
+    runcmd("sed -ri \"s/\!LICENSE_KEY\!/%s/g\" /etc/newrelic/newrelic_plugin_agent.cfg" % nr_license_key)
+    runcmd("sed -ri \"s/\!HOSTNAME\!/%s/g\" /etc/newrelic/newrelic_plugin_agent.cfg" % nr_hostname)
+    runcmd("ln -sf %s/linux/newrelic/init/newrelic_plugin_agent /etc/init.d/newrelic_plugin_agent" % dist_path)
+    runcmd("update-rc.d newrelic_plugin_agent defaults")
+    runcmd("/etc/init.d/newrelic_plugin_agent restart")
 
 def main():
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s|%(levelname)s: %(message)s')
@@ -411,6 +492,8 @@ def main():
     do_nginx_setup(run_as_user, base_path, dist_path)
     
     do_counterwallet_setup(run_as_user, branch)
+
+    do_newrelic_setup(run_as_user, base_path, dist_path, run_mode) #optional
     
     logging.info("Counterwallet Federated Node Build Complete (whew).")
 
