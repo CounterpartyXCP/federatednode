@@ -35,3 +35,5 @@ gevent-socketio==0.3.6
 redis==2.9.1
 
 grequests==0.2.0
+
+pyzmq==14.0.1
