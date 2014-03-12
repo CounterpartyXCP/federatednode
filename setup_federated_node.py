@@ -191,11 +191,11 @@ def do_counterparty_setup(run_as_user, branch, base_path, dist_path, run_mode, b
         os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterpartyd-testnet", "counterpartyd.conf") ]:
         f = open(cfgFilename, 'a+')
         content = f.read()
-        if 'insight-enable' not in content:
+        if not re.search(r'insight-enable', content):
             f.write('\ninsight-enable=1')
-        if 'api-num-threads' not in content:
+        if not re.search(r'api-num-threads', content):
             f.write('\napi-num-threads=100')
-        if 'api-request-queue-size' not in content:
+        if not re.search(r'api-request-queue-size', content):
             f.write('\napi-request-queue-size=500')
         f.close()
 

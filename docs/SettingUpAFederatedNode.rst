@@ -3,19 +3,25 @@ Setting up a Counterwallet Federated Node
 
 .. note::
 
-    The Counterparty team itself operates the primary Counterwallet website. However, as Counterwallet is open source
-    software, it is possible to host your own Counterwallet-derived site, or host your own Counterwallet servers
-    to use from your own Counterparty wallet implementation. 
-
-    That being said, this document is intended for system administrators and developers who would like to do this.
-    Suffice it to say, this is not something that normal end users will ever need to do.
+    The Counterparty team itself operates the primary Counterwallet platform. However, as Counterwallet is open source
+    software, it is possible to host your own site with Counterwallet site (for your personal use, or as an offering to
+    others), or to even host your own Counterwallet servers to use with your own Counterparty wallet implementation.
+    The Counterparty team supports this kind of activity, as it aids with reducing network centralization.
     
+    Also note that due to the nature of Counterwallet being a deterministic wallet, users using one Counterwallet platform (i.e. the
+    official one, for instance) have the flexibility to start using a different Counterwallet platform instead at any time,
+    and as funds (i.e. private keys) are not stored on the server in any fashion, they will be able to see their funds on either.
+    (Note that the only thing that will not migrate are saved preferences, such as address aliases, the theme setting, etc.)
+
+    The above being said, this document walks one though some of the inner workings of Counterwallet, as well as describing
+    how one can set up their own Counterwallet server (i.e. Counterwallet Federated Node). That being said, this document
+    is primarily intended for system administrators and developers.
 
 Introduction & Theory
 ----------------------
 
-Counterwallet (the primary Counterparty web-wallet implementation), can work against one or more back-end servers.
-Each backend server runs ``bitcoind``, ``counterpartyd``, and ``counterwalletd``, and exists as a fully self-contained
+The Counterwallet web-wallet implementation can work against one or more back-end servers.
+Each backend server runs ``bitcoind``, ``insight``, ``counterpartyd``, and ``counterwalletd``, and exists as a fully self-contained
 node. Counterwallet has multiple servers listed (in ``counterwallet.js``) which it can utilize in making API calls either
 sequentially (i.e. failover) or in parallel (i.e. consensus-based). When a user logs in, this list is shuffled so that,
 in aggregate, user requests are effectively load-balanced across available servers.
@@ -30,12 +36,16 @@ for all ``create_``-type operations. For example, if you send XCP, counterpartyd
 back the unsigned raw transaction, but for data security, it compares the results returned from all servers, and will 
 only sign and broadcast (both client-side) if all the results match). This is known as *multiAPIConsensus*.
 
-The goal here is to have a federated net of semi-trusted backend servers not tied to any one country, provider, network or
+The ultimate goal here is to have a federated net of semi-trusted backend servers not tied to any one country, provider, network or
 operator/admin. Through requiring consensus on the unsigned transactions returned for all ``create_`` operations, 'semi-trust'
 on a single server basis leads to an overall trustworthy network. Worst case, if backend server is hacked and owned
 (and the counterpartyd code modified), then you may get some invalid read results, but it won't be rewriting your XCP send
 destination address, for example. The attackers would have to hack the code on every single server in the same exact
 way, undetected, to do that.
+
+Moreover, the Counterwallet web client contains basic transaction validation code that will check that any unsigned Bitcoin
+transaction returned from a Counterwallet Federated Node contains expected inputs and outputs. This provides further
+protection against potential attacks.
 
 multiAPIConsensus actually helps discover any potential "hacked" servers as well, since a returned consensus set with
 a divergent result will be rejected by the client, and thus trigger an examination of the root cause by the team.
@@ -92,8 +102,12 @@ Some notes:
 - Utilize ``fail2ban``, ``psad``, ``chkrootkit`` and ``rkhunter``
 - Utilize modified ``sysctl`` settings for improved security and DDOS protection 
 - Only one or two trusted individuals should have access to the box. All root access through ``sudo``.
+- Consider utilizing 2FA (two-factor authentication) on SSH and any other services that require login.
+  `Duo <https://www.duosecurity.com/>`__ is a good choice for this (and has great `SSH integration <https://www.duosecurity.com/unix>`__).
 - The system should have a proper hostname (e.g. counterwallet.myorganization.org), and your DNS provider should be DDOS resistant
-- System timezone should be set to UTC 
+- System timezone should be set to UTC
+- Enable Ubuntu's  `automated security updates <http://askubuntu.com/a/204>`__
+- If running multiple servers, consider other tweaks on a per-server basis to reduce homogeneity.  
 
 
 Node Setup
@@ -112,25 +126,31 @@ Then just follow the on-screen prompts, and once done, start up ``bitcoind`` dae
     
     sudo tail -f ~xcp/.bitcoin/debug.log 
 
-Watching the debug log, wait for the blockchain sync to complete. Once done, launch the ``insight`` daemon(s)::
+That last command will give you information on the Bitcoin blockchain download status. While the blockchain is
+downloading, you can launch the ``insight`` daemon(s)::
 
     sudo service insight start
     sudo service insight-testnet start
     
     sudo tail -f ~xcp/insight-api/insight.log 
 
-Then, watching this log, wait for the insight sync to finish. After this, reboot the box for the new services to start
-(which will include ``counterpartyd`` and ``counterwalletd``).
+Then, watching this log, wait for the insight sync (as well as the bitcoind sync) to finish, which should take between 7 and 12 hours.
+After this is all done, reboot the box for the new services to start (which includes ``counterpartyd`` and ``counterwalletd``).
 
+Then, check on the status of ``counterpartyd`` and ``counterwalletd``'s sync with the blockchain using::
+
+    sudo tail -f ~xcp/.config/counterpartyd/counterpartyd.log
+    sudo tail -f ~xcp/.config/counterwalletd/countewalletd.log
+
+Once both are fully synced up, you should be good to proceed.
 
 Getting a SSL Certificate
 --------------------------
 
 By default, the system is set up to use a self-signed SSL certificate. If you are hosting your services for others, 
-you should get your own SSL certificate from your DNS registrar (so that your users don't see a certificate warning when
-they visit your site). Once you have that certificate, create a
-nginx-compatible ``.pem`` file, and place that at ``/etc/ssl/certs/counterwallet.pem``. Then, place your SSL private key
-at ``/etc/ssl/private/counterwallet.key``.
+you should get your own SSL certificate from your DNS registrar so that your users don't see a certificate warning when
+they visit your site. Once you have that certificate, create a nginx-compatible ``.pem`` file, and place that
+at ``/etc/ssl/certs/counterwallet.pem``. Then, place your SSL private key at ``/etc/ssl/private/counterwallet.key``.
 
 After doing this, edit the ``/etc/nginx/sites-enabled/counterwallet.conf`` file. Comment out the two development
 SSL certificate lines, and uncomment the production SSL cert lines, like so::
@@ -155,3 +175,27 @@ For now, to run Counterwallet against your new servers, you will need to modify 
 Search for the line that sets ``counterwalletd_urls`` for production mode (``!IS_DEV``) and modify to use your own hostnames.
 Note that we recommend that you use hostnames so that the API communications can be SSL encrypted (since it appears that
 IP address-based SSL certificates are being phased out).
+
+After doing this, you should be able to visit your Counterwallet server and log in.
+
+
+Troubleshooting
+------------------------------------
+
+If you experience issues with your Counterwallet server, a good start is to check out the logs. Something like the following should work::
+
+    #if for mainnet
+    sudo tail -f ~xcp/.config/counterpartyd/counterpartyd.log
+    sudo tail -f ~xcp/.config/counterwalletd/countewalletd.log
+    sudo tail -f ~xcp/.config/counterpartyd/api.error.log
+    sudo tail -f ~xcp/.config/counterwalletd/api.error.log
+
+    #if for testnet
+    sudo tail -f ~xcp/.config/counterpartyd-testnet/counterpartyd.log
+    sudo tail -f ~xcp/.config/counterwalletd-testnet/counterwalletd.log
+    sudo tail -f ~xcp/.config/counterpartyd-testnet/api.error.log
+    sudo tail -f ~xcp/.config/counterwalletd-testnet/api.error.log
+
+These logs should hopefully provide some useful information that will help you further diagnose your issue. You can also
+keep tailing them (or use them with a log analysis tool like Splunk) to gain insight on the current
+status of ``counterpartyd``/``counterwalletd``.
