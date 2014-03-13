@@ -9,6 +9,7 @@ TODO: This is admittedly a (bit of a) hack. In the future, take this kind of fun
 """
 import os
 import sys
+import re
 import getopt
 import logging
 import shutil
@@ -331,6 +332,9 @@ def do_newrelic_setup(run_as_user, base_path, dist_path, run_mode):
     NR_PREFS_LICENSE_KEY_PATH = "/etc/newrelic/LICENSE_KEY"
     NR_PREFS_HOSTNAME_PATH = "/etc/newrelic/HOSTNAME"
     
+    runcmd("mkdir -p /etc/newrelic /var/log/newrelic /var/run/newrelic")
+    runcmd("chown xcp /etc/newrelic /var/log/newrelic /var/run/newrelic")
+    
     #try to find existing license key
     nr_license_key = None
     if os.path.exists(NR_PREFS_LICENSE_KEY_PATH):
@@ -402,8 +406,6 @@ def do_newrelic_setup(run_as_user, base_path, dist_path, run_mode):
     
     #install/setup meetme agent (mongo, redis, nginx)
     runcmd("pip install newrelic-plugin-agent pymongo")
-    runcmd("mkdir -p /etc/newrelic /var/log/newrelic /var/run/newrelic")
-    runcmd("chown xcp /etc/newrelic /var/log/newrelic /var/run/newrelic")
     runcmd("cp -af %s/linux/newrelic/newrelic_plugin_agent.cfg.template /etc/newrelic/newrelic_plugin_agent.cfg" % dist_path)
     runcmd("sed -ri \"s/\!LICENSE_KEY\!/%s/g\" /etc/newrelic/newrelic_plugin_agent.cfg" % nr_license_key)
     runcmd("sed -ri \"s/\!HOSTNAME\!/%s/g\" /etc/newrelic/newrelic_plugin_agent.cfg" % nr_hostname)
