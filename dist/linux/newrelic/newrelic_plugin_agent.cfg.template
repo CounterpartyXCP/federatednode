@@ -14,13 +14,13 @@ Application:
       - counterwalletd
       - counterwalletd_testnet
 
-  nginx:
-    name: !HOSTNAME!-nginx
-    scheme: https
-    host: localhost
-    port: 443
-    verify_ssl_cert: false
-    path: /nginx_stub_status
+  #nginx:
+  #  name: !HOSTNAME!-nginx
+  #  scheme: https
+  #  host: localhost
+  #  port: 443
+  #  verify_ssl_cert: false
+  #  path: /nginx_stub_status
 
   redis:
     - name: !HOSTNAME!-redis
@@ -45,7 +45,7 @@ Logging:
       backupCount: 3
   loggers:
     newrelic_plugin_agent:
-      level: INFO
+      level: WARNING
       propagate: True
       handlers: [console, file]
     requests:
