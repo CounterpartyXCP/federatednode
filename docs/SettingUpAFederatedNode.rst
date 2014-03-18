@@ -76,7 +76,10 @@ funds would not be at risk before the hacked server could be discovered and remo
 Node Provisioning
 ------------------
 
-Here are the recommendations and/or requirements when setting up a Counterwallet server:
+Production
+^^^^^^^^^^^^
+
+Here are the recommendations and/or requirements when setting up a production-grade Counterwallet server:
 
 **Server Hardware/Network Recommendations:**
 
@@ -110,16 +113,26 @@ Some notes:
 - If running multiple servers, consider other tweaks on a per-server basis to reduce homogeneity.  
 
 
+Testing / Development
+^^^^^^^^^^^^^^^^^^^^^^
+
+If you'd like to set up a Counterwallet system for testing and development, the requirements are minimal. Basically you
+need to set up a Virtual Machine (VM) instance (or hardware) with **Ubuntu 13.10 64-bit** and give it at least **2 GB** of memory.
+
+
 Node Setup
 -----------
 
-Once the server is provisioned and secured as above, you will need to install all of the necessary software. We have an
+Once the server is provisioned and set up as above, you will need to install all of the necessary software and dependencies. We have an
 installation script for this, that is fully automated **and installs ALL dependencies, including ``bitcoind`` and ``insight``**::
 
-    cd && wget -qO setup_federated_node.py https://raw.github.com/xnova/counterpartyd_build/master/setup_federated_node.py
+    cd && wget -qO setup_federated_node.py https://raw.github.com/xnova/counterpartyd_build/develop/setup_federated_node.py
     sudo python3 setup_federated_node.py
 
-Then just follow the on-screen prompts, and once done, start up ``bitcoind`` daemon(s)::
+Then just follow the on-screen prompts (choosing to build from *master* if you are building a production node,
+or from *develop* **only** if you are a developer).
+
+Once done, start up ``bitcoind`` daemon(s)::
 
     sudo service bitcoind start
     sudo service bitcoind-testnet start
@@ -142,7 +155,11 @@ Then, check on the status of ``counterpartyd`` and ``counterwalletd``'s sync wit
     sudo tail -f ~xcp/.config/counterpartyd/counterpartyd.log
     sudo tail -f ~xcp/.config/counterwalletd/countewalletd.log
 
-Once both are fully synced up, you should be good to proceed.
+Once both are fully synced up, you should be good to proceed. The next step is to simply open up a web browser, and
+go to the IP address/hostname of the server. You will then be presented to accept your self-signed SSL certificate, and
+after doing that, should see the Counterwallet login interface. From this point, you can proceed testing Counterwallet
+functionality on your own system(s).
+
 
 Getting a SSL Certificate
 --------------------------
@@ -168,15 +185,28 @@ Then restart nginx::
     sudo service nginx restart
 
 
-Connecting with Counterwallet
+Multi-Server Setups
 ------------------------------------
 
-For now, to run Counterwallet against your new servers, you will need to modify the `counterwallet.js <https://github.com/xnova/counterwallet/blob/develop/src/js/counterwallet.js>`__ file.
-Search for the line that sets ``counterwalletd_urls`` for production mode (``!IS_DEV``) and modify to use your own hostnames.
-Note that we recommend that you use hostnames so that the API communications can be SSL encrypted (since it appears that
-IP address-based SSL certificates are being phased out).
+Counterwallet should work out-of-the-box in a scenario where you have a single Counterwallet server that both hosts the
+static site content, as well as the backend API services. You will need to read and follow this section if any of the
+following apply to your situation:
 
-After doing this, you should be able to visit your Counterwallet server and log in.
+- You have more than one server hosting the content (i.e. javascript, html, css resources) and API services (backend ``counterwalletd``, etc)
+- Or, you have a different set of hosts hosting API services than those hosting the static site content
+- Or, you are hosting the static site content on a CDN
+
+In these situations, you need to create a small file called ``servers.json`` at the root of your site (e.g. normally
+in the ``counterwallet/build/`` directory). This file will contain a valid JSON-formatted array of all of your backend servers. For example::
+
+    [ "https://counterwallet1.mydomain.com", "https://counterwallet2.mydomain.com", "https://counterwallet3.mydomain.com" ]
+
+As in the example above, each of the hosts must have a "http://" or "https://" prefix (we strongly recommend using HTTPS),
+and the strings must *not* end in a slash (just leave it off).
+
+Once done, save this file and make sure it exists on all servers you are hosting Counterwallet static content on. Now, when you go
+to your Counterwallet site, the server will read in this file immediately after loading the page, and set the list of
+backend API hosts from it automatically.
 
 
 Troubleshooting
