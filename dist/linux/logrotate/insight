@@ -5,6 +5,6 @@
         compress
         delaycompress
         notifempty
-        create 640 root adm
+        create 640 !RUN_AS_USER! !RUN_AS_USER!
         sharedscripts
 }

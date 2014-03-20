@@ -153,6 +153,7 @@ def do_counterparty_setup(run_as_user, branch, base_path, dist_path, run_mode, b
     # counterpartyd/counterwalletd to start up at startup for both mainnet and testnet (we will override this as necessary
     # based on run_mode later in this function)
     runcmd("~%s/counterpartyd_build/setup.py -y --with-counterwalletd --with-testnet --for-user=%s" % (USERNAME, USERNAME))
+    runcmd("chown -R %s ~xcp/counterpartyd_build" % run_as_user) #hack
 
     #modify the default stored bitcoind passwords in counterpartyd.conf and counterwalletd.conf
     runcmd(r"""sed -ri "s/^bitcoind\-rpc\-password=.*?$/bitcoind-rpc-password=%s/g" ~%s/.config/counterpartyd/counterpartyd.conf""" % (
@@ -192,11 +193,11 @@ def do_counterparty_setup(run_as_user, branch, base_path, dist_path, run_mode, b
         os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterpartyd-testnet", "counterpartyd.conf") ]:
         f = open(cfgFilename, 'a+')
         content = f.read()
-        if not re.search(r'insight-enable', content):
+        if not re.search(r'^insight\-enable', content, re.MULTILINE):
             f.write('\ninsight-enable=1')
-        if not re.search(r'api-num-threads', content):
+        if not re.search(r'^api\-num\-threads', content, re.MULTILINE):
             f.write('\napi-num-threads=100')
-        if not re.search(r'api-request-queue-size', content):
+        if not re.search(r'^api\-request\-queue\-size', content, re.MULTILINE):
             f.write('\napi-request-queue-size=500')
         f.close()
 
@@ -219,7 +220,7 @@ def do_insight_setup(run_as_user, base_path, dist_path, run_mode):
         runcmd("mv %s %s_bkup" % (gypdir, gypdir))
         #^ fix for https://github.com/TooTallNate/node-gyp/issues/363
     git_repo_clone("master", "insight-api", "https://github.com/bitpay/insight-api.git", run_as_user)
-    runcmd("cd ~%s/insight-api && npm install" % USERNAME)
+    runcmd("rm -rf ~%s/insight-api/node-modules && cd ~%s/insight-api && npm install" % (USERNAME, USERNAME))
     #Set up insight startup scripts (will be disabled later from autostarting on system startup if necessary)
     runcmd("cp -af %s/linux/init/insight.conf.template /etc/init/insight.conf" % dist_path)
     runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/insight.conf" % USERNAME)
@@ -227,9 +228,10 @@ def do_insight_setup(run_as_user, base_path, dist_path, run_mode):
     runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/insight-testnet.conf" % USERNAME)
     #install logrotate file
     runcmd("cp -af %s/linux/logrotate/insight /etc/logrotate.d/insight" % dist_path)
+    runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/logrotate.d/insight" % USERNAME)
     runcmd("sed -ri \"s/\!RUN_AS_USER_HOMEDIR\!/%s/g\" /etc/logrotate.d/insight" % user_homedir.replace('/', '\/'))
 
-    runcmd("chown -R %s:%s ~%s/insight-api" % (run_as_user, USERNAME, USERNAME))
+    runcmd("chown -R %s:%s ~%s/insight-api" % (USERNAME, USERNAME, USERNAME))
     
     #disable upstart scripts from autostarting on system boot if necessary
     if run_mode == 't': #disable mainnet daemons from autostarting
