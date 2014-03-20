@@ -11,7 +11,7 @@ requests==2.1.0
 
 cherrypy==3.2.4
 
-json-rpc==1.2
+json-rpc==1.2.1
 
 pycoin==0.25
 

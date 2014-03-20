@@ -101,9 +101,12 @@ def do_bitcoind_setup(run_as_user, branch, base_path, dist_path, run_mode):
     bitcoind_rpc_password_testnet = pass_generator()
     
     #Install bitcoind
-    runcmd("add-apt-repository -y ppa:bitcoin/bitcoin")
-    runcmd("apt-get update")
-    runcmd("apt-get -y install bitcoind")
+    runcmd("rm -rf /tmp/bitcoind.tar.gz /tmp/bitcoin-0.9.0-linux")
+    runcmd("wget -O /tmp/bitcoind.tar.gz https://bitcoin.org/bin/0.9.0/bitcoin-0.9.0-linux.tar.gz")
+    runcmd("tar -C /tmp -zxvf /tmp/bitcoind.tar.gz")
+    runcmd("cp -af /tmp/bitcoin-0.9.0-linux/bin/64/bitcoind /usr/bin")
+    runcmd("cp -af /tmp/bitcoin-0.9.0-linux/bin/64/bitcoin-cli /usr/bin")
+    runcmd("rm -rf /tmp/bitcoind.tar.gz /tmp/bitcoin-0.9.0-linux")
 
     #Do basic inital bitcoin config (for both testnet and mainnet)
     runcmd("mkdir -p ~%s/.bitcoin ~%s/.bitcoin-testnet" % (USERNAME, USERNAME))
@@ -498,6 +501,17 @@ def main():
             if run_mode == '': run_mode = 'b'
             break
     logging.info("Setting up to run on %s" % ('testnet' if run_mode.lower() == 't' else ('mainnet' if run_mode.lower() == 'm' else 'testnet and mainnet')))
+
+    #shutdown services if they may be running on the box
+    if os.path.exists("/etc/init/counterpartyd.conf"):
+        runcmd("service bitcoind stop", abort_on_failure=False)
+        runcmd("service bitcoind-testnet stop", abort_on_failure=False)
+        runcmd("service insight stop", abort_on_failure=False)
+        runcmd("service insight-testnet stop", abort_on_failure=False)
+        runcmd("service counterpartyd stop", abort_on_failure=False)
+        runcmd("service counterpartyd-testnet stop", abort_on_failure=False)
+        runcmd("service counterwalletd stop", abort_on_failure=False)
+        runcmd("service counterwalletd-testnet stop", abort_on_failure=False)
     
     do_base_setup(run_as_user, branch, base_path, dist_path)
     
