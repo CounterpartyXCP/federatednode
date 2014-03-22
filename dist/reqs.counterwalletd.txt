@@ -12,9 +12,9 @@ prettytable==0.7.2
 
 python-dateutil==2.2
 
-requests==2.1.0
+requests==2.2.1
 
-cherrypy==3.2.4
+cherrypy==3.2.5
 
 json-rpc==1.2.1
 
