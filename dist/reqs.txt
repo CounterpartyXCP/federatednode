@@ -16,3 +16,5 @@ json-rpc==1.2.1
 pycoin==0.25
 
 pytest==2.5.1
+
+pycrypto==2.6.1
