@@ -17,4 +17,5 @@ pycoin==0.25
 
 pytest==2.5.1
 
-pycrypto==2.6.1
+pycrypto>=2.6
+#^ on windows, this will skip as the windows pycrypto installer should have been run

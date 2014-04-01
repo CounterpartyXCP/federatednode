@@ -32,6 +32,8 @@ Minimally required to build ``counterpartyd`` from source is the following:
   or `64-bit version <http://sourceforge.net/projects/pywin32/files/pywin32/Build%20218/pywin32-218.win-amd64-py3.2.exe/download>`__
 - APSW for Windows -- grab the `32-bit version <https://apsw.googlecode.com/files/apsw-3.8.2-r1.win32-py3.2.exe>`__
   or `64-bit version <https://apsw.googlecode.com/files/apsw-3.8.2-r1.win-amd64-py3.2.exe>`__
+- Pycrypto for Windows -- grab the `32-bit version <http://www.voidspace.org.uk/downloads/pycrypto26/pycrypto-2.6.win32-py3.2.exe>`__
+  or `64-bit version <http://www.voidspace.org.uk/downloads/pycrypto26/pycrypto-2.6.win-amd64-py3.2.exe>`__
 - Git for Windows (should have already been downloaded for the ``insight`` setup).
   Download `here <http://git-scm.com/download/win>`__ and install. Use the default installer
   options (except, select *"Run Git from the Windows Command Prompt"* on the appropriate screen)
