@@ -331,7 +331,10 @@ etc usr var''' % (OPENRESTY_VER, OPENRESTY_VER))
 def do_counterwallet_setup(run_as_user, branch):
     #check out counterwallet from git
     git_repo_clone(branch, "counterwallet", "https://github.com/xnova/counterwallet.git", run_as_user)
-    runcmd("~%s/counterwallet/build.py" % (USERNAME,)) #link files, instead of copying (for now at least)
+    runcmd("npm install -g grunt-cli bower")
+    runcmd("cd ~xcp/counterwallet/src && bower install")
+    runcmd("cd ~xcp/counterwallet && npm install") #will generate the minified site
+    runcmd("chown -R %s ~xcp/counterwallet" % run_as_user) #just in case
 
 def do_newrelic_setup(run_as_user, base_path, dist_path, run_mode):
     NR_PREFS_LICENSE_KEY_PATH = "/etc/newrelic/LICENSE_KEY"

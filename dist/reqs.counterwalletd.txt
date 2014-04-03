@@ -39,3 +39,5 @@ pyzmq==14.0.1
 pillow==2.3.1
 
 numpy==1.8.1
+
+lxml==3.3.3
