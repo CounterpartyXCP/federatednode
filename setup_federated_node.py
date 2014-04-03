@@ -43,7 +43,7 @@ def runcmd(command, abort_on_failure=True):
         logging.error("Command failed: '%s'" % command)
         sys.exit(1) 
         
-def git_repo_clone(branch, repo_dir, repo_url, run_as_user):
+def git_repo_clone(branch, repo_dir, repo_url, run_as_user, hash=None):
     if branch == 'AUTO':
         try:
             branch = subprocess.check_output("cd %s && git rev-parse --abbrev-ref HEAD" % (
@@ -56,6 +56,10 @@ def git_repo_clone(branch, repo_dir, repo_url, run_as_user):
         runcmd("cd ~%s/%s && git pull origin %s" % (USERNAME, repo_dir, branch))
     else:
         runcmd("git clone -b %s %s ~%s/%s" % (branch, repo_url, USERNAME, repo_dir))
+
+    if hash:
+        runcmd("cd ~%s/%s && git reset --hard %s" % (USERNAME, repo_dir, hash))
+            
     runcmd("chown -R %s:%s ~%s/%s" % (run_as_user, USERNAME, USERNAME, repo_dir))
 
 def do_prerun_checks():
@@ -222,7 +226,8 @@ def do_insight_setup(run_as_user, base_path, dist_path, run_mode):
     else:
         runcmd("mv %s %s_bkup" % (gypdir, gypdir))
         #^ fix for https://github.com/TooTallNate/node-gyp/issues/363
-    git_repo_clone("master", "insight-api", "https://github.com/bitpay/insight-api.git", run_as_user)
+    git_repo_clone("master", "insight-api", "https://github.com/bitpay/insight-api.git",
+        run_as_user, hash="55ce11e8fc390907bf9e10378a6fb02008cc76d2") #check out a specific hash
     runcmd("rm -rf ~%s/insight-api/node-modules && cd ~%s/insight-api && npm install" % (USERNAME, USERNAME))
     #Set up insight startup scripts (will be disabled later from autostarting on system startup if necessary)
     runcmd("cp -af %s/linux/init/insight.conf.template /etc/init/insight.conf" % dist_path)
@@ -332,8 +337,9 @@ def do_counterwallet_setup(run_as_user, branch):
     #check out counterwallet from git
     git_repo_clone(branch, "counterwallet", "https://github.com/xnova/counterwallet.git", run_as_user)
     runcmd("npm install -g grunt-cli bower")
-    runcmd("cd ~xcp/counterwallet/src && bower install")
-    runcmd("cd ~xcp/counterwallet && npm install") #will generate the minified site
+    runcmd("cd ~xcp/counterwallet/src && bower --allow-root --config.interactive=false install")
+    runcmd("cd ~xcp/counterwallet && npm install")
+    runcmd("cd ~xcp/counterwallet && grunt build") #will generate the minified site
     runcmd("chown -R %s ~xcp/counterwallet" % run_as_user) #just in case
 
 def do_newrelic_setup(run_as_user, base_path, dist_path, run_mode):
