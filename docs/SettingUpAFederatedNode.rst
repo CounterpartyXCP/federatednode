@@ -197,9 +197,12 @@ following apply to your situation:
 - Or, you are hosting the static site content on a CDN
 
 In these situations, you need to create a small file called ``servers.json`` at the root of your site (e.g. normally
-in the ``counterwallet/build/`` directory). This file will contain a valid JSON-formatted array of all of your backend servers. For example::
+in the ``counterwallet/build/`` directory). This file will contain a valid JSON-formatted object, containing an array of all of your backend servers, as well as a property for the common domain name (which document.domain will be set to, to enable cross-site AJAX API requests). For example::
 
-    [ "https://counterwallet1.mydomain.com", "https://counterwallet2.mydomain.com", "https://counterwallet3.mydomain.com" ]
+    { 
+      "commonDomain": "mydomain.com",
+      "servers": [ "https://counterwallet1.mydomain.com", "https://counterwallet2.mydomain.com", "https://counterwallet3.mydomain.com" ]
+    }
 
 As in the example above, each of the hosts must have a "http://" or "https://" prefix (we strongly recommend using HTTPS),
 and the strings must *not* end in a slash (just leave it off).
