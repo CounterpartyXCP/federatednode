@@ -297,6 +297,7 @@ def do_nginx_setup(run_as_user, base_path, dist_path):
 && install -m 0755 -D %s/linux/nginx/cw_api.inc /tmp/openresty/etc/nginx/sites-enabled/cw_api.inc \
 && install -m 0755 -D %s/linux/nginx/cw_api_cache.inc /tmp/openresty/etc/nginx/sites-enabled/cw_api_cache.inc \
 && install -m 0755 -D %s/linux/nginx/cw_socketio.inc /tmp/openresty/etc/nginx/sites-enabled/cw_socketio.inc \
+&& install -m 0755 -D %s/linux/nginx/cw_cors.inc /tmp/openresty/etc/nginx/sites-enabled/cw_cors.inc \
 && install -m 0755 -D %s/linux/logrotate/nginx /tmp/openresty/etc/logrotate.d/nginx''' % (
     OPENRESTY_VER, dist_path, dist_path, dist_path, dist_path, dist_path, dist_path, dist_path))
     #package it up using fpm
@@ -333,10 +334,11 @@ etc usr var''' % (OPENRESTY_VER, OPENRESTY_VER))
     runcmd("rm -rf /tmp/openresty /tmp/ngx_openresty-* /tmp/nginx-openresty.tar.gz /tmp/nginx-openresty*.deb")
     runcmd("update-rc.d nginx defaults")
     
-def do_counterwallet_setup(run_as_user, branch):
+def do_counterwallet_setup(run_as_user, branch, updateOnly=False):
     #check out counterwallet from git
     git_repo_clone(branch, "counterwallet", "https://github.com/xnova/counterwallet.git", run_as_user)
-    runcmd("npm install -g grunt-cli bower")
+    if not updateOnly:
+        runcmd("npm install -g grunt-cli bower")
     runcmd("cd ~xcp/counterwallet/src && bower --allow-root --config.interactive=false install")
     runcmd("cd ~xcp/counterwallet && npm install")
     runcmd("cd ~xcp/counterwallet && grunt build") #will generate the minified site
@@ -483,7 +485,7 @@ def main():
     if do_rebuild == 'g': #just refresh counterpartyd, counterwalletd, and counterwallet from github
         runcmd("%s/setup.py --with-counterwalletd --for-user=xcp update" % base_path)
         assert(os.path.exists(os.path.expanduser("~%s/counterwallet" % USERNAME)))
-        git_repo_clone("AUTO", "counterwallet", "https://github.com/xnova/counterwallet.git", run_as_user)
+        do_counterwallet_setup(run_as_user, "AUTO", updateOnly=True)        
         sys.exit(0) #all done
 
     #If here, a) federated node has not been set up yet or b) the user wants a rebuild

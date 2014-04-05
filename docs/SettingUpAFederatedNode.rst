@@ -197,12 +197,20 @@ following apply to your situation:
 - Or, you are hosting the static site content on a CDN
 
 In these situations, you need to create a small file called ``servers.json`` in the ``counterwallet/`` directory.
-This file will contain a valid JSON-formatted array of all of your backend servers. For example::
+This file will contain a valid JSON-formatted object, containing an array of all of your backend servers, as well as
+a number of other site specific configuration properties. For example::
 
-[ "https://counterwallet1.mydomain.com", "https://counterwallet2.mydomain.com", "https://counterwallet3.mydomain.com" ]
-
-As in the example above, each of the hosts must have a "http://" or "https://" prefix (we strongly recommend using HTTPS),
-and the strings must *not* end in a slash (just leave it off).
+    { 
+      "servers": [ "https://counterwallet1.mydomain.com", "https://counterwallet2.mydomain.com", "https://counterwallet3.mydomain.com" ],
+      "forceTestnet": true,
+      "googleAnalyticsUA": "UA-48454783-2",
+      "googleAnalyticsUA-testnet": "UA-48454783-4",
+      "rollbarAccessToken": "39d23b5a512f4169c98fc922f0d1b121"
+    }
+  
+As in the example above, each of the hosts in ``servers`` must have a "http://" or "https://" prefix (we strongly recommend using HTTPS),
+and the strings must *not* end in a slash (just leave it off). The other properties are optional, and can be set if you
+make use of these services.
 
 Once done, save this file and make sure it exists on all servers you are hosting Counterwallet static content on. Now, when you go
 to your Counterwallet site, the server will read in this file immediately after loading the page, and set the list of
