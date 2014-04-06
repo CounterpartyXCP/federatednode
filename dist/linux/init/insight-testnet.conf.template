@@ -8,6 +8,10 @@ oom never
 respawn
 respawn limit 10 60 # 10 times in 60 seconds
 
+post-stop script
+   /bin/sleep 5
+end script
+
 script
 USER=!RUN_AS_USER!
 USER_HOME=$(eval echo ~${USER})

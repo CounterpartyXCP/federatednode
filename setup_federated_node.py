@@ -443,6 +443,19 @@ def do_newrelic_setup(run_as_user, base_path, dist_path, run_mode):
     runcmd("update-rc.d newrelic_nginx_agent defaults")
     runcmd("/etc/init.d/newrelic_nginx_agent restart")
     
+def command_services(command):
+    assert command in ("stop", "restart")
+    #restart/shutdown services if they may be running on the box
+    if os.path.exists("/etc/init/counterpartyd.conf"):
+        logging.warn("STOPPING SERVICES" if command == 'stop' else "RESTARTING SERVICES")
+        runcmd("service bitcoind %s" % command, abort_on_failure=False)
+        runcmd("service bitcoind-testnet %s" % command, abort_on_failure=False)
+        runcmd("service insight %s" % command, abort_on_failure=False)
+        runcmd("service insight-testnet %s" % command, abort_on_failure=False)
+        runcmd("service counterpartyd %s" % command, abort_on_failure=False)
+        runcmd("service counterpartyd-testnet %s" % command, abort_on_failure=False)
+        runcmd("service counterwalletd %s" % command, abort_on_failure=False)
+        runcmd("service counterwalletd-testnet %s" % command, abort_on_failure=False)
 
 def main():
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s|%(levelname)s: %(message)s')
@@ -485,7 +498,8 @@ def main():
     if do_rebuild == 'g': #just refresh counterpartyd, counterwalletd, and counterwallet from github
         runcmd("%s/setup.py --with-counterwalletd --for-user=xcp update" % base_path)
         assert(os.path.exists(os.path.expanduser("~%s/counterwallet" % USERNAME)))
-        do_counterwallet_setup(run_as_user, "AUTO", updateOnly=True)        
+        do_counterwallet_setup(run_as_user, "AUTO", updateOnly=True)
+        command_services("restart")        
         sys.exit(0) #all done
 
     #If here, a) federated node has not been set up yet or b) the user wants a rebuild
@@ -513,16 +527,7 @@ def main():
             break
     logging.info("Setting up to run on %s" % ('testnet' if run_mode.lower() == 't' else ('mainnet' if run_mode.lower() == 'm' else 'testnet and mainnet')))
 
-    #shutdown services if they may be running on the box
-    if os.path.exists("/etc/init/counterpartyd.conf"):
-        runcmd("service bitcoind stop", abort_on_failure=False)
-        runcmd("service bitcoind-testnet stop", abort_on_failure=False)
-        runcmd("service insight stop", abort_on_failure=False)
-        runcmd("service insight-testnet stop", abort_on_failure=False)
-        runcmd("service counterpartyd stop", abort_on_failure=False)
-        runcmd("service counterpartyd-testnet stop", abort_on_failure=False)
-        runcmd("service counterwalletd stop", abort_on_failure=False)
-        runcmd("service counterwalletd-testnet stop", abort_on_failure=False)
+    command_services("stop")
     
     do_base_setup(run_as_user, branch, base_path, dist_path)
     
