@@ -60,7 +60,10 @@ def git_repo_clone(branch, repo_dir, repo_url, run_as_user, hash=None):
     if hash:
         runcmd("cd ~%s/%s && git reset --hard %s" % (USERNAME, repo_dir, hash))
             
-    runcmd("chown -R %s:%s ~%s/%s" % (run_as_user, USERNAME, USERNAME, repo_dir))
+    runcmd("cd ~%s/%s && git repo-config core.sharedRepository group && find ~%s/%s -type d -print0 | xargs -0 chmod g+s" % (
+        USERNAME, repo_dir, USERNAME, repo_dir)) #to allow for group git actions 
+    runcmd("chown -R %s:%s ~%s/%s" % (USERNAME, USERNAME, USERNAME, repo_dir))
+    runcmd("chmod -R g+rw ~%s/%s" % (USERNAME, repo_dir)) #just in case
 
 def do_prerun_checks():
     #make sure this is running on a supported OS
@@ -160,7 +163,10 @@ def do_counterparty_setup(run_as_user, branch, base_path, dist_path, run_mode, b
     # counterpartyd/counterwalletd to start up at startup for both mainnet and testnet (we will override this as necessary
     # based on run_mode later in this function)
     runcmd("~%s/counterpartyd_build/setup.py -y --with-counterwalletd --with-testnet --for-user=%s" % (USERNAME, USERNAME))
-    runcmd("chown -R %s ~xcp/counterpartyd_build" % run_as_user) #hack
+    runcmd("cd ~%s/counterpartyd_build && git repo-config core.sharedRepository group && find ~%s/counterpartyd_build -type d -print0 | xargs -0 chmod g+s" % (
+        USERNAME, USERNAME)) #to allow for group git actions 
+    runcmd("chown -R %s:%s ~%s/counterpartyd_build" % (USERNAME, USERNAME, USERNAME)) #hacky, probably not necessary    
+    runcmd("chmod -R g+rw ~%s/counterpartyd_build" % USERNAME) #hacky
 
     #modify the default stored bitcoind passwords in counterpartyd.conf and counterwalletd.conf
     runcmd(r"""sed -ri "s/^bitcoind\-rpc\-password=.*?$/bitcoind-rpc-password=%s/g" ~%s/.config/counterpartyd/counterpartyd.conf""" % (
@@ -194,18 +200,23 @@ def do_counterparty_setup(run_as_user, branch, base_path, dist_path, run_mode, b
     else:
         runcmd("rm -f /etc/init/counterpartyd-testnet.override /etc/init/counterwalletd-testnet.override")
     
-    #append insight enablement params to counterpartyd's configs
+    #append insight enablement param and API performance params to counterpartyd's configs
     for cfgFilename in [
         os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterpartyd", "counterpartyd.conf"),
         os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterpartyd-testnet", "counterpartyd.conf") ]:
-        f = open(cfgFilename, 'a+')
+        f = open(cfgFilename, 'r')
         content = f.read()
+        f.close()
+        if content[-1] != '\n':
+            content += '\n'
         if not re.search(r'^insight\-enable', content, re.MULTILINE):
-            f.write('\ninsight-enable=1')
+            content += 'insight-enable=1\n'
         if not re.search(r'^api\-num\-threads', content, re.MULTILINE):
-            f.write('\napi-num-threads=100')
+            content += 'api-num-threads=100\n'
         if not re.search(r'^api\-request\-queue\-size', content, re.MULTILINE):
-            f.write('\napi-request-queue-size=500')
+            content += 'api-request-queue-size=500\n'
+        f = open(cfgFilename, 'w')
+        f.write(content)
         f.close()
 
     #change ownership
@@ -299,7 +310,7 @@ def do_nginx_setup(run_as_user, base_path, dist_path):
 && install -m 0755 -D %s/linux/nginx/cw_socketio.inc /tmp/openresty/etc/nginx/sites-enabled/cw_socketio.inc \
 && install -m 0755 -D %s/linux/nginx/cw_cors.inc /tmp/openresty/etc/nginx/sites-enabled/cw_cors.inc \
 && install -m 0755 -D %s/linux/logrotate/nginx /tmp/openresty/etc/logrotate.d/nginx''' % (
-    OPENRESTY_VER, dist_path, dist_path, dist_path, dist_path, dist_path, dist_path, dist_path))
+    OPENRESTY_VER, dist_path, dist_path, dist_path, dist_path, dist_path, dist_path, dist_path, dist_path))
     #package it up using fpm
     runcmd('''cd /tmp && fpm -s dir -t deb -n nginx-openresty -v %s --iteration 1 -C /tmp/openresty \
 --description "openresty %s" \
@@ -342,14 +353,15 @@ def do_counterwallet_setup(run_as_user, branch, updateOnly=False):
     runcmd("cd ~xcp/counterwallet/src && bower --allow-root --config.interactive=false install")
     runcmd("cd ~xcp/counterwallet && npm install")
     runcmd("cd ~xcp/counterwallet && grunt build") #will generate the minified site
-    runcmd("chown -R %s ~xcp/counterwallet" % run_as_user) #just in case
+    runcmd("chown -R %s:%s ~xcp/counterwallet" % (USERNAME, USERNAME)) #just in case
+    runcmd("chmod -R g+rw ~xcp/counterwallet") #just in case
 
 def do_newrelic_setup(run_as_user, base_path, dist_path, run_mode):
     NR_PREFS_LICENSE_KEY_PATH = "/etc/newrelic/LICENSE_KEY"
     NR_PREFS_HOSTNAME_PATH = "/etc/newrelic/HOSTNAME"
     
     runcmd("mkdir -p /etc/newrelic /var/log/newrelic /var/run/newrelic")
-    runcmd("chown xcp /etc/newrelic /var/log/newrelic /var/run/newrelic")
+    runcmd("chown %s:%s /etc/newrelic /var/log/newrelic /var/run/newrelic" % (USERNAME, USERNAME))
     
     #try to find existing license key
     nr_license_key = None
@@ -528,7 +540,7 @@ def main():
     logging.info("Setting up to run on %s" % ('testnet' if run_mode.lower() == 't' else ('mainnet' if run_mode.lower() == 'm' else 'testnet and mainnet')))
 
     command_services("stop")
-    
+
     do_base_setup(run_as_user, branch, base_path, dist_path)
     
     bitcoind_rpc_password, bitcoind_rpc_password_testnet \
