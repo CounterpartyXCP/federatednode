@@ -222,13 +222,13 @@ Troubleshooting
 
 If you experience issues with your Counterwallet server, a good start is to check out the logs. Something like the following should work::
 
-    #if for mainnet
+    #mainnet
     sudo tail -f ~xcp/.config/counterpartyd/counterpartyd.log
     sudo tail -f ~xcp/.config/counterwalletd/countewalletd.log
     sudo tail -f ~xcp/.config/counterpartyd/api.error.log
     sudo tail -f ~xcp/.config/counterwalletd/api.error.log
 
-    #if for testnet
+    #testnet
     sudo tail -f ~xcp/.config/counterpartyd-testnet/counterpartyd.log
     sudo tail -f ~xcp/.config/counterwalletd-testnet/counterwalletd.log
     sudo tail -f ~xcp/.config/counterpartyd-testnet/api.error.log
@@ -237,3 +237,56 @@ If you experience issues with your Counterwallet server, a good start is to chec
 These logs should hopefully provide some useful information that will help you further diagnose your issue. You can also
 keep tailing them (or use them with a log analysis tool like Splunk) to gain insight on the current
 status of ``counterpartyd``/``counterwalletd``.
+
+Also, you can start up the daemons in the foreground, for easier debugging, using the following sets of commands::
+
+    #mainnet
+    sudo su -c 'counterpartyd --data-dir=/home/xcp/.config/counterpartyd' xcp
+    sudo su -c 'counterwalletd --data-dir=/home/xcp/.config/counterwalletd' xcp
+    
+    #testnet
+    sudo su -c 'counterpartyd --data-dir=/home/xcp/.config/counterpartyd-testnet --testnet' xcp
+    sudo su -c 'counterwalletd --data-dir=/home/xcp/.config/counterwalletd-testnet --testnet' xcp
+
+You can also run ``bitcoind`` commands directly, e.g.::
+
+    #mainnet
+    sudo su - xcp -c "bitcoind -datadir=/home/xcp/.bitcoin getinfo"
+    
+    #testnet
+    sudo su - xcp -c "bitcoind -datadir=/home/xcp/.bitcoin-testnet getinfo"
+
+Other Topics
+--------------
+
+Easy Updating
+^^^^^^^^^^^^^^^^
+
+To update the system with new ``counterpartyd``, ``counterwalletd`` and ``counterwallet`` code releases, you simply need
+to rerun the ``setup_federated_node`` script, like so::
+
+    cd ~xcp/counterpartyd_build
+    sudo ./setup_federated_node.py
+    
+As prompted, you should be able to choose just to Update, instead of to Rebuild. However, you would choose the Rebuild
+option if there were updates to the ``counterpartyd_build`` system files for the federated node itself (such as the
+``nginx`` configuration, or the init scripts) that you wanted/needed to apply. Otherwise, if there are just updates
+to the daemons or ``counterwallet`` code itself, Update should be fine. 
+
+Giving Op Chat Access
+^^^^^^^^^^^^^^^^^^^^^^
+
+Counterwallet has its own built-in chatbox. Users in the chat box are able to have operator (op) status, which allows them
+to do things like ban or rename other users. Any op can give any other user op status via the ``/op`` command, typed into
+the chat window. However, manual database-level intervention is required to give op status to the first op in the system.
+
+Doing this, however, is simple. Here's an example that gives ``testuser1`` op access. It needs to be issued at the
+command line for every node in the cluster::
+
+    #mainnet
+    mongo counterwalletd
+    db.chat_handles.update({handle: "testuser1"}, {$set: {op: true}})
+    
+    #testnet
+    mongo counterwalletd_testnet
+    db.chat_handles.update({handle: "testuser1"}, {$set: {op: true}})
