@@ -455,8 +455,22 @@ def do_newrelic_setup(run_as_user, base_path, dist_path, run_mode):
     runcmd("update-rc.d newrelic_nginx_agent defaults")
     runcmd("/etc/init.d/newrelic_nginx_agent restart")
     
-def command_services(command):
+def command_services(command, prompt=False):
     assert command in ("stop", "restart")
+    
+    if prompt:
+        confirmation = None
+        while True:
+            confirmation = input("%s services? (Y/n): " % command.capitalize())
+            confirmation = confirmation.lower()
+            if confirmation.lower() not in ('y', 'n', ''):
+                logging.error("Please enter 'y' or 'n'")
+            else:
+                if confirmation == '': confirmation = 'y'
+                break
+        if confirmation == 'n':
+            return
+    
     #restart/shutdown services if they may be running on the box
     if os.path.exists("/etc/init/counterpartyd.conf"):
         logging.warn("STOPPING SERVICES" if command == 'stop' else "RESTARTING SERVICES")
@@ -511,7 +525,7 @@ def main():
         runcmd("%s/setup.py --with-counterwalletd --for-user=xcp update" % base_path)
         assert(os.path.exists(os.path.expanduser("~%s/counterwallet" % USERNAME)))
         do_counterwallet_setup(run_as_user, "AUTO", updateOnly=True)
-        command_services("restart")        
+        command_services("restart", prompt=True)
         sys.exit(0) #all done
 
     #If here, a) federated node has not been set up yet or b) the user wants a rebuild
