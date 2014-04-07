@@ -219,7 +219,7 @@ If you experience issues with your Counterwallet server, a good start is to chec
 
     #if for mainnet
     sudo tail -f ~xcp/.config/counterpartyd/counterpartyd.log
-    sudo tail -f ~xcp/.config/counterwalletd/countewalletd.log
+    sudo tail -f ~xcp/.config/counterwalletd/counterwalletd.log
     sudo tail -f ~xcp/.config/counterpartyd/api.error.log
     sudo tail -f ~xcp/.config/counterwalletd/api.error.log
 
