@@ -108,12 +108,12 @@ def do_bitcoind_setup(run_as_user, branch, base_path, dist_path, run_mode):
     bitcoind_rpc_password_testnet = pass_generator()
     
     #Install bitcoind
-    runcmd("rm -rf /tmp/bitcoind.tar.gz /tmp/bitcoin-0.9.0-linux")
-    runcmd("wget -O /tmp/bitcoind.tar.gz https://bitcoin.org/bin/0.9.0/bitcoin-0.9.0-linux.tar.gz")
+    runcmd("rm -rf /tmp/bitcoind.tar.gz /tmp/bitcoin-0.9.1-linux")
+    runcmd("wget -O /tmp/bitcoind.tar.gz https://bitcoin.org/bin/0.9.1/bitcoin-0.9.1-linux.tar.gz")
     runcmd("tar -C /tmp -zxvf /tmp/bitcoind.tar.gz")
-    runcmd("cp -af /tmp/bitcoin-0.9.0-linux/bin/64/bitcoind /usr/bin")
-    runcmd("cp -af /tmp/bitcoin-0.9.0-linux/bin/64/bitcoin-cli /usr/bin")
-    runcmd("rm -rf /tmp/bitcoind.tar.gz /tmp/bitcoin-0.9.0-linux")
+    runcmd("cp -af /tmp/bitcoin-0.9.1-linux/bin/64/bitcoind /usr/bin")
+    runcmd("cp -af /tmp/bitcoin-0.9.1-linux/bin/64/bitcoin-cli /usr/bin")
+    runcmd("rm -rf /tmp/bitcoind.tar.gz /tmp/bitcoin-0.9.1-linux")
 
     #Do basic inital bitcoin config (for both testnet and mainnet)
     runcmd("mkdir -p ~%s/.bitcoin ~%s/.bitcoin-testnet" % (USERNAME, USERNAME))
