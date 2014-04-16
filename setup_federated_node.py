@@ -308,9 +308,8 @@ def do_nginx_setup(run_as_user, base_path, dist_path):
 && install -m 0755 -D %s/linux/nginx/cw_api.inc /tmp/openresty/etc/nginx/sites-enabled/cw_api.inc \
 && install -m 0755 -D %s/linux/nginx/cw_api_cache.inc /tmp/openresty/etc/nginx/sites-enabled/cw_api_cache.inc \
 && install -m 0755 -D %s/linux/nginx/cw_socketio.inc /tmp/openresty/etc/nginx/sites-enabled/cw_socketio.inc \
-&& install -m 0755 -D %s/linux/nginx/cw_cors.inc /tmp/openresty/etc/nginx/sites-enabled/cw_cors.inc \
 && install -m 0755 -D %s/linux/logrotate/nginx /tmp/openresty/etc/logrotate.d/nginx''' % (
-    OPENRESTY_VER, dist_path, dist_path, dist_path, dist_path, dist_path, dist_path, dist_path, dist_path))
+    OPENRESTY_VER, dist_path, dist_path, dist_path, dist_path, dist_path, dist_path, dist_path))
     #package it up using fpm
     runcmd('''cd /tmp && fpm -s dir -t deb -n nginx-openresty -v %s --iteration 1 -C /tmp/openresty \
 --description "openresty %s" \
