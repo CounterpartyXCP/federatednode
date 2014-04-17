@@ -98,6 +98,10 @@ def do_base_setup(run_as_user, branch, base_path, dist_path):
     except:
         logging.info("Creating user '%s' ..." % USERNAME)
         runcmd("adduser --system --disabled-password --shell /bin/bash --group %s" % USERNAME)
+    
+    #add the run_as_user to the xcp group
+    runcmd("adduser %s %s" % (run_as_user, USERNAME))
+    
     #Check out counterpartyd-build repo under this user's home dir and use that for the build
     git_repo_clone(branch, "counterpartyd_build", "https://github.com/xnova/counterpartyd_build.git", run_as_user)
 
