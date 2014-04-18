@@ -219,7 +219,7 @@ def install_dependencies(paths, with_counterwalletd, assume_yes):
             
             if with_counterwalletd:
                 #counterwalletd currently uses Python 2.7 due to gevent-socketio's lack of support for Python 3
-                runcmd("apt-get -y install python python-dev python-setuptools python-pip python-sphinx python-zmq libzmq3 libzmq3-dev libxml2-dev libxslt-dev zlib1g-dev")
+                runcmd("apt-get -y install python python-dev python-setuptools python-pip python-sphinx python-zmq libzmq3 libzmq3-dev libxml2-dev libxslt-dev zlib1g-dev libimage-exiftool-perl")
                 if assume_yes:
                     db_locally = 'y'
                 else:
