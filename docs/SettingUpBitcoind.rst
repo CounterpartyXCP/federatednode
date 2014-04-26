@@ -72,7 +72,7 @@ Once this is done, you have two options:
 
 - Close Bitcoin-QT and run ``bitcoind.exe`` directly. You can run it on startup by adding to your
   Startup program group in Windows, or using something like `NSSM <http://nssm.cc/usage>`__.
-- You can simply restart Bitcoin-QT (for the configuration changes to take effecnt) and use that. This is
+- You can simply restart Bitcoin-QT (for the configuration changes to take effect) and use that. This is
   fine for development/test setups, but not normally suitable for production systems. (You can have
   Bitcoin-QT start up automatically by clicking on Settings, then Options and checking the
   box titled "Start Bitcoin on system startup".
