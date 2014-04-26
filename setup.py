@@ -121,7 +121,7 @@ def do_prerun_checks():
     if os.name == "nt":
         PYTHON3_VER = "3.2"
     else:
-        for ver in ["3.3", "3.2", "3.1"]:
+        for ver in ["3.4", "3.3", "3.2", "3.1"]:
             if which("python%s" % ver):
                 PYTHON3_VER = ver
                 logging.info("Found Python version %s" % PYTHON3_VER)
@@ -209,11 +209,8 @@ def install_dependencies(paths, with_counterwalletd, assume_yes):
         logging.info("UBUNTU LINUX %s: Installing Required Packages..." % ubuntu_release) 
         runcmd("apt-get -y update")
 
-        if with_counterwalletd and ubuntu_release != "13.10":
-            logging.error("Only Ubuntu 13.10 supported for counterwalletd install.")
-        
         #13.10 deps
-        if ubuntu_release == "13.10":
+        if ubuntu_release in ("14.04", "13.10"):
             runcmd("apt-get -y install software-properties-common python-software-properties git-core wget cx-freeze \
             python3 python3-setuptools python3-dev python3-pip build-essential python3-sphinx python-virtualenv libsqlite3-dev python3-apsw python3-zmq")
             
@@ -232,26 +229,8 @@ def install_dependencies(paths, with_counterwalletd, assume_yes):
                 if db_locally.lower() == 'y':
                     runcmd("apt-get -y install mongodb mongodb-server redis-server")
                     
-        elif ubuntu_release == "12.04":
-            #12.04 deps. 12.04 doesn't include python3-pip, so we need to use the workaround at http://stackoverflow.com/a/12262143
-            runcmd("apt-get -y install software-properties-common python-software-properties git-core wget cx-freeze \
-            python3 python3-setuptools python3-dev build-essential python3-sphinx python-virtualenv libsqlite3-dev")
-            if not os.path.exists("/usr/local/bin/pip3"):
-                runcmd("easy_install3 pip==1.4.1") #pip1.5 breaks things due to its use of wheel by default
-                #for some reason, it installs "pip" to /usr/local/bin, instead of "pip3"
-                runcmd("mv /usr/local/bin/pip /usr/local/bin/pip3")
-            
-            ##ASPW
-            #12.04 also has no python3-apsw module as well (unlike 13.10), so we need to do this one manually
-            # Ubuntu 12.04 (Precise) ships with sqlite3 version 3.7.9 - the apsw version needs to match that exactly
-            runcmd("pip3 install https://github.com/rogerbinns/apsw/zipball/f5bf9e5e7617bc7ff2a5b4e1ea7a978257e08c95#egg=apsw")
-            
-            ##LIBZMQ
-            #12.04 has no python3-zmq module
-            runcmd("apt-get -y install libzmq-dev")
-            runcmd("easy_install3 pyzmq")
         else:
-            logging.error("Unsupported Ubuntu version, please use 13.10 or 12.04 LTS")
+            logging.error("Unsupported Ubuntu version, please use 14.04 LTS or 13.10")
             sys.exit(1)
 
         #install sqlite utilities (not technically required, but nice to have)

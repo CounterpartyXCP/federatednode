@@ -60,7 +60,7 @@ def git_repo_clone(branch, repo_dir, repo_url, run_as_user, hash=None):
     if hash:
         runcmd("cd ~%s/%s && git reset --hard %s" % (USERNAME, repo_dir, hash))
             
-    runcmd("cd ~%s/%s && git repo-config core.sharedRepository group && find ~%s/%s -type d -print0 | xargs -0 chmod g+s" % (
+    runcmd("cd ~%s/%s && git config core.sharedRepository group && find ~%s/%s -type d -print0 | xargs -0 chmod g+s" % (
         USERNAME, repo_dir, USERNAME, repo_dir)) #to allow for group git actions 
     runcmd("chown -R %s:%s ~%s/%s" % (USERNAME, USERNAME, USERNAME, repo_dir))
     runcmd("chmod -R g+rw ~%s/%s" % (USERNAME, repo_dir)) #just in case
@@ -167,7 +167,7 @@ def do_counterparty_setup(run_as_user, branch, base_path, dist_path, run_mode, b
     # counterpartyd/counterwalletd to start up at startup for both mainnet and testnet (we will override this as necessary
     # based on run_mode later in this function)
     runcmd("~%s/counterpartyd_build/setup.py -y --with-counterwalletd --with-testnet --for-user=%s" % (USERNAME, USERNAME))
-    runcmd("cd ~%s/counterpartyd_build && git repo-config core.sharedRepository group && find ~%s/counterpartyd_build -type d -print0 | xargs -0 chmod g+s" % (
+    runcmd("cd ~%s/counterpartyd_build && git config core.sharedRepository group && find ~%s/counterpartyd_build -type d -print0 | xargs -0 chmod g+s" % (
         USERNAME, USERNAME)) #to allow for group git actions 
     runcmd("chown -R %s:%s ~%s/counterpartyd_build" % (USERNAME, USERNAME, USERNAME)) #hacky, probably not necessary    
     runcmd("chmod -R g+rw ~%s/counterpartyd_build" % USERNAME) #hacky
