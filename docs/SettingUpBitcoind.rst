@@ -39,7 +39,9 @@ Say Yes to when Notepad asks if you want to create a new file, then paste in the
 - If you want ``bitcoind`` to be on testnet, not mainnet, see the section entitled **Running counterpartyd on testnet** in :doc:`Additional Topics <AdditionalTopics>`.
 - You should change the RPC password above to something more secure.
     
-Once done, press CTRL-S to save, and close Notepad.
+Once done, press CTRL-S to save, and close Notepad.  The config file will be saved here:
+
+    %AppData%\Roaming\Counterparty\counterpartyd\counterpartyd.conf
 
 New Blockchain Download
 ^^^^^^^^^^^^^^^^^^^^^^^^
