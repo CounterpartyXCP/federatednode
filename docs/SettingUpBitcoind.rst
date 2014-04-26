@@ -39,7 +39,9 @@ Say Yes to when Notepad asks if you want to create a new file, then paste in the
 - If you want ``bitcoind`` to be on testnet, not mainnet, see the section entitled **Running counterpartyd on testnet** in :doc:`Additional Topics <AdditionalTopics>`.
 - You should change the RPC password above to something more secure.
     
-Once done, press CTRL-S to save, and close Notepad.
+Once done, press CTRL-S to save, and close Notepad.  The config file will be saved here:
+
+    %AppData%\Roaming\Counterparty\counterpartyd\counterpartyd.conf
 
 New Blockchain Download
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -72,7 +74,7 @@ Once this is done, you have two options:
 
 - Close Bitcoin-QT and run ``bitcoind.exe`` directly. You can run it on startup by adding to your
   Startup program group in Windows, or using something like `NSSM <http://nssm.cc/usage>`__.
-- You can simply restart Bitcoin-QT (for the configuration changes to take effecnt) and use that. This is
+- You can simply restart Bitcoin-QT (for the configuration changes to take effect) and use that. This is
   fine for development/test setups, but not normally suitable for production systems. (You can have
   Bitcoin-QT start up automatically by clicking on Settings, then Options and checking the
   box titled "Start Bitcoin on system startup".
