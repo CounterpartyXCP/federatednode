@@ -85,12 +85,12 @@ def _rmtree(path):
             rmgeneric(fullpath, f)    
 
 def usage():
-    print("SYNTAX: %s [-h] [--with-counterwalletd] [--with-testnet] [--for-user=] [setup|build|update]" % sys.argv[0])
+    print("SYNTAX: %s [-h] [--with-counterblockd] [--with-testnet] [--for-user=] [setup|build|update]" % sys.argv[0])
     print("* The 'setup' command will setup and install counterpartyd as a source installation (including automated setup of its dependencies)")
     print("* The 'build' command builds an installer package (Windows only, currently)")
-    print("* The 'update' command updates the git repo for both counterpartyd, counterpartyd_build, and counterwalletd (if --with-counterwalletd is specified)")
+    print("* The 'update' command updates the git repo for both counterpartyd, counterpartyd_build, and counterblockd (if --with-counterblockd is specified)")
     print("* 'setup' is chosen by default if neither the 'build', 'update', or 'setup' arguments are specified.")
-    print("* If you want to install counterwalletd along with counterpartyd, specify the --with-counterwalletd option")
+    print("* If you want to install counterblockd along with counterpartyd, specify the --with-counterblockd option")
 
 def runcmd(command, abort_on_failure=True):
     logging.debug("RUNNING COMMAND: %s" % command)
@@ -130,7 +130,7 @@ def do_prerun_checks():
             logging.error("Cannot find your Python version in your path")
             sys.exit(1)
 
-def get_paths(with_counterwalletd):
+def get_paths(with_counterblockd):
     paths = {}
     paths['sys_python_path'] = os.path.dirname(sys.executable)
 
@@ -161,9 +161,9 @@ def get_paths(with_counterwalletd):
     paths['pip_path'] = os.path.join(paths['env_path'], "Scripts" if os.name == "nt" else "bin", "pip.exe" if os.name == "nt" else "pip")
     paths['python_path'] = os.path.join(paths['env_path'], "Scripts" if os.name == "nt" else "bin", "python.exe" if os.name == "nt" else "python3")
 
-    #for now, counterwalletd currently uses Python 2.7 due to gevent-socketio's lack of support for Python 3
+    #for now, counterblockd currently uses Python 2.7 due to gevent-socketio's lack of support for Python 3
     #because of this, it needs its own virtual environment
-    if with_counterwalletd:
+    if with_counterblockd:
         paths['virtualenv_args.cwalletd'] = "--system-site-packages --python=python2.7"
         paths['env_path.cwalletd'] = os.path.join(paths['base_path'], "env.cwalletd") # home for the virtual environment
         paths['pip_path.cwalletd'] = os.path.join(paths['env_path.cwalletd'], "Scripts" if os.name == "nt" else "bin", "pip.exe" if os.name == "nt" else "pip")
@@ -171,7 +171,7 @@ def get_paths(with_counterwalletd):
     
     return paths
 
-def checkout(paths, run_as_user, with_counterwalletd, is_update):
+def checkout(paths, run_as_user, with_counterblockd, is_update):
     #check what our current branch is
     try:
         branch = subprocess.check_output(("cd %s && git rev-parse --abbrev-ref HEAD" % paths['base_path']), shell=True).strip().decode('utf-8')
@@ -188,22 +188,22 @@ def checkout(paths, run_as_user, with_counterwalletd, is_update):
     if os.name != 'nt':
         runcmd("chown -R %s \"%s\"" % (run_as_user, counterpartyd_path))
         
-    if with_counterwalletd:
-        counterwalletd_path = os.path.join(paths['dist_path'], "counterwalletd")
-        if os.path.exists(counterwalletd_path):
-            runcmd("cd \"%s\" && git pull origin %s" % (counterwalletd_path, branch))
+    if with_counterblockd:
+        counterblockd_path = os.path.join(paths['dist_path'], "counterblockd")
+        if os.path.exists(counterblockd_path):
+            runcmd("cd \"%s\" && git pull origin %s" % (counterblockd_path, branch))
         else:
-            runcmd("git clone -b %s https://github.com/xnova/counterwalletd \"%s\"" % (branch, counterwalletd_path))
+            runcmd("git clone -b %s https://github.com/xnova/counterblockd \"%s\"" % (branch, counterblockd_path))
             pass
         if os.name != 'nt':
-            runcmd("chown -R %s \"%s\"" % (run_as_user, counterwalletd_path))
+            runcmd("chown -R %s \"%s\"" % (run_as_user, counterblockd_path))
     
     if is_update: #update mode specified... update ourselves (counterpartyd_build) as well
         runcmd("cd \"%s\" && git pull origin %s" % (paths['base_path'], branch))
     
     sys.path.insert(0, os.path.join(paths['dist_path'], "counterpartyd")) #can now import counterparty modules
 
-def install_dependencies(paths, with_counterwalletd, assume_yes):
+def install_dependencies(paths, with_counterblockd, assume_yes):
     if os.name == "posix" and platform.dist()[0] == "Ubuntu":
         ubuntu_release = platform.linux_distribution()[1]
         logging.info("UBUNTU LINUX %s: Installing Required Packages..." % ubuntu_release) 
@@ -214,14 +214,14 @@ def install_dependencies(paths, with_counterwalletd, assume_yes):
             runcmd("apt-get -y install software-properties-common python-software-properties git-core wget cx-freeze \
             python3 python3-setuptools python3-dev python3-pip build-essential python3-sphinx python-virtualenv libsqlite3-dev python3-apsw python3-zmq")
             
-            if with_counterwalletd:
-                #counterwalletd currently uses Python 2.7 due to gevent-socketio's lack of support for Python 3
+            if with_counterblockd:
+                #counterblockd currently uses Python 2.7 due to gevent-socketio's lack of support for Python 3
                 runcmd("apt-get -y install python python-dev python-setuptools python-pip python-sphinx python-zmq libzmq3 libzmq3-dev libxml2-dev libxslt-dev zlib1g-dev libimage-exiftool-perl")
                 if assume_yes:
                     db_locally = 'y'
                 else:
                     while True:
-                        db_locally = input("counterwalletd: Run mongo and redis locally? (y/n): ")
+                        db_locally = input("counterblockd: Run mongo and redis locally? (y/n): ")
                         if db_locally.lower() not in ('y', 'n'):
                             logger.error("Please enter 'y' or 'n'")
                         else:
@@ -252,7 +252,7 @@ def install_dependencies(paths, with_counterwalletd, assume_yes):
         #now that pip is installed, install necessary deps outside of the virtualenv (e.g. for this script)
         runcmd("%s install appdirs==1.2.0" % (os.path.join(paths['sys_python_path'], "Scripts", "pip.exe")))
 
-def create_virtualenv(paths, with_counterwalletd):
+def create_virtualenv(paths, with_counterblockd):
     def create_venv(env_path, pip_path, python_path, virtualenv_args, reqs_filename, delete_if_exists=True):
         if paths['virtualenv_path'] is None or not os.path.exists(paths['virtualenv_path']):
             logging.debug("ERROR: virtualenv missing (%s)" % (paths['virtualenv_path'],))
@@ -274,20 +274,20 @@ def create_virtualenv(paths, with_counterwalletd):
         runcmd("%s install -r %s" % (pip_path, os.path.join(paths['dist_path'], reqs_filename)))
 
     create_venv(paths['env_path'], paths['pip_path'], paths['python_path'], paths['virtualenv_args'], 'reqs.txt')    
-    if with_counterwalletd: #as counterwalletd uses python 2.x, it needs its own virtualenv
+    if with_counterblockd: #as counterblockd uses python 2.x, it needs its own virtualenv
         runcmd("rm -rf %s && mkdir -p %s" % (paths['env_path.cwalletd'], paths['env_path.cwalletd']))
         create_venv(paths['env_path.cwalletd'], paths['pip_path.cwalletd'], paths['python_path.cwalletd'],
-            paths['virtualenv_args.cwalletd'], 'reqs.counterwalletd.txt', delete_if_exists=False)    
+            paths['virtualenv_args.cwalletd'], 'reqs.counterblockd.txt', delete_if_exists=False)    
 
-def setup_startup(paths, run_as_user, with_counterwalletd, with_testnet, assume_yes):
+def setup_startup(paths, run_as_user, with_counterblockd, with_testnet, assume_yes):
     if os.name == "posix":
         runcmd("ln -sf %s/run.py /usr/local/bin/counterpartyd" % paths['base_path'])
-        if with_counterwalletd:
-            #make a short script to launch counterwallet
-            f = open("/usr/local/bin/counterwalletd", 'w')
-            f.write("#!/bin/sh\n%s/run.py counterwalletd \"$@\"" % paths['base_path'])
+        if with_counterblockd:
+            #make a short script to launch counterblockd
+            f = open("/usr/local/bin/counterblockd", 'w')
+            f.write("#!/bin/sh\n%s/run.py counterblockd \"$@\"" % paths['base_path'])
             f.close()
-            runcmd("chmod +x /usr/local/bin/counterwalletd")
+            runcmd("chmod +x /usr/local/bin/counterblockd")
     elif os.name == "nt":
         #create a batch script
         batch_contents = "echo off%sREM Launch counterpartyd (source build) under windows%s%s %s %%*" % (
@@ -339,14 +339,14 @@ def setup_startup(paths, run_as_user, with_counterwalletd, with_testnet, assume_
         if with_testnet:
             runcmd("cp -af %s/linux/init/counterpartyd-testnet.conf.template /etc/init/counterpartyd-testnet.conf" % paths['dist_path'])
             runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterpartyd-testnet.conf" % run_as_user)
-        if with_counterwalletd:
-            runcmd("cp -af %s/linux/init/counterwalletd.conf.template /etc/init/counterwalletd.conf" % paths['dist_path'])
-            runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterwalletd.conf" % run_as_user)
+        if with_counterblockd:
+            runcmd("cp -af %s/linux/init/counterblockd.conf.template /etc/init/counterblockd.conf" % paths['dist_path'])
+            runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterblockd.conf" % run_as_user)
             if with_testnet:
-                runcmd("cp -af %s/linux/init/counterwalletd-testnet.conf.template /etc/init/counterwalletd-testnet.conf" % paths['dist_path'])
-                runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterwalletd-testnet.conf" % run_as_user)
+                runcmd("cp -af %s/linux/init/counterblockd-testnet.conf.template /etc/init/counterblockd-testnet.conf" % paths['dist_path'])
+                runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterblockd-testnet.conf" % run_as_user)
 
-def create_default_datadir_and_config(paths, run_as_user, with_counterwalletd, with_testnet):
+def create_default_datadir_and_config(paths, run_as_user, with_counterblockd, with_testnet):
     def create_config(appname, default_config):
         data_dir, cfg_path = _get_app_cfg_paths(appname, run_as_user)
         if not os.path.exists(data_dir):
@@ -384,13 +384,13 @@ def create_default_datadir_and_config(paths, run_as_user, with_counterwalletd, w
     create_config('counterpartyd', DEFAULT_CONFIG)
     if with_testnet:
         create_config('counterpartyd-testnet', DEFAULT_CONFIG_TESTNET)
-    if with_counterwalletd:
-        create_config('counterwalletd', DEFAULT_CONFIG_COUNTERWALLETD)
+    if with_counterblockd:
+        create_config('counterblockd', DEFAULT_CONFIG_COUNTERWALLETD)
         if with_testnet:
-            create_config('counterwalletd-testnet', DEFAULT_CONFIG_COUNTERWALLETD_TESTNET)
+            create_config('counterblockd-testnet', DEFAULT_CONFIG_COUNTERWALLETD_TESTNET)
 
-def do_build(paths, with_counterwalletd):
-    #TODO: finish windows build support for counterwalletd
+def do_build(paths, with_counterblockd):
+    #TODO: finish windows build support for counterblockd
     if os.name != "nt":
         logging.error("Building an installer only supported on Windows at this time.")
         sys.exit(1)
@@ -416,8 +416,8 @@ def do_build(paths, with_counterwalletd):
     cfg = open(os.path.join(os.path.join(paths['bin_path'], "build"), "counterpartyd.conf.default"), 'w')
     cfg.write(DEFAULT_CONFIG_INSTALLER)
     cfg.close()
-    if with_counterwalletd:
-        cfg = open(os.path.join(os.path.join(paths['bin_path'], "build"), "counterwalletd.conf.default"), 'w')
+    if with_counterblockd:
+        cfg = open(os.path.join(os.path.join(paths['bin_path'], "build"), "counterblockd.conf.default"), 'w')
         cfg.write(COUNTERWALLETD_DEFAULT_CONFIG_INSTALLER)
         cfg.close()
     
@@ -454,18 +454,18 @@ def main():
 
     #parse any command line objects
     command = None
-    with_counterwalletd = False
+    with_counterblockd = False
     with_testnet = False
     assume_yes = False #headless operation
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hby", ["build", "help", "with-counterwalletd", "with-testnet", "for-user="])
+        opts, args = getopt.getopt(sys.argv[1:], "hby", ["build", "help", "with-counterblockd", "with-testnet", "for-user="])
     except getopt.GetoptError as err:
         usage()
         sys.exit(2)
     mode = None
     for o, a in opts:
-        if o in ("--with-counterwalletd",):
-            with_counterwalletd = True
+        if o in ("--with-counterblockd",):
+            with_counterblockd = True
         elif o in ("--with-testnet",):
             with_testnet = True
         elif o in ("--for-user",):
@@ -499,29 +499,29 @@ def main():
         command = "setup"
     assert command in ["build", "update", "setup"]
 
-    paths = get_paths(with_counterwalletd)
+    paths = get_paths(with_counterblockd)
 
     if command == "build": #build counterpartyd installer (currently windows only)
         logging.info("Building Counterparty...")
-        checkout(paths, run_as_user, with_counterwalletd, command == "update")
-        install_dependencies(paths, with_counterwalletd, assume_yes)
-        create_virtualenv(paths, with_counterwalletd)
-        do_build(paths, with_counterwalletd)
+        checkout(paths, run_as_user, with_counterblockd, command == "update")
+        install_dependencies(paths, with_counterblockd, assume_yes)
+        create_virtualenv(paths, with_counterblockd)
+        do_build(paths, with_counterblockd)
     elif command == "update": #auto update from git
         logging.info("Updating relevant Counterparty repos")
-        checkout(paths, run_as_user, with_counterwalletd, command == "update")
+        checkout(paths, run_as_user, with_counterblockd, command == "update")
     else: #setup mode
         assert command == "setup"
         logging.info("Installing Counterparty from source%s..." % (
             (" for user '%s'" % run_as_user) if os.name != "nt" else '',))
-        checkout(paths, run_as_user, with_counterwalletd, command == "update")
-        install_dependencies(paths, with_counterwalletd, assume_yes)
-        create_virtualenv(paths, with_counterwalletd)
-        setup_startup(paths, run_as_user, with_counterwalletd, with_testnet, assume_yes)
+        checkout(paths, run_as_user, with_counterblockd, command == "update")
+        install_dependencies(paths, with_counterblockd, assume_yes)
+        create_virtualenv(paths, with_counterblockd)
+        setup_startup(paths, run_as_user, with_counterblockd, with_testnet, assume_yes)
     
     logging.info("%s DONE. (It's time to kick ass, and chew bubblegum... and I'm all outta gum.)" % ("BUILD" if command == "build" else "SETUP"))
     if command != "build":
-        create_default_datadir_and_config(paths, run_as_user, with_counterwalletd, with_testnet)
+        create_default_datadir_and_config(paths, run_as_user, with_counterblockd, with_testnet)
 
 
 if __name__ == "__main__":

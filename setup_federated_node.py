@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 """
-Sets up an Ubuntu 13.10 x64 server to be a counterwallet federated node.
+Sets up an Ubuntu 14.04 x64 server to be a Counterblock Federated Node.
 
 NOTE: The system should be properly secured before running this script.
 
@@ -71,14 +71,16 @@ def do_prerun_checks():
         logging.error("Only 64bit Ubuntu Linux is supported at this time")
         sys.exit(1)
     ubuntu_release = platform.linux_distribution()[1]
-    if ubuntu_release != "13.10":
-        logging.error("Only Ubuntu 13.10 supported for counterwalletd install.")
+    if ubuntu_release != "14.04":
+        logging.error("Only Ubuntu 14.04 supported for Counterblock Federated Node install.")
+        sys.exit(1)
     #script must be run as root
     if os.geteuid() != 0:
         logging.error("This script must be run as root (use 'sudo' to run)")
         sys.exit(1)
     if os.name == "posix" and "SUDO_USER" not in os.environ:
         logging.error("Please use `sudo` to run this script.")
+        sys.exit(1)
 
 def do_base_setup(run_as_user, branch, base_path, dist_path):
     """This creates the xcp user and checks out the counterpartyd_build system from git"""
@@ -92,7 +94,7 @@ def do_base_setup(run_as_user, branch, base_path, dist_path):
     runcmd("apt-get update")
     runcmd("apt-get -y install nodejs") #includes npm
 
-    #Create xcp user (to run bitcoind, counterpartyd, counterwalletd) if not already made
+    #Create xcp user (to run bitcoind, counterpartyd, counterblockd) if not already made
     try:
         pwd.getpwnam(USERNAME)
     except:
@@ -158,51 +160,51 @@ def do_bitcoind_setup(run_as_user, branch, base_path, dist_path, run_mode):
     return bitcoind_rpc_password, bitcoind_rpc_password_testnet
 
 def do_counterparty_setup(run_as_user, branch, base_path, dist_path, run_mode, bitcoind_rpc_password, bitcoind_rpc_password_testnet):
-    """Installs and configures counterpartyd and counterwalletd"""
+    """Installs and configures counterpartyd and counterblockd"""
     counterpartyd_rpc_password = pass_generator()
     counterpartyd_rpc_password_testnet = pass_generator()
     
-    #Run setup.py (as the XCP user, who runs it sudoed) to install and set up counterpartyd, counterwalletd
-    # as -y is specified, this will auto install counterwalletd full node (mongo and redis) as well as setting
-    # counterpartyd/counterwalletd to start up at startup for both mainnet and testnet (we will override this as necessary
+    #Run setup.py (as the XCP user, who runs it sudoed) to install and set up counterpartyd, counterblockd
+    # as -y is specified, this will auto install counterblockd full node (mongo and redis) as well as setting
+    # counterpartyd/counterblockd to start up at startup for both mainnet and testnet (we will override this as necessary
     # based on run_mode later in this function)
-    runcmd("~%s/counterpartyd_build/setup.py -y --with-counterwalletd --with-testnet --for-user=%s" % (USERNAME, USERNAME))
+    runcmd("~%s/counterpartyd_build/setup.py -y --with-counterblockd --with-testnet --for-user=%s" % (USERNAME, USERNAME))
     runcmd("cd ~%s/counterpartyd_build && git config core.sharedRepository group && find ~%s/counterpartyd_build -type d -print0 | xargs -0 chmod g+s" % (
         USERNAME, USERNAME)) #to allow for group git actions 
     runcmd("chown -R %s:%s ~%s/counterpartyd_build" % (USERNAME, USERNAME, USERNAME)) #hacky, probably not necessary    
     runcmd("chmod -R g+rw ~%s/counterpartyd_build" % USERNAME) #hacky
 
-    #modify the default stored bitcoind passwords in counterpartyd.conf and counterwalletd.conf
+    #modify the default stored bitcoind passwords in counterpartyd.conf and counterblockd.conf
     runcmd(r"""sed -ri "s/^bitcoind\-rpc\-password=.*?$/bitcoind-rpc-password=%s/g" ~%s/.config/counterpartyd/counterpartyd.conf""" % (
         bitcoind_rpc_password, USERNAME))
     runcmd(r"""sed -ri "s/^bitcoind\-rpc\-password=.*?$/bitcoind-rpc-password=%s/g" ~%s/.config/counterpartyd-testnet/counterpartyd.conf""" % (
         bitcoind_rpc_password_testnet, USERNAME))
-    runcmd(r"""sed -ri "s/^bitcoind\-rpc\-password=.*?$/bitcoind-rpc-password=%s/g" ~%s/.config/counterwalletd/counterwalletd.conf""" % (
+    runcmd(r"""sed -ri "s/^bitcoind\-rpc\-password=.*?$/bitcoind-rpc-password=%s/g" ~%s/.config/counterblockd/counterblockd.conf""" % (
         bitcoind_rpc_password, USERNAME))
-    runcmd(r"""sed -ri "s/^bitcoind\-rpc\-password=.*?$/bitcoind-rpc-password=%s/g" ~%s/.config/counterwalletd-testnet/counterwalletd.conf""" % (
+    runcmd(r"""sed -ri "s/^bitcoind\-rpc\-password=.*?$/bitcoind-rpc-password=%s/g" ~%s/.config/counterblockd-testnet/counterblockd.conf""" % (
         bitcoind_rpc_password_testnet, USERNAME))
     
-    #modify the counterpartyd API rpc password in both counterpartyd and counterwalletd
+    #modify the counterpartyd API rpc password in both counterpartyd and counterblockd
     runcmd(r"""sed -ri "s/^rpc\-password=.*?$/rpc-password=%s/g" ~%s/.config/counterpartyd/counterpartyd.conf""" % (
         counterpartyd_rpc_password, USERNAME))
     runcmd(r"""sed -ri "s/^rpc\-password=.*?$/rpc-password=%s/g" ~%s/.config/counterpartyd-testnet/counterpartyd.conf""" % (
         counterpartyd_rpc_password_testnet, USERNAME))
-    runcmd(r"""sed -ri "s/^counterpartyd\-rpc\-password=.*?$/counterpartyd-rpc-password=%s/g" ~%s/.config/counterwalletd/counterwalletd.conf""" % (
+    runcmd(r"""sed -ri "s/^counterpartyd\-rpc\-password=.*?$/counterpartyd-rpc-password=%s/g" ~%s/.config/counterblockd/counterblockd.conf""" % (
         counterpartyd_rpc_password, USERNAME))
-    runcmd(r"""sed -ri "s/^counterpartyd\-rpc\-password=.*?$/counterpartyd-rpc-password=%s/g" ~%s/.config/counterwalletd-testnet/counterwalletd.conf""" % (
+    runcmd(r"""sed -ri "s/^counterpartyd\-rpc\-password=.*?$/counterpartyd-rpc-password=%s/g" ~%s/.config/counterblockd-testnet/counterblockd.conf""" % (
         counterpartyd_rpc_password_testnet, USERNAME))
     
     #disable upstart scripts from autostarting on system boot if necessary
     if run_mode == 't': #disable mainnet daemons from autostarting
         runcmd(r"""bash -c "echo 'manual' >> /etc/init/counterpartyd.override" """)
-        runcmd(r"""bash -c "echo 'manual' >> /etc/init/counterwalletd.override" """)
+        runcmd(r"""bash -c "echo 'manual' >> /etc/init/counterblockd.override" """)
     else:
-        runcmd("rm -f /etc/init/counterpartyd.override /etc/init/counterwalletd.override")
+        runcmd("rm -f /etc/init/counterpartyd.override /etc/init/counterblockd.override")
     if run_mode == 'm': #disable testnet daemons from autostarting
         runcmd(r"""bash -c "echo 'manual' >> /etc/init/counterpartyd-testnet.override" """)
-        runcmd(r"""bash -c "echo 'manual' >> /etc/init/counterwalletd-testnet.override" """)
+        runcmd(r"""bash -c "echo 'manual' >> /etc/init/counterblockd-testnet.override" """)
     else:
-        runcmd("rm -f /etc/init/counterpartyd-testnet.override /etc/init/counterwalletd-testnet.override")
+        runcmd("rm -f /etc/init/counterpartyd-testnet.override /etc/init/counterblockd-testnet.override")
     
     #append insight enablement param and API performance params to counterpartyd's configs
     for cfgFilename in [
@@ -224,9 +226,9 @@ def do_counterparty_setup(run_as_user, branch, base_path, dist_path, run_mode, b
         f.close()
 
     #change ownership
-    runcmd("chown -R %s:%s ~%s/.bitcoin ~%s/.config/counterpartyd ~%s/.config/counterwalletd" % (
+    runcmd("chown -R %s:%s ~%s/.bitcoin ~%s/.config/counterpartyd ~%s/.config/counterblockd" % (
         USERNAME, USERNAME, USERNAME, USERNAME, USERNAME))
-    runcmd("chown -R %s:%s ~%s/.bitcoin-testnet ~%s/.config/counterpartyd-testnet ~%s/.config/counterwalletd-testnet" % (
+    runcmd("chown -R %s:%s ~%s/.bitcoin-testnet ~%s/.config/counterpartyd-testnet ~%s/.config/counterblockd-testnet" % (
         USERNAME, USERNAME, USERNAME, USERNAME, USERNAME))
 
 def do_insight_setup(run_as_user, base_path, dist_path, run_mode):
@@ -308,10 +310,10 @@ def do_nginx_setup(run_as_user, base_path, dist_path):
 && mkdir -p /tmp/openresty/var/lib/nginx \
 && install -m 0755 -D %s/linux/nginx/nginx.init /tmp/openresty/etc/init.d/nginx \
 && install -m 0755 -D %s/linux/nginx/nginx.conf /tmp/openresty/etc/nginx/nginx.conf \
-&& install -m 0755 -D %s/linux/nginx/counterwallet.conf /tmp/openresty/etc/nginx/sites-enabled/counterwallet.conf \
-&& install -m 0755 -D %s/linux/nginx/cw_api.inc /tmp/openresty/etc/nginx/sites-enabled/cw_api.inc \
-&& install -m 0755 -D %s/linux/nginx/cw_api_cache.inc /tmp/openresty/etc/nginx/sites-enabled/cw_api_cache.inc \
-&& install -m 0755 -D %s/linux/nginx/cw_socketio.inc /tmp/openresty/etc/nginx/sites-enabled/cw_socketio.inc \
+&& install -m 0755 -D %s/linux/nginx/counterblock.conf /tmp/openresty/etc/nginx/sites-enabled/counterblock.conf \
+&& install -m 0755 -D %s/linux/nginx/counterblock_api.inc /tmp/openresty/etc/nginx/sites-enabled/counterblock_api.inc \
+&& install -m 0755 -D %s/linux/nginx/counterblock_api_cache.inc /tmp/openresty/etc/nginx/sites-enabled/counterblock_api_cache.inc \
+&& install -m 0755 -D %s/linux/nginx/counterblock_socketio.inc /tmp/openresty/etc/nginx/sites-enabled/counterblock_socketio.inc \
 && install -m 0755 -D %s/linux/logrotate/nginx /tmp/openresty/etc/logrotate.d/nginx''' % (
     OPENRESTY_VER, dist_path, dist_path, dist_path, dist_path, dist_path, dist_path, dist_path))
     #package it up using fpm
@@ -324,7 +326,7 @@ def do_nginx_setup(run_as_user, base_path, dist_path):
 -d geoip-database \
 -d libpcre3 \
 --config-files /etc/nginx/nginx.conf \
---config-files /etc/nginx/sites-enabled/counterwallet.conf \
+--config-files /etc/nginx/sites-enabled/counterblock.conf \
 --config-files /etc/nginx/fastcgi.conf.default \
 --config-files /etc/nginx/win-utf \
 --config-files /etc/nginx/fastcgi_params \
@@ -407,22 +409,22 @@ def do_newrelic_setup(run_as_user, base_path, dist_path, run_mode):
     #install some deps...
     runcmd("sudo apt-get -y install libyaml-dev")
     
-    #install/setup python agent for both counterpartyd and counterwalletd
+    #install/setup python agent for both counterpartyd and counterblockd
     #counterpartyd
     runcmd("%s/env/bin/pip install newrelic" % base_path)
     runcmd("cp -af %s/linux/newrelic/nr_counterpartyd.ini.template /etc/newrelic/nr_counterpartyd.ini" % dist_path)
     runcmd("sed -ri \"s/\!LICENSE_KEY\!/%s/g\" /etc/newrelic/nr_counterpartyd.ini" % nr_license_key)
     runcmd("sed -ri \"s/\!HOSTNAME\!/%s/g\" /etc/newrelic/nr_counterpartyd.ini" % nr_hostname)
-    #counterwalletd
+    #counterblockd
     runcmd("%s/env.cwalletd/bin/pip install newrelic" % base_path)
-    runcmd("cp -af %s/linux/newrelic/nr_counterwalletd.ini.template /etc/newrelic/nr_counterwalletd.ini" % dist_path)
-    runcmd("sed -ri \"s/\!LICENSE_KEY\!/%s/g\" /etc/newrelic/nr_counterwalletd.ini" % nr_license_key)
-    runcmd("sed -ri \"s/\!HOSTNAME\!/%s/g\" /etc/newrelic/nr_counterwalletd.ini" % nr_hostname)
+    runcmd("cp -af %s/linux/newrelic/nr_counterblockd.ini.template /etc/newrelic/nr_counterblockd.ini" % dist_path)
+    runcmd("sed -ri \"s/\!LICENSE_KEY\!/%s/g\" /etc/newrelic/nr_counterblockd.ini" % nr_license_key)
+    runcmd("sed -ri \"s/\!HOSTNAME\!/%s/g\" /etc/newrelic/nr_counterblockd.ini" % nr_hostname)
     #install init scripts (overwrite the existing ones for now at least)
     runcmd("cp -af %s/linux/newrelic/init/nr-counterpartyd.conf /etc/init/counterpartyd.conf" % dist_path) #overwrite
-    runcmd("cp -af %s/linux/newrelic/init/nr-counterwalletd.conf /etc/init/counterwalletd.conf" % dist_path) #overwrite
+    runcmd("cp -af %s/linux/newrelic/init/nr-counterblockd.conf /etc/init/counterblockd.conf" % dist_path) #overwrite
     runcmd("cp -af %s/linux/newrelic/init/nr-counterpartyd-testnet.conf /etc/init/counterpartyd-testnet.conf" % dist_path) #overwrite
-    runcmd("cp -af %s/linux/newrelic/init/nr-counterwalletd-testnet.conf /etc/init/counterwalletd-testnet.conf" % dist_path) #overwrite
+    runcmd("cp -af %s/linux/newrelic/init/nr-counterblockd-testnet.conf /etc/init/counterblockd-testnet.conf" % dist_path) #overwrite
     #upstart enablement (overrides) should be fine as established in do_counterparty_setup...
 
     #install/setup server agent
@@ -483,8 +485,8 @@ def command_services(command, prompt=False):
         runcmd("service insight-testnet %s" % command, abort_on_failure=False)
         runcmd("service counterpartyd %s" % command, abort_on_failure=False)
         runcmd("service counterpartyd-testnet %s" % command, abort_on_failure=False)
-        runcmd("service counterwalletd %s" % command, abort_on_failure=False)
-        runcmd("service counterwalletd-testnet %s" % command, abort_on_failure=False)
+        runcmd("service counterblockd %s" % command, abort_on_failure=False)
+        runcmd("service counterblockd-testnet %s" % command, abort_on_failure=False)
 
 def main():
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s|%(levelname)s: %(message)s')
@@ -524,8 +526,8 @@ def main():
             else:
                 if do_rebuild == '': do_rebuild = 'g'
                 break
-    if do_rebuild == 'g': #just refresh counterpartyd, counterwalletd, and counterwallet from github
-        runcmd("%s/setup.py --with-counterwalletd --for-user=xcp update" % base_path)
+    if do_rebuild == 'g': #just refresh counterpartyd, counterblockd, and counterwallet from github
+        runcmd("%s/setup.py --with-counterblockd --for-user=xcp update" % base_path)
         assert(os.path.exists(os.path.expanduser("~%s/counterwallet" % USERNAME)))
         do_counterwallet_setup(run_as_user, "AUTO", updateOnly=True)
         command_services("restart", prompt=True)
@@ -573,7 +575,7 @@ def main():
 
     do_newrelic_setup(run_as_user, base_path, dist_path, run_mode) #optional
     
-    logging.info("Counterwallet Federated Node Build Complete (whew).")
+    logging.info("Counterblock Federated Node Build Complete (whew).")
 
 
 if __name__ == "__main__":

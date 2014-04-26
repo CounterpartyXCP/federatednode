@@ -1,6 +1,6 @@
 
-#dependencies for counterwalletd
-#counterwalletd currently uses Python 2.7 due to gevent-socketio's lack of support for Python 3
+#dependencies for counterblockd
+#counterblockd currently uses Python 2.7 due to gevent-socketio's lack of support for Python 3
 
 #############
 #similar/same deps as with counterpartyd
@@ -22,7 +22,7 @@ pytest==2.5.1
 
 
 #############
-#counterwalletd specific deps
+#counterblockd specific deps
 
 pymongo==2.6.3
 

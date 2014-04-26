@@ -11,8 +11,8 @@ Application:
     host: localhost
     port: 27017
     databases:
-      - counterwalletd
-      - counterwalletd_testnet
+      - counterblockd
+      - counterblockd_testnet
 
   #nginx:
   #  name: !HOSTNAME!-nginx

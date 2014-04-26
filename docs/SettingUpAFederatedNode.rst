@@ -1,9 +1,10 @@
-Setting up a Counterwallet Federated Node
+Setting up a Counterblock Federated Node
 ==============================================
 
 .. note::
 
-    The Counterparty team itself operates the primary Counterwallet platform. However, as Counterwallet is open source
+    By default, Counterblock Federated Nodes also host Counterwallet content (this may change in the future).
+    Regarding this, the Counterparty team itself operates the primary Counterwallet platform. However, as Counterwallet is open source
     software, it is possible to host your own site with Counterwallet site (for your personal use, or as an offering to
     others), or to even host your own Counterwallet servers to use with your own Counterparty wallet implementation.
     The Counterparty team supports this kind of activity, as it aids with reducing network centralization.
@@ -14,20 +15,50 @@ Setting up a Counterwallet Federated Node
     (Note that the only thing that will not migrate are saved preferences, such as address aliases, the theme setting, etc.)
 
     The above being said, this document walks one though some of the inner workings of Counterwallet, as well as describing
-    how one can set up their own Counterwallet server (i.e. Counterwallet Federated Node). That being said, this document
+    how one can set up their own Counterblock Federated Node server(s). That being said, this document
     is primarily intended for system administrators and developers.
 
-Introduction & Theory
-----------------------
 
-The Counterwallet web-wallet implementation can work against one or more back-end servers.
-Each backend server runs ``bitcoind``, ``insight``, ``counterpartyd``, and ``counterwalletd``, and exists as a fully self-contained
-node. Counterwallet has multiple servers listed (in ``counterwallet.js``) which it can utilize in making API calls either
-sequentially (i.e. failover) or in parallel (i.e. consensus-based). When a user logs in, this list is shuffled so that,
-in aggregate, user requests are effectively load-balanced across available servers.
+Components
+----------
+
+counterpartyd
+^^^^^^^^^^^^^^
+
+``counterpartyd`` is the Counterparty reference client itself. It's responsibilities include parsing out Counterparty
+transactions from the Bitcoin blockchain. It has a basic command line interface, and a reletively low-level API for
+getting information on specific transactions, or general state info.
+
+counterblockd
+^^^^^^^^^^^^^
+
+The ``counterblockd`` daemon provides a more high-level API that layers on top of ``counterpartyd``'s API, and includes extended
+information, such as market and price data, trade operations, asset history, and more. It is used extensively by Counterwallet
+itself, and is appropriate for use by applications that require additional API-based functionality beyond the scope of
+what ``counterpartyd`` provides.
+
+``counterblockd`` also provides a proxy-based interface to all ``counterpartyd`` API methods, via the ``proxy_to_counterpartyd`` API call.
+
+counterwallet
+^^^^^^^^^^^^^^
+
+This is the Counterwallet source code itself. ``counterwallet`` communicates with one or more Counterblock Federated Nodes,
+and accesses API functionality of both ``counterblockd`` and ``counterpartyd``.
+
+
+Counterwallet Introduction 
+----------------------------
+
+As stated above, the Counterwallet web-wallet works against one or more Counterblock Federated Node back-end servers.
+Each backend server runs ``bitcoind``, ``insight``, ``counterpartyd``, and ``counterblockd``, and exists as a fully self-contained
+node. Counterwallet utilizes these backend servers in making API calls either sequentially (i.e. failover) or in
+parallel (i.e. consensus-based). When a user logs in, this list is shuffled so that, in aggregate, user requests are
+effectively load-balanced across available servers.
 
 The nodes used by Counterwallet in this way are referred to as Federated Nodes, because they are self-contained and
-independent, but (though special "multiAPI" functionality client-side) work together to provide services to Counterwallet users.  
+independent, but (though special "multiAPI" functionality client-side) work together to provide services to Counterwallet users.
+Indeed, by setting up multiple such (Counterblock) Federated Nodes, one can utilize a similar redundancy/reliability model
+in one's own 3rd party application, that Counterwallet utilizes.  
 
 **multiAPIConsensus for Action/Write (``create_``) Operations**
 
@@ -44,7 +75,7 @@ destination address, for example. The attackers would have to hack the code on e
 way, undetected, to do that.
 
 Moreover, the Counterwallet web client contains basic transaction validation code that will check that any unsigned Bitcoin
-transaction returned from a Counterwallet Federated Node contains expected inputs and outputs. This provides further
+transaction returned from a Counterblock Federated Node contains expected inputs and outputs. This provides further
 protection against potential attacks.
 
 multiAPIConsensus actually helps discover any potential "hacked" servers as well, since a returned consensus set with
@@ -73,13 +104,13 @@ were used. However, wallet preferences (and other data stored via this functiona
 funds would not be at risk before the hacked server could be discovered and removed.
 
 
-Node Provisioning
-------------------
+Counterblock Node Provisioning
+--------------------------------
 
 Production
 ^^^^^^^^^^^^
 
-Here are the recommendations and/or requirements when setting up a production-grade Counterwallet server:
+Here are the recommendations and/or requirements when setting up a production-grade Counterblock Federated Node server:
 
 **Server Hardware/Network Recommendations:**
 
@@ -107,7 +138,7 @@ Some notes:
 - Only one or two trusted individuals should have access to the box. All root access through ``sudo``.
 - Consider utilizing 2FA (two-factor authentication) on SSH and any other services that require login.
   `Duo <https://www.duosecurity.com/>`__ is a good choice for this (and has great `SSH integration <https://www.duosecurity.com/unix>`__).
-- The system should have a proper hostname (e.g. counterwallet.myorganization.org), and your DNS provider should be DDOS resistant
+- The system should have a proper hostname (e.g. counterblock.myorganization.org), and your DNS provider should be DDOS resistant
 - System timezone should be set to UTC
 - Enable Ubuntu's  `automated security updates <http://askubuntu.com/a/204>`__
 - If running multiple servers, consider other tweaks on a per-server basis to reduce homogeneity.  
@@ -116,7 +147,7 @@ Some notes:
 Testing / Development
 ^^^^^^^^^^^^^^^^^^^^^^
 
-If you'd like to set up a Counterwallet system for testing and development, the requirements are minimal. Basically you
+If you'd like to set up a Counterblock Federated Node system for testing and development, the requirements are minimal. Basically you
 need to set up a Virtual Machine (VM) instance (or hardware) with **Ubuntu 13.10 64-bit** and give it at least **2 GB** of memory.
 
 
@@ -148,16 +179,16 @@ downloading, you can launch the ``insight`` daemon(s)::
     sudo tail -f ~xcp/insight-api/insight.log 
 
 Then, watching this log, wait for the insight sync (as well as the bitcoind sync) to finish, which should take between 7 and 12 hours.
-After this is all done, reboot the box for the new services to start (which includes ``counterpartyd`` and ``counterwalletd``).
+After this is all done, reboot the box for the new services to start (which includes ``counterpartyd`` and ``counterblockd``).
 
-Then, check on the status of ``counterpartyd`` and ``counterwalletd``'s sync with the blockchain using::
+Then, check on the status of ``counterpartyd`` and ``counterblockd``'s sync with the blockchain using::
 
     sudo tail -f ~xcp/.config/counterpartyd/counterpartyd.log
-    sudo tail -f ~xcp/.config/counterwalletd/countewalletd.log
+    sudo tail -f ~xcp/.config/counterblockd/counterblockd.log
 
 Once both are fully synced up, you should be good to proceed. The next step is to simply open up a web browser, and
 go to the IP address/hostname of the server. You will then be presented to accept your self-signed SSL certificate, and
-after doing that, should see the Counterwallet login interface. From this point, you can proceed testing Counterwallet
+after doing that, should see the Counterwallet login interface. From this point, you can proceed testing Counterblock/Counterwallet
 functionality on your own system(s).
 
 
@@ -167,14 +198,14 @@ Getting a SSL Certificate
 By default, the system is set up to use a self-signed SSL certificate. If you are hosting your services for others, 
 you should get your own SSL certificate from your DNS registrar so that your users don't see a certificate warning when
 they visit your site. Once you have that certificate, create a nginx-compatible ``.pem`` file, and place that
-at ``/etc/ssl/certs/counterwallet.pem``. Then, place your SSL private key at ``/etc/ssl/private/counterwallet.key``.
+at ``/etc/ssl/certs/counterblockd.pem``. Then, place your SSL private key at ``/etc/ssl/private/counterblockd.key``.
 
-After doing this, edit the ``/etc/nginx/sites-enabled/counterwallet.conf`` file. Comment out the two development
+After doing this, edit the ``/etc/nginx/sites-enabled/counterblock.conf`` file. Comment out the two development
 SSL certificate lines, and uncomment the production SSL cert lines, like so::
 
     #SSL - For production use
-    ssl_certificate      /etc/ssl/certs/counterwallet.pem;
-    ssl_certificate_key  /etc/ssl/private/counterwallet.key;
+    ssl_certificate      /etc/ssl/certs/counterblockd.pem;
+    ssl_certificate_key  /etc/ssl/private/counterblockd.key;
   
     #SSL - For development use
     #ssl_certificate      /etc/ssl/certs/ssl-cert-snakeoil.pem;
@@ -188,20 +219,20 @@ Then restart nginx::
 Multi-Server Setups
 ------------------------------------
 
-Counterwallet should work out-of-the-box in a scenario where you have a single Counterwallet server that both hosts the
-static site content, as well as the backend API services. You will need to read and follow this section if any of the
+Counterwallet should work out-of-the-box in a scenario where you have a single Counterblock Federated Node that both hosts the
+static site content, as well as the backend Counterblock API services. You will need to read and follow this section if any of the
 following apply to your situation:
 
-- You have more than one server hosting the content (i.e. javascript, html, css resources) and API services (backend ``counterwalletd``, etc)
+- You have more than one server hosting the content (i.e. javascript, html, css resources) and API services (backend ``counterblockd``, etc)
 - Or, you have a different set of hosts hosting API services than those hosting the static site content
 - Or, you are hosting the static site content on a CDN
 
-In these situations, you need to create a small file called ``servers.json`` in the ``counterwallet/`` directory.
+In these situations, you need to create a small file called ``servers.json`` in the ``counterblock/`` directory.
 This file will contain a valid JSON-formatted object, containing an array of all of your backend servers, as well as
 a number of other site specific configuration properties. For example::
 
     { 
-      "servers": [ "https://counterwallet1.mydomain.com", "https://counterwallet2.mydomain.com", "https://counterwallet3.mydomain.com" ],
+      "servers": [ "https://counterblock1.mydomain.com", "https://counterblock2.mydomain.com", "https://counterblock3.mydomain.com" ],
       "forceTestnet": true,
       "googleAnalyticsUA": "UA-48454783-2",
       "googleAnalyticsUA-testnet": "UA-48454783-4",
@@ -220,33 +251,37 @@ backend API hosts from it automatically.
 Troubleshooting
 ------------------------------------
 
-If you experience issues with your Counterwallet server, a good start is to check out the logs. Something like the following should work::
+If you experience issues with your Counterblock Federated Node, a good start is to check out the logs. Something like the following should work::
 
     #mainnet
     sudo tail -f ~xcp/.config/counterpartyd/counterpartyd.log
-    sudo tail -f ~xcp/.config/counterwalletd/countewalletd.log
+    sudo tail -f ~xcp/.config/counterblockd/countewalletd.log
     sudo tail -f ~xcp/.config/counterpartyd/api.error.log
-    sudo tail -f ~xcp/.config/counterwalletd/api.error.log
+    sudo tail -f ~xcp/.config/counterblockd/api.error.log
 
     #testnet
     sudo tail -f ~xcp/.config/counterpartyd-testnet/counterpartyd.log
-    sudo tail -f ~xcp/.config/counterwalletd-testnet/counterwalletd.log
+    sudo tail -f ~xcp/.config/counterblockd-testnet/counterblockd.log
     sudo tail -f ~xcp/.config/counterpartyd-testnet/api.error.log
-    sudo tail -f ~xcp/.config/counterwalletd-testnet/api.error.log
+    sudo tail -f ~xcp/.config/counterblockd-testnet/api.error.log
+    
+    #relevant nginx logs
+    sudo tail -f /var/log/nginx/counterblock.access.log
+    sudo tail -f /var/log/nginx/counterblock.error.log
 
 These logs should hopefully provide some useful information that will help you further diagnose your issue. You can also
 keep tailing them (or use them with a log analysis tool like Splunk) to gain insight on the current
-status of ``counterpartyd``/``counterwalletd``.
+status of ``counterpartyd``/``counterblockd``.
 
 Also, you can start up the daemons in the foreground, for easier debugging, using the following sets of commands::
 
     #mainnet
     sudo su -c 'counterpartyd --data-dir=/home/xcp/.config/counterpartyd' xcp
-    sudo su -c 'counterwalletd --data-dir=/home/xcp/.config/counterwalletd' xcp
+    sudo su -c 'counterblockd --data-dir=/home/xcp/.config/counterblockd' xcp
     
     #testnet
     sudo su -c 'counterpartyd --data-dir=/home/xcp/.config/counterpartyd-testnet --testnet' xcp
-    sudo su -c 'counterwalletd --data-dir=/home/xcp/.config/counterwalletd-testnet --testnet' xcp
+    sudo su -c 'counterblockd --data-dir=/home/xcp/.config/counterblockd-testnet --testnet' xcp
 
 You can also run ``bitcoind`` commands directly, e.g.::
 
@@ -262,7 +297,7 @@ Other Topics
 Easy Updating
 ^^^^^^^^^^^^^^^^
 
-To update the system with new ``counterpartyd``, ``counterwalletd`` and ``counterwallet`` code releases, you simply need
+To update the system with new ``counterpartyd``, ``counterblockd`` and ``counterwallet`` code releases, you simply need
 to rerun the ``setup_federated_node`` script, like so::
 
     cd ~xcp/counterpartyd_build
@@ -284,9 +319,9 @@ Doing this, however, is simple. Here's an example that gives ``testuser1`` op ac
 command line for every node in the cluster::
 
     #mainnet
-    mongo counterwalletd
+    mongo counterblockd
     db.chat_handles.update({handle: "testuser1"}, {$set: {op: true}})
     
     #testnet
-    mongo counterwalletd_testnet
+    mongo counterblockd_testnet
     db.chat_handles.update({handle: "testuser1"}, {$set: {op: true}})

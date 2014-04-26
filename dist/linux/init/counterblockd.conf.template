@@ -1,5 +1,5 @@
 #!upstart
-description "counterwalletd (mainnet)"
+description "counterblockd (mainnet)"
 
 # When to start the service
 start on startup
@@ -14,5 +14,5 @@ respawn limit 10 60 # 10 times in 60 seconds
 script
 USER=!RUN_AS_USER!
 USER_HOME=$(eval echo ~${USER})
-start-stop-daemon --start --pidfile $USER_HOME/.config/counterwalletd/counterwalletd.pid --chuid $USER --exec /usr/local/bin/counterwalletd
+start-stop-daemon --start --pidfile $USER_HOME/.config/counterblockd/counterblockd.pid --chuid $USER --exec /usr/local/bin/counterblockd
 end script
