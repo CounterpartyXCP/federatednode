@@ -55,7 +55,7 @@ Viewing the Logs
 By default, ``counterpartyd`` logs data to a file named ``counterpartyd.log``, located within the ``counterpartyd``
 data directory.
 
-Under Linux, you can monitor these logs via a command like ``tail -f ~/.config/counterparty/counterparty.log``.
+Under Linux, you can monitor these logs via a command like ``tail -f ~/.config/counterpartyd/counterparty.log``.
 
 Under Windows, you can use a tool like `Notepad++ <http://notepad-plus-plus.org/>`__ to view the log file,
 which will detect changes to the file and update if necessary.
