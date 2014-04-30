@@ -86,7 +86,7 @@ def do_base_setup(run_as_user, branch, base_path, dist_path):
     """This creates the xcp user and checks out the counterpartyd_build system from git"""
     #install some necessary base deps
     runcmd("apt-get update")
-    runcmd("apt-get -y install git-core software-properties-common python-software-properties build-essential")
+    runcmd("apt-get -y install git-core software-properties-common python-software-properties build-essential ssl-cert")
     runcmd("apt-get update")
     #node-gyp building for insight has ...issues out of the box on Ubuntu... use Chris Lea's nodejs build instead, which is newer
     runcmd("apt-get -y remove nodejs npm gyp")
@@ -344,7 +344,7 @@ def do_nginx_setup(run_as_user, base_path, dist_path):
 --config-files /etc/nginx/fastcgi.conf \
 etc usr var''' % (OPENRESTY_VER, OPENRESTY_VER))
     #now install the .deb package that was created (along with its deps)
-    runcmd("apt-get install libxslt1.1 libgeoip1 geoip-database libpcre3")
+    runcmd("apt-get -y install libxslt1.1 libgeoip1 geoip-database libpcre3")
     runcmd("dpkg -i /tmp/nginx-openresty_%s-1_amd64.deb" % OPENRESTY_VER)
     #clean up after ourselves
     runcmd("rm -rf /tmp/openresty /tmp/ngx_openresty-* /tmp/nginx-openresty.tar.gz /tmp/nginx-openresty*.deb")
