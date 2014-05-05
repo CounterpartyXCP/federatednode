@@ -157,7 +157,7 @@ Node Setup
 Once the server is provisioned and set up as above, you will need to install all of the necessary software and dependencies. We have an
 installation script for this, that is fully automated **and installs ALL dependencies, including ``bitcoind`` and ``insight``**::
 
-    cd && wget -qO setup_federated_node.py https://raw.github.com/xnova/counterpartyd_build/develop/setup_federated_node.py
+    cd && wget -qO setup_federated_node.py https://raw.github.com/CounterpartyXCP/counterpartyd_build/master/setup_federated_node.py
     sudo python3 setup_federated_node.py
 
 Then just follow the on-screen prompts (choosing to build from *master* if you are building a production node,

@@ -1,9 +1,9 @@
 counterpartyd Build System (counterpartyd_build)
 ==================================================
 
-`counterpartyd_build <https://github.com/xnova/counterpartyd_build>`__ is the automated build system for
-`counterpartyd <https://github.com/PhantomPhreak/counterpartyd>`__. This is an alternative method from
-`manual counterpartyd installation and running <https://github.com/PhantomPhreak/counterpartyd/blob/master/README.md>`__,
+`counterpartyd_build <https://github.com/CounterpartyXCP/counterpartyd_build>`__ is the automated build system for
+`counterpartyd <https://github.com/CounterpartyXCP/counterpartyd>`__. This is an alternative method from
+`manual counterpartyd installation and running <https://github.com/CounterpartyXCP/counterpartyd/blob/master/README.md>`__,
 which includes a point-and-click Windows installer, as well as a source code build script that takes care of
 all setup necessary to run ``counterpartyd`` from source.
 
@@ -13,7 +13,7 @@ all setup necessary to run ``counterpartyd`` from source.
   :doc:`build from source <BuildingFromSource>`
 - If you are an **Ubuntu Linux user**, you can :doc:`use the build system to automate your
   install/setup from source <BuildingFromSource>`
-- If you are **neither**, at this point you will need to follow `the manual installation instructions <https://github.com/PhantomPhreak/counterpartyd/blob/master/README.md>`__.
+- If you are **neither**, at this point you will need to follow `the manual installation instructions <https://github.com/CounterpartyXCP/counterpartyd/blob/master/README.md>`__.
 
 
 When to use?
@@ -35,7 +35,7 @@ Future plans for the build system (*pull requests for these features would be gr
 - Add support for creation of installer for Mac OS X
 - Add support for creation of ``.rpm``, ``.deb.``, etc. binary packages for Linux
 
-More information on Counterparty is available in the `specs <https://github.com/PhantomPhreak/Counterparty>`__.
+More information on Counterparty is available in the `specs <https://github.com/CounterpartyXCP/Counterparty>`__.
 
 
 Table of Contents

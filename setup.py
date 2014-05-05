@@ -184,7 +184,7 @@ def checkout(paths, run_as_user, with_counterblockd, is_update):
     if os.path.exists(counterpartyd_path):
         runcmd("cd \"%s\" && git pull origin %s" % (counterpartyd_path, branch))
     else:
-        runcmd("git clone -b %s https://github.com/PhantomPhreak/counterpartyd \"%s\"" % (branch, counterpartyd_path))
+        runcmd("git clone -b %s https://github.com/CounterpartyXCP/counterpartyd \"%s\"" % (branch, counterpartyd_path))
     if os.name != 'nt':
         runcmd("chown -R %s \"%s\"" % (run_as_user, counterpartyd_path))
         
@@ -193,7 +193,7 @@ def checkout(paths, run_as_user, with_counterblockd, is_update):
         if os.path.exists(counterblockd_path):
             runcmd("cd \"%s\" && git pull origin %s" % (counterblockd_path, branch))
         else:
-            runcmd("git clone -b %s https://github.com/xnova/counterblockd \"%s\"" % (branch, counterblockd_path))
+            runcmd("git clone -b %s https://github.com/CounterpartyXCP/counterblockd \"%s\"" % (branch, counterblockd_path))
             pass
         if os.name != 'nt':
             runcmd("chown -R %s \"%s\"" % (run_as_user, counterblockd_path))

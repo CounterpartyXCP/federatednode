@@ -61,7 +61,7 @@ Installing
 After launching a DOS command window using the instructions in the note above, type the following commands::
 
     cd C:\
-    git clone https://github.com/xnova/counterpartyd_build
+    git clone https://github.com/CounterpartyXCP/counterpartyd_build
     cd counterpartyd_build
     C:\Python32\python.exe setup.py
      
@@ -86,7 +86,7 @@ You can then open up another command window and run any of ``counterpartyd’s``
 
     counterpartyd send --source=12WQTnVbzhJRswra4TvGxq1RyhUkmiVXXm --destination=1QGZ4sCpvCgRizL5v4NniaKdZKzxBtVN3q --asset=XCP --quantity=5
 
-For more examples, see `this link <https://github.com/PhantomPhreak/counterpartyd#examples>`__.
+For more examples, see `this link <https://github.com/CounterpartyXCP/counterpartyd#examples>`__.
 
 To run the ``counterpartyd`` testsuite::
 
@@ -103,7 +103,7 @@ As the code is enhanced and improved on Github, you can refresh your local copy 
 
 If, upon running counterpartyd, you get a missing dependency or some other error, you can always rerun
 ``setup.py``, which will regenerate your dependencies listing to the libraries and versions as listed in
-`reqs.txt <https://github.com/xnova/counterpartyd_build/blob/master/dist/reqs.txt>`__::
+`reqs.txt <https://github.com/CounterpartyXCP/counterpartyd_build/blob/master/dist/reqs.txt>`__::
 
     cd counterpartyd_build
     C:\Python32\python.exe setup.py
@@ -139,7 +139,7 @@ Installing
 
     sudo apt-get -y update
     sudo apt-get -y install git-core python3
-    git clone https://github.com/xnova/counterpartyd_build ~/counterpartyd_build
+    git clone https://github.com/CounterpartyXCP/counterpartyd_build ~/counterpartyd_build
     cd ~/counterpartyd_build
     sudo python3 setup.py
 
@@ -173,7 +173,7 @@ You can then open up another command window and run any of ``counterpartyd’s``
 
     counterpartyd send --source=12WQTnVbzhJRswra4TvGxq1RyhUkmiVXXm --destination=1QGZ4sCpvCgRizL5v4NniaKdZKzxBtVN3q --asset=XCP --quantity=5
 
-For more examples, see `this link <https://github.com/PhantomPhreak/counterpartyd#examples>`__.
+For more examples, see `this link <https://github.com/CounterpartyXCP/counterpartyd#examples>`__.
 
 To run the ``counterpartyd`` testsuite::
 
@@ -190,7 +190,7 @@ As the code is enhanced and improved on Github, you can refresh your local copy 
 
 If, upon running counterpartyd, you get a missing dependency or some other error, you can always rerun
 ``setup.py``, which will regenerate your dependencies listing to the libraries and versions as listed in
-`reqs.txt <https://github.com/xnova/counterpartyd_build/blob/master/dist/reqs.txt>`__::
+`reqs.txt <https://github.com/CounterpartyXCP/counterpartyd_build/blob/master/dist/reqs.txt>`__::
 
     cd ~/counterpartyd_build
     sudo python3 setup.py

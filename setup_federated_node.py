@@ -105,7 +105,7 @@ def do_base_setup(run_as_user, branch, base_path, dist_path):
     runcmd("adduser %s %s" % (run_as_user, USERNAME))
     
     #Check out counterpartyd-build repo under this user's home dir and use that for the build
-    git_repo_clone(branch, "counterpartyd_build", "https://github.com/xnova/counterpartyd_build.git", run_as_user)
+    git_repo_clone(branch, "counterpartyd_build", "https://github.com/CounterpartyXCP/counterpartyd_build.git", run_as_user)
 
 def do_bitcoind_setup(run_as_user, branch, base_path, dist_path, run_mode):
     """Installs and configures bitcoind"""
@@ -352,7 +352,7 @@ etc usr var''' % (OPENRESTY_VER, OPENRESTY_VER))
     
 def do_counterwallet_setup(run_as_user, branch, updateOnly=False):
     #check out counterwallet from git
-    git_repo_clone(branch, "counterwallet", "https://github.com/xnova/counterwallet.git", run_as_user)
+    git_repo_clone(branch, "counterwallet", "https://github.com/CounterpartyXCP/counterwallet.git", run_as_user)
     if not updateOnly:
         runcmd("npm install -g grunt-cli bower")
     runcmd("cd ~xcp/counterwallet/src && bower --allow-root --config.interactive=false install")

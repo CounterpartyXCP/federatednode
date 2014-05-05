@@ -3,7 +3,7 @@ Additional Topics
 
 This section contains some tidbits of info that you may find useful when working with ``counterpartyd``.
 
-For a good overview of what you can do with ``counterpartyd``, see `this link <https://github.com/PhantomPhreak/counterpartyd#usage>`__.
+For a good overview of what you can do with ``counterpartyd``, see `this link <https://github.com/CounterpartyXCP/counterpartyd#usage>`__.
 
 Finding the Data Directory
 ---------------------------
@@ -131,4 +131,4 @@ Next Steps
 -----------
 
 Once ``counterpartyd`` is installed and running, you can start running ``counterpartyd`` commands directly,
-or explore the (soon to exist) built-in API via the documentation at the `main counterpartyd repository <https://github.com/PhantomPhreak/counterpartyd>`__.  
+or explore the (soon to exist) built-in API via the documentation at the `main counterpartyd repository <https://github.com/CounterpartyXCP/counterpartyd>`__.  
