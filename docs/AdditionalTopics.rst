@@ -1,4 +1,4 @@
-Additional Topics
+BitcoinTest Additional Topics
 ======================
 
 This section contains some tidbits of info that you may find useful when working with ``counterpartyd``.
@@ -81,7 +81,7 @@ like ``BitcoinTest``.
 - ``C:\Users\<your username>\AppData\Roaming\BitcoinTest`` (Windows 7/8/Server)
 - ``C:\Documents and Settings\<your username>\Application Data\BitcoinTest`` (Windows XP)
  
-In this ``BitcoinTest`` directory, create a ``bitcoin.conf`` file with the following contents:
+In this ``BitcoinTest`` directory, create a ``bitcoin.conf`` file with the following contents::
 
     rpcuser=rpc
     rpcpassword=rpcpw1234
