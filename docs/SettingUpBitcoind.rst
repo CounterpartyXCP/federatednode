@@ -106,7 +106,7 @@ you can just start ``bitcoind``::
 In either of the above cases, the bitcoin server should now be started. The blockchain will begin to download automatically. You must let it finish 
 downloading entirely before going to the next step. You can check the status of this by running::
 
-     bitcoind getinfo|grep blocks
+     bitcoind getinfo | grep blocks
 
 When done, the block count returned by this command will match the value given from
 `this page <http://blockexplorer.com/q/getblockcount>`__.
@@ -114,9 +114,10 @@ When done, the block count returned by this command will match the value given f
 Already have Blockchain
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you *have* already downloaded the blockchain before you modified your config, you'll probably need to launch ``bitcoind`` as follows:
+If you *have* already downloaded the blockchain before you modified your config, you'll probably need to launch ``bitcoind`` as follows::
 
     bitcoind --reindex
+
     
 This will start up bitcoin to do a one time reindexing of the blockchain on disk. The reason this is is because we added the
 ``txindex=1`` configuration parameter above to the bitcoin config file, which means that it will need to

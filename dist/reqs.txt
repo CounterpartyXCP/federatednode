@@ -19,3 +19,5 @@ pytest==2.5.1
 
 pycrypto>=2.6
 #^ on windows, this will skip as the windows pycrypto installer should have been run
+# One of available download locations is: 
+# http://www.voidspace.org.uk/python/modules.shtml#pycrypto
