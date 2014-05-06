@@ -106,7 +106,7 @@ you can just start ``bitcoind``::
 In either of the above cases, the bitcoin server should now be started. The blockchain will begin to download automatically. You must let it finish 
 downloading entirely before going to the next step. You can check the status of this by running::
 
-     bitcoind getinfo|grep blocks
+     bitcoind getinfo | grep blocks
 
 When done, the block count returned by this command will match the value given from
 `this page <http://blockexplorer.com/q/getblockcount>`__.
