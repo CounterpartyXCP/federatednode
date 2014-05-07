@@ -148,7 +148,7 @@ Testing / Development
 ^^^^^^^^^^^^^^^^^^^^^^
 
 If you'd like to set up a Counterblock Federated Node system for testing and development, the requirements are minimal. Basically you
-need to set up a Virtual Machine (VM) instance (or hardware) with **Ubuntu 13.10 64-bit** and give it at least **2 GB** of memory.
+need to set up a Virtual Machine (VM) instance (or hardware) with **Ubuntu 13.10 64-bit** and give it at least **2 GB** of memory and **90 GB** of free disk space.
 
 
 Node Setup
