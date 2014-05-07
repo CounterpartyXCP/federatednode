@@ -536,12 +536,12 @@ def main():
     #If here, a) federated node has not been set up yet or b) the user wants a rebuild
     branch = None
     while True:
-        branch = input("Build from branch (m)aster or (d)evelop? (M/d): ")
+        branch = input("Build from branch (m)aster or (d)evelop? (m/D): ")
         branch = branch.lower()
         if branch not in ('m', 'd', ''):
             logging.error("Please enter 'm' or 'd'")
         else:
-            if branch == '': branch = 'm'
+            if branch == '': branch = 'd'
             break
     if branch == 'm': branch = 'master'
     elif branch == 'd': branch = 'develop'
