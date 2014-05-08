@@ -122,7 +122,7 @@ Here are the recommendations and/or requirements when setting up a production-gr
 
 **Server Software:**
 
-- Ubuntu 13.10 64-bit required
+- Ubuntu 14.04 64-bit required
 
 **Server Security:**
 
@@ -148,7 +148,7 @@ Testing / Development
 ^^^^^^^^^^^^^^^^^^^^^^
 
 If you'd like to set up a Counterblock Federated Node system for testing and development, the requirements are minimal. Basically you
-need to set up a Virtual Machine (VM) instance (or hardware) with **Ubuntu 13.10 64-bit** and give it at least **2 GB** of memory.
+need to set up a Virtual Machine (VM) instance (or hardware) with **Ubuntu 14.04 64-bit** and give it at least **2 GB** of memory.
 
 
 Node Setup
