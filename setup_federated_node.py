@@ -29,6 +29,8 @@ except ImportError:
     pass
 
 USERNAME = "xcp"
+REPO_COUNTERPARTYD_BUILD = "https://github.com/CounterpartyXCP/counterpartyd_build.git"
+REPO_COUNTERWALLET = "https://github.com/CounterpartyXCP/counterwallet.git"
 
 def pass_generator(size=14, chars=string.ascii_uppercase + string.ascii_lowercase + string.digits):
     return ''.join(random.choice(chars) for x in range(size))
@@ -105,7 +107,7 @@ def do_base_setup(run_as_user, branch, base_path, dist_path):
     runcmd("adduser %s %s" % (run_as_user, USERNAME))
     
     #Check out counterpartyd-build repo under this user's home dir and use that for the build
-    git_repo_clone(branch, "counterpartyd_build", "https://github.com/CounterpartyXCP/counterpartyd_build.git", run_as_user)
+    git_repo_clone(branch, "counterpartyd_build", REPO_COUNTERPARTYD_BUILD, run_as_user)
 
 def do_bitcoind_setup(run_as_user, branch, base_path, dist_path, run_mode):
     """Installs and configures bitcoind"""
@@ -352,7 +354,7 @@ etc usr var''' % (OPENRESTY_VER, OPENRESTY_VER))
     
 def do_counterwallet_setup(run_as_user, branch, updateOnly=False):
     #check out counterwallet from git
-    git_repo_clone(branch, "counterwallet", "https://github.com/CounterpartyXCP/counterwallet.git", run_as_user)
+    git_repo_clone(branch, "counterwallet", REPO_COUNTERWALLET, run_as_user)
     if not updateOnly:
         runcmd("npm install -g grunt-cli bower")
     runcmd("cd ~xcp/counterwallet/src && bower --allow-root --config.interactive=false install")
@@ -527,9 +529,14 @@ def main():
                 if do_rebuild == '': do_rebuild = 'g'
                 break
     if do_rebuild == 'g': #just refresh counterpartyd, counterblockd, and counterwallet from github
+        #refresh counterpartyd_build
+        git_repo_clone("AUTO", "counterpartyd_build", REPO_COUNTERPARTYD_BUILD, run_as_user)
+        #refresh counterpartyd and counterblockd
         runcmd("%s/setup.py --with-counterblockd --for-user=xcp update" % base_path)
+        #refresh counterwallet
         assert(os.path.exists(os.path.expanduser("~%s/counterwallet" % USERNAME)))
         do_counterwallet_setup(run_as_user, "AUTO", updateOnly=True)
+        #offer to restart services
         command_services("restart", prompt=True)
         sys.exit(0) #all done
 
