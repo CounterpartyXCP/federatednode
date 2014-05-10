@@ -79,7 +79,7 @@ Here are the recommendations and/or requirements when setting up a production-gr
 
 **Server Software:**
 
-- Ubuntu 13.10 64-bit required
+- Ubuntu 14.04 64-bit required
 
 **Server Security:**
 
