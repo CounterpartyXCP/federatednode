@@ -164,10 +164,10 @@ def get_paths(with_counterblockd):
     #for now, counterblockd currently uses Python 2.7 due to gevent-socketio's lack of support for Python 3
     #because of this, it needs its own virtual environment
     if with_counterblockd:
-        paths['virtualenv_args.cwalletd'] = "--system-site-packages --python=python2.7"
-        paths['env_path.cwalletd'] = os.path.join(paths['base_path'], "env.cwalletd") # home for the virtual environment
-        paths['pip_path.cwalletd'] = os.path.join(paths['env_path.cwalletd'], "Scripts" if os.name == "nt" else "bin", "pip.exe" if os.name == "nt" else "pip")
-        paths['python_path.cwalletd'] = os.path.join(paths['env_path.cwalletd'], "Scripts" if os.name == "nt" else "bin", "python.exe" if os.name == "nt" else "python")
+        paths['virtualenv_args.counterblockd'] = "--system-site-packages --python=python2.7"
+        paths['env_path.counterblockd'] = os.path.join(paths['base_path'], "env.counterblockd") # home for the virtual environment
+        paths['pip_path.counterblockd'] = os.path.join(paths['env_path.counterblockd'], "Scripts" if os.name == "nt" else "bin", "pip.exe" if os.name == "nt" else "pip")
+        paths['python_path.counterblockd'] = os.path.join(paths['env_path.counterblockd'], "Scripts" if os.name == "nt" else "bin", "python.exe" if os.name == "nt" else "python")
     
     return paths
 
@@ -291,9 +291,9 @@ def create_virtualenv(paths, with_counterblockd):
 
     create_venv(paths['env_path'], paths['pip_path'], paths['python_path'], paths['virtualenv_args'], 'reqs.txt')    
     if with_counterblockd: #as counterblockd uses python 2.x, it needs its own virtualenv
-        runcmd("rm -rf %s && mkdir -p %s" % (paths['env_path.cwalletd'], paths['env_path.cwalletd']))
-        create_venv(paths['env_path.cwalletd'], paths['pip_path.cwalletd'], paths['python_path.cwalletd'],
-            paths['virtualenv_args.cwalletd'], 'reqs.counterblockd.txt', delete_if_exists=False)    
+        runcmd("rm -rf %s && mkdir -p %s" % (paths['env_path.counterblockd'], paths['env_path.counterblockd']))
+        create_venv(paths['env_path.counterblockd'], paths['pip_path.counterblockd'], paths['python_path.counterblockd'],
+            paths['virtualenv_args.counterblockd'], 'reqs.counterblockd.txt', delete_if_exists=False)    
 
 def setup_startup(paths, run_as_user, with_counterblockd, with_testnet, assume_yes):
     if os.name == "posix":

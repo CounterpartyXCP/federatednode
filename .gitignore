@@ -1,6 +1,7 @@
 *.py[cod]
 env
 env.cwalletd
+env.counterblockd
 docs/_build/*
 dist/counterpartyd
 dist/counterblockd
