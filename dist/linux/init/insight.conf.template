@@ -17,6 +17,7 @@ USER=!RUN_AS_USER!
 USER_HOME=$(eval echo ~${USER})
 chown -R $USER $USER_HOME/insight-api
 export INSIGHT_NETWORK=livenet
+export INSIGHT_DB=$USER_HOME/insight-api/db
 export BITCOIND_DATADIR=$USER_HOME/.bitcoin/
 export BITCOIND_USER=`cat $USER_HOME/.bitcoin/bitcoin.conf | sed -n 's/.*rpcuser=\([^ \n]*\).*/\1/p'`
 export BITCOIND_PASS=`cat $USER_HOME/.bitcoin/bitcoin.conf | sed -n 's/.*rpcpassword=\([^ \n]*\).*/\1/p'`

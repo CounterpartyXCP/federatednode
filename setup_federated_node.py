@@ -246,7 +246,7 @@ def do_insight_setup(run_as_user, base_path, dist_path, run_mode):
         runcmd("mv %s %s_bkup" % (gypdir, gypdir))
         #^ fix for https://github.com/TooTallNate/node-gyp/issues/363
     git_repo_clone("master", "insight-api", "https://github.com/bitpay/insight-api.git",
-        run_as_user, hash="aae590f86ee8052a6a70fed41e54de246df40f96") #check out a specific hash
+        run_as_user, hash="bce9f7a0bb9d2fde7d0a8c7c2d42fbf071e24c32") #check out a specific hash
     runcmd("rm -rf ~%s/insight-api/node-modules && cd ~%s/insight-api && npm install" % (USERNAME, USERNAME))
     #Set up insight startup scripts (will be disabled later from autostarting on system startup if necessary)
     runcmd("cp -af %s/linux/init/insight.conf.template /etc/init/insight.conf" % dist_path)
