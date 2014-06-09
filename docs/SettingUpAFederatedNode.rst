@@ -283,6 +283,28 @@ command line for every node in the cluster::
     mongo counterblockd_testnet
     db.chat_handles.update({handle: "testuser1"}, {$set: {op: true}})
 
+Monitoring the Server
+----------------------
+
+To monitor the server, you can use a 3rd-party service such as [Pingdom](http://www.pingdom.com) or [StatusCake](http://statuscake.com).
+The federated node allows these (and any other monitoring service) to query the basic status of the server (e.g. the ``nginx``,
+``counterblockd`` and ``counterpartyd`` services) via making a HTTP GET call to one of the following URLs:
+
+* ``/_api/`` (for mainnet) 
+* ``/_t_api/`` (for testnet)
+
+If all services are up, a HTTP 200 response with the following data will be returned::
+
+    {"counterpartyd": "OK", "counterblockd": "OK"}
+    
+If all services but ``counterpartyd`` are up, a HTTP 500 response with the following data will be returned::
+
+    {"counterpartyd": "NOT OK", "counterblockd": "OK"}
+
+If ``counterblockd`` is not working properly, ``nginx`` will return a HTTP 503 (Gateway unavailable) or 500 response.
+
+If ``nginx`` is not working properly, either a HTTP 5xx response, or no response at all (i.e. timeout) will be returned.
+
 
 MultiAPI specifics
 -------------------
