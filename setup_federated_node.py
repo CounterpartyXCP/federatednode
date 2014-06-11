@@ -29,6 +29,8 @@ except ImportError:
     pass
 
 USERNAME = "xcp"
+REPO_COUNTERPARTYD_BUILD = "https://github.com/CounterpartyXCP/counterpartyd_build.git"
+REPO_COUNTERWALLET = "https://github.com/CounterpartyXCP/counterwallet.git"
 
 def pass_generator(size=14, chars=string.ascii_uppercase + string.ascii_lowercase + string.digits):
     return ''.join(random.choice(chars) for x in range(size))
@@ -105,7 +107,7 @@ def do_base_setup(run_as_user, branch, base_path, dist_path):
     runcmd("adduser %s %s" % (run_as_user, USERNAME))
     
     #Check out counterpartyd-build repo under this user's home dir and use that for the build
-    git_repo_clone(branch, "counterpartyd_build", "https://github.com/CounterpartyXCP/counterpartyd_build.git", run_as_user)
+    git_repo_clone(branch, "counterpartyd_build", REPO_COUNTERPARTYD_BUILD, run_as_user)
 
 def do_bitcoind_setup(run_as_user, branch, base_path, dist_path, run_mode):
     """Installs and configures bitcoind"""
@@ -244,7 +246,7 @@ def do_insight_setup(run_as_user, base_path, dist_path, run_mode):
         runcmd("mv %s %s_bkup" % (gypdir, gypdir))
         #^ fix for https://github.com/TooTallNate/node-gyp/issues/363
     git_repo_clone("master", "insight-api", "https://github.com/bitpay/insight-api.git",
-        run_as_user, hash="aae590f86ee8052a6a70fed41e54de246df40f96") #check out a specific hash
+        run_as_user, hash="c05761b98b70886d0700563628a510f89f87c03e") #insight 0.2.7
     runcmd("rm -rf ~%s/insight-api/node-modules && cd ~%s/insight-api && npm install" % (USERNAME, USERNAME))
     #Set up insight startup scripts (will be disabled later from autostarting on system startup if necessary)
     runcmd("cp -af %s/linux/init/insight.conf.template /etc/init/insight.conf" % dist_path)
@@ -352,7 +354,7 @@ etc usr var''' % (OPENRESTY_VER, OPENRESTY_VER))
     
 def do_counterwallet_setup(run_as_user, branch, updateOnly=False):
     #check out counterwallet from git
-    git_repo_clone(branch, "counterwallet", "https://github.com/CounterpartyXCP/counterwallet.git", run_as_user)
+    git_repo_clone(branch, "counterwallet", REPO_COUNTERWALLET, run_as_user)
     if not updateOnly:
         runcmd("npm install -g grunt-cli bower")
     runcmd("cd ~xcp/counterwallet/src && bower --allow-root --config.interactive=false install")
@@ -416,7 +418,7 @@ def do_newrelic_setup(run_as_user, base_path, dist_path, run_mode):
     runcmd("sed -ri \"s/\!LICENSE_KEY\!/%s/g\" /etc/newrelic/nr_counterpartyd.ini" % nr_license_key)
     runcmd("sed -ri \"s/\!HOSTNAME\!/%s/g\" /etc/newrelic/nr_counterpartyd.ini" % nr_hostname)
     #counterblockd
-    runcmd("%s/env.cwalletd/bin/pip install newrelic" % base_path)
+    runcmd("%s/env.counterblockd/bin/pip install newrelic" % base_path)
     runcmd("cp -af %s/linux/newrelic/nr_counterblockd.ini.template /etc/newrelic/nr_counterblockd.ini" % dist_path)
     runcmd("sed -ri \"s/\!LICENSE_KEY\!/%s/g\" /etc/newrelic/nr_counterblockd.ini" % nr_license_key)
     runcmd("sed -ri \"s/\!HOSTNAME\!/%s/g\" /etc/newrelic/nr_counterblockd.ini" % nr_hostname)
@@ -527,9 +529,14 @@ def main():
                 if do_rebuild == '': do_rebuild = 'g'
                 break
     if do_rebuild == 'g': #just refresh counterpartyd, counterblockd, and counterwallet from github
+        #refresh counterpartyd_build
+        git_repo_clone("AUTO", "counterpartyd_build", REPO_COUNTERPARTYD_BUILD, run_as_user)
+        #refresh counterpartyd and counterblockd
         runcmd("%s/setup.py --with-counterblockd --for-user=xcp update" % base_path)
+        #refresh counterwallet
         assert(os.path.exists(os.path.expanduser("~%s/counterwallet" % USERNAME)))
         do_counterwallet_setup(run_as_user, "AUTO", updateOnly=True)
+        #offer to restart services
         command_services("restart", prompt=True)
         sys.exit(0) #all done
 
@@ -557,7 +564,7 @@ def main():
             if run_mode == '': run_mode = 'b'
             break
     logging.info("Setting up to run on %s" % ('testnet' if run_mode.lower() == 't' else ('mainnet' if run_mode.lower() == 'm' else 'testnet and mainnet')))
-
+    
     command_services("stop")
 
     do_base_setup(run_as_user, branch, base_path, dist_path)

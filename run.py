@@ -32,7 +32,7 @@ if run_tests:
     counterpartyd_tests_path = os.path.join(dist_path, "counterpartyd", "test", "test_.py")
     command = "%s %s %s" % (pytest_path, counterpartyd_tests_path, ' '.join(args))
 elif run_counterblockd:
-    counterblockd_env_path = os.path.join(base_path, "env.cwalletd")
+    counterblockd_env_path = os.path.join(base_path, "env.counterblockd")
     counterblockd_python_path = os.path.join(counterblockd_env_path, "Scripts" if os.name == "nt" else "bin", "python.exe" if os.name == "nt" else "python")
     counterblockd_path = os.path.join(dist_path, "counterblockd", "counterblockd.py")
     command = "%s %s %s" % (counterblockd_python_path, counterblockd_path, ' '.join(args))
