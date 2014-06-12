@@ -260,6 +260,7 @@ def do_insight_setup(run_as_user, base_path, dist_path, run_mode):
     runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/logrotate.d/insight" % USERNAME)
     runcmd("sed -ri \"s/\!RUN_AS_USER_HOMEDIR\!/%s/g\" /etc/logrotate.d/insight" % user_homedir.replace('/', '\/'))
 
+    runcmd("mkdir -p ~%s/insight-api/db" % USERNAME)
     runcmd("chown -R %s:%s ~%s/insight-api" % (USERNAME, USERNAME, USERNAME))
     
     #disable upstart scripts from autostarting on system boot if necessary
