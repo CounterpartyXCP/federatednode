@@ -77,7 +77,7 @@ Once this is done, you have two options:
 - You can simply restart Bitcoin-QT (for the configuration changes to take effect) and use that. This is
   fine for development/test setups, but not normally suitable for production systems. (You can have
   Bitcoin-QT start up automatically by clicking on Settings, then Options and checking the
-  box titled "Start Bitcoin on system startup".
+  box titled "Start Bitcoin on system startup".)
 
 
 On Ubuntu Linux
