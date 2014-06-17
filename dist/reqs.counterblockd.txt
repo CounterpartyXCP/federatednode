@@ -12,11 +12,11 @@ prettytable==0.7.2
 
 python-dateutil==2.2
 
-requests==2.2.1
+requests==2.3.0
 
-cherrypy==3.2.5
+cherrypy==3.3.0
 
-json-rpc==1.2.1
+json-rpc==1.6.0
 
 pytest==2.5.1
 
@@ -24,25 +24,25 @@ pytest==2.5.1
 #############
 #counterblockd specific deps
 
-pymongo==2.6.3
+pymongo==2.7.1
 
-gevent==1.0
+gevent==1.0.1
 
 gevent-socketio==0.3.6
 
-redis==2.9.1
+redis==2.10.1
 
 grequests==0.2.0
 
-pyzmq==14.0.1
+pyzmq==14.3.1
 
-pillow==2.3.1
+pillow==2.4.0
 
 numpy==1.8.1
 
-lxml==3.3.3
+lxml==3.3.5
 
-rollbar==0.7.2
+rollbar==0.8.0
 
 jsonschema==2.3.0 
 
