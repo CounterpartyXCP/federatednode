@@ -7,13 +7,13 @@ prettytable==0.7.2
 
 python-dateutil==2.2
 
-requests==2.2.1
+requests==2.3.0
 
-cherrypy==3.2.5
+cherrypy==3.3.0
 
-json-rpc==1.2.1
+json-rpc==1.6.0
 
-pycoin==0.25
+pycoin==0.26
 
 pytest==2.5.1
 
