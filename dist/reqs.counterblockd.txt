@@ -32,7 +32,8 @@ gevent-socketio==0.3.6
 
 redis==2.10.1
 
-grequests==0.2.0
+https://github.com/kennethreitz/grequests/archive/5d12c6642c5d11cb46cb6141cd87415c88de878c.zip#egg=grequests
+#grequests
 
 pyzmq==14.3.1
 
