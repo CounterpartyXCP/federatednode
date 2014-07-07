@@ -73,7 +73,7 @@ Here are the recommendations and/or requirements when setting up a production-gr
 
 - Xeon E3+ or similar-class processor
 - 16GB+ RAM (ECC)
-- 2x SSD 120GB+ drives in RAID-0 (mirrored) configuration
+- 2x SSD 120GB+ drives in RAID-1 (mirrored) configuration
 - Hosted in a secure data center with physical security and access controls
 - DDOS protection recommended if you will be offering your service to others
 
