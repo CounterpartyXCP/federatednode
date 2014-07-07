@@ -75,9 +75,10 @@ to ``counterpartyd`` in your Startup group.
 Upon the successful completion of this script, you can now run ``counterpartyd`` using the steps below.
 
 
-Running from Source
+Running counterpartyd built from Source
 ^^^^^^^^^^^^^^^^^^^^^^
 
+Counterpartyd does not require elevated ("administrator") privileges to be executed and operated.  
 After installing, open a command window and run ``counterpartyd`` in the foreground via::
 
     counterpartyd server
@@ -154,7 +155,7 @@ Creating a default config
 Follow the instructions listed under the **Config and Logging** section in :doc:`AdditionalTopics`.
 
 
-Running from Source
+Running counterpartyd built from Source
 ^^^^^^^^^^^^^^^^^^^^^^
 
 After installing and creating the necessary basic config, run ``counterpartyd`` in the foreground to make sure
@@ -188,6 +189,8 @@ As the code is enhanced and improved on Github, you can refresh your local copy 
     cd ~/counterpartyd_build
     sudo python3 setup.py update
 
+Counterparty for Windows must also be updated from a console window started with elevated privileges.
+
 If, upon running counterpartyd, you get a missing dependency or some other error, you can always rerun
 ``setup.py``, which will regenerate your dependencies listing to the libraries and versions as listed in
 `reqs.txt <https://github.com/CounterpartyXCP/counterpartyd_build/blob/master/dist/reqs.txt>`__::
@@ -195,6 +198,7 @@ If, upon running counterpartyd, you get a missing dependency or some other error
     cd ~/counterpartyd_build
     sudo python3 setup.py
 
+The same logic applies to Windows.  This operation also requires elevation.
 
 Mac OS X
 --------
