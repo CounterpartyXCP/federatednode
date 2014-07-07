@@ -76,7 +76,7 @@ Upon the successful completion of this script, you can now run ``counterpartyd``
 
 
 Running counterpartyd built from Source
-^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Counterpartyd does not require elevated ("administrator") privileges to be executed and operated.  
 After installing, open a command window and run ``counterpartyd`` in the foreground via::
@@ -156,7 +156,7 @@ Follow the instructions listed under the **Config and Logging** section in :doc:
 
 
 Running counterpartyd built from Source
-^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 After installing and creating the necessary basic config, run ``counterpartyd`` in the foreground to make sure
 everything works fine::
@@ -198,7 +198,7 @@ If, upon running counterpartyd, you get a missing dependency or some other error
     cd ~/counterpartyd_build
     sudo python3 setup.py
 
-The same logic applies to Windows.  This operation also requires elevation.
+The same approach applies to Windows - this operation requires elevation.
 
 Mac OS X
 --------
