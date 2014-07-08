@@ -594,10 +594,6 @@ def main():
             break
     logging.info("Setting up to run on %s" % ('testnet' if run_mode.lower() == 't' else ('mainnet' if run_mode.lower() == 'm' else 'testnet and mainnet')))
 
-    do_newrelic_setup(run_as_user, base_path, dist_path, run_mode) #optional
-    sys.exit(1)
-
-    
     command_services("stop")
 
     do_base_setup(run_as_user, branch, base_path, dist_path)
