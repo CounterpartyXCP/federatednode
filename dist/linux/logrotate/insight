@@ -1,4 +1,4 @@
-!RUN_AS_USER_HOMEDIR!/insight-api/insight*.log {
+!USER_HOMEDIR!/insight-api/insight*.log {
         daily
         missingok
         rotate 52

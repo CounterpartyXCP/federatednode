@@ -14,6 +14,6 @@ respawn limit 10 60 # 10 times in 60 seconds
 
 script
 USER=!RUN_AS_USER!
-USER_HOME=$(eval echo ~${USER})
+USER_HOME=!USER_HOMEDIR!
 start-stop-daemon --start --pidfile $USER_HOME/.config/counterblockd/counterblockd.pid --chuid $USER --exec /usr/local/bin/counterblockd
 end script

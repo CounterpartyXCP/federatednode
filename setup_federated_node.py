@@ -29,6 +29,7 @@ except ImportError:
     pass
 
 USERNAME = "xcp"
+DAEMON_USERNAME = "xcpd"
 REPO_COUNTERPARTYD_BUILD = "https://github.com/CounterpartyXCP/counterpartyd_build.git"
 REPO_COUNTERWALLET = "https://github.com/CounterpartyXCP/counterwallet.git"
 
@@ -65,7 +66,7 @@ def git_repo_clone(branch, repo_dir, repo_url, run_as_user, hash=None):
     runcmd("cd ~%s/%s && git config core.sharedRepository group && find ~%s/%s -type d -print0 | xargs -0 chmod g+s" % (
         USERNAME, repo_dir, USERNAME, repo_dir)) #to allow for group git actions 
     runcmd("chown -R %s:%s ~%s/%s" % (USERNAME, USERNAME, USERNAME, repo_dir))
-    runcmd("chmod -R g+rw ~%s/%s" % (USERNAME, repo_dir)) #just in case
+    runcmd("chmod -R u+rw,g+rw,o+r,o-w ~%s/%s" % (USERNAME, repo_dir)) #just in case
 
 def do_prerun_checks():
     #make sure this is running on a supported OS
@@ -85,23 +86,36 @@ def do_prerun_checks():
         sys.exit(1)
 
 def do_base_setup(run_as_user, branch, base_path, dist_path):
-    """This creates the xcp user and checks out the counterpartyd_build system from git"""
+    """This creates the xcp and xcpd users and checks out the counterpartyd_build system from git"""
     #install some necessary base deps
     runcmd("apt-get update")
-    runcmd("apt-get -y install git-core software-properties-common python-software-properties build-essential ssl-cert")
+    runcmd("apt-get -y install git-core software-properties-common python-software-properties build-essential ssl-cert ntp")
     runcmd("apt-get update")
     #node-gyp building for insight has ...issues out of the box on Ubuntu... use Chris Lea's nodejs build instead, which is newer
     runcmd("apt-get -y remove nodejs npm gyp")
     runcmd("add-apt-repository -y ppa:chris-lea/node.js")
     runcmd("apt-get update")
     runcmd("apt-get -y install nodejs") #includes npm
+    
+    #Sync time
+    runcmd("service ntp stop")
+    runcmd("ntpdate ntp.ubuntu.com")
+    runcmd("service ntp start")
 
-    #Create xcp user (to run bitcoind, counterpartyd, counterblockd) if not already made
+    #Create xcp user, under which the files will be stored, and who will own the files, etc
     try:
         pwd.getpwnam(USERNAME)
     except:
         logging.info("Creating user '%s' ..." % USERNAME)
-        runcmd("adduser --system --disabled-password --shell /bin/bash --group %s" % USERNAME)
+        runcmd("adduser --system --disabled-password --shell /bin/false --group %s" % USERNAME)
+        
+    #Create xcpd user (to run counterpartyd, counterblockd, insight, bitcoind, nginx) if not already made
+    try:
+        pwd.getpwnam(DAEMON_USERNAME)
+    except:
+        logging.info("Creating user '%s' ..." % DAEMON_USERNAME)
+        user_homedir = os.path.expanduser("~" + USERNAME)
+        runcmd("adduser --system --disabled-password --shell /bin/false --ingroup nogroup --home %s %s" % (user_homedir, DAEMON_USERNAME))
     
     #add the run_as_user to the xcp group
     runcmd("adduser %s %s" % (run_as_user, USERNAME))
@@ -141,13 +155,15 @@ def do_bitcoind_setup(run_as_user, branch, base_path, dist_path, run_mode):
     
     #Set up bitcoind startup scripts (will be disabled later from autostarting on system startup if necessary)
     runcmd("cp -af %s/linux/init/bitcoind.conf.template /etc/init/bitcoind.conf" % dist_path)
-    runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/bitcoind.conf" % USERNAME)
+    runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/bitcoind.conf" % DAEMON_USERNAME)
+    runcmd("sed -ri \"s/\!USER_HOMEDIR\!/%s/g\" /etc/init/bitcoind.conf" % user_homedir.replace('/', '\/'))
     runcmd("cp -af %s/linux/init/bitcoind-testnet.conf.template /etc/init/bitcoind-testnet.conf" % dist_path)
-    runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/bitcoind-testnet.conf" % USERNAME)
+    runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/bitcoind-testnet.conf" % DAEMON_USERNAME)
+    runcmd("sed -ri \"s/\!USER_HOMEDIR\!/%s/g\" /etc/init/bitcoind-testnet.conf" % user_homedir.replace('/', '\/'))
     
     #install logrotate file
     runcmd("cp -af %s/linux/logrotate/bitcoind /etc/logrotate.d/bitcoind" % dist_path)
-    runcmd("sed -ri \"s/\!RUN_AS_USER_HOMEDIR\!/%s/g\" /etc/logrotate.d/bitcoind" % user_homedir.replace('/', '\/'))
+    runcmd("sed -ri \"s/\!USER_HOMEDIR\!/%s/g\" /etc/logrotate.d/bitcoind" % user_homedir.replace('/', '\/'))
     
     #disable upstart scripts from autostarting on system boot if necessary
     if run_mode == 't': #disable mainnet daemons from autostarting
@@ -158,11 +174,14 @@ def do_bitcoind_setup(run_as_user, branch, base_path, dist_path, run_mode):
         runcmd(r"""bash -c "echo 'manual' >> /etc/init/bitcoind-testnet.override" """)
     else:
         runcmd("rm -f /etc/init/bitcoind-testnet.override")
+        
+    runcmd("chown -R %s:%s ~%s/.bitcoin ~%s/.bitcoin-testnet" % (DAEMON_USERNAME, USERNAME, USERNAME, USERNAME))
     
     return bitcoind_rpc_password, bitcoind_rpc_password_testnet
 
 def do_counterparty_setup(run_as_user, branch, base_path, dist_path, run_mode, bitcoind_rpc_password, bitcoind_rpc_password_testnet):
     """Installs and configures counterpartyd and counterblockd"""
+    user_homedir = os.path.expanduser("~" + USERNAME)
     counterpartyd_rpc_password = pass_generator()
     counterpartyd_rpc_password_testnet = pass_generator()
     
@@ -173,8 +192,17 @@ def do_counterparty_setup(run_as_user, branch, base_path, dist_path, run_mode, b
     runcmd("~%s/counterpartyd_build/setup.py -y --with-counterblockd --with-testnet --for-user=%s" % (USERNAME, USERNAME))
     runcmd("cd ~%s/counterpartyd_build && git config core.sharedRepository group && find ~%s/counterpartyd_build -type d -print0 | xargs -0 chmod g+s" % (
         USERNAME, USERNAME)) #to allow for group git actions 
-    runcmd("chown -R %s:%s ~%s/counterpartyd_build" % (USERNAME, USERNAME, USERNAME)) #hacky, probably not necessary    
-    runcmd("chmod -R g+rw ~%s/counterpartyd_build" % USERNAME) #hacky
+    runcmd("chown -R %s:%s ~%s/counterpartyd_build" % (USERNAME, USERNAME, USERNAME)) #just in case
+    runcmd("chmod -R u+rw,g+rw,o+r,o-w ~%s/counterpartyd_build" % USERNAME) #just in case
+    
+    #now change the counterpartyd and counterblockd directories to be owned by the xcpd user (and the xcp group),
+    # so that the xcpd account can write to the database, saved image files (counterblockd), log files, etc
+    runcmd("mkdir -p ~%s/.config/counterpartyd ~%s/.config/counterblockd ~%s/.config/counterpartyd-testnet ~%s/.config/counterblockd-testnet" % (
+        USERNAME, USERNAME, USERNAME, USERNAME))    
+    runcmd("chown -R %s:%s ~%s/.config/counterpartyd ~%s/.config/counterpartyd ~%s/.config/counterpartyd-testnet ~%s/.config/counterblockd-testnet" % (
+        DAEMON_USERNAME, USERNAME, USERNAME, USERNAME, USERNAME, USERNAME))
+    runcmd("sed -ri \"s/USER=%s/USER=%s/g\" /etc/init/counterpartyd.conf /etc/init/counterpartyd-testnet.conf /etc/init/counterblockd.conf /etc/init/counterblockd-testnet.conf" % (
+        USERNAME, DAEMON_USERNAME))
 
     #modify the default stored bitcoind passwords in counterpartyd.conf and counterblockd.conf
     runcmd(r"""sed -ri "s/^bitcoind\-rpc\-password=.*?$/bitcoind-rpc-password=%s/g" ~%s/.config/counterpartyd/counterpartyd.conf""" % (
@@ -229,12 +257,6 @@ def do_counterparty_setup(run_as_user, branch, base_path, dist_path, run_mode, b
         f.write(content)
         f.close()
 
-    #change ownership
-    runcmd("chown -R %s:%s ~%s/.bitcoin ~%s/.config/counterpartyd ~%s/.config/counterblockd" % (
-        USERNAME, USERNAME, USERNAME, USERNAME, USERNAME))
-    runcmd("chown -R %s:%s ~%s/.bitcoin-testnet ~%s/.config/counterpartyd-testnet ~%s/.config/counterblockd-testnet" % (
-        USERNAME, USERNAME, USERNAME, USERNAME, USERNAME))
-
 def do_insight_setup(run_as_user, base_path, dist_path, run_mode):
     """This installs and configures insight"""
     user_homedir = os.path.expanduser("~" + USERNAME)
@@ -252,16 +274,19 @@ def do_insight_setup(run_as_user, base_path, dist_path, run_mode):
     runcmd("rm -rf ~%s/insight-api/node-modules && cd ~%s/insight-api && npm install" % (USERNAME, USERNAME))
     #Set up insight startup scripts (will be disabled later from autostarting on system startup if necessary)
     runcmd("cp -af %s/linux/init/insight.conf.template /etc/init/insight.conf" % dist_path)
-    runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/insight.conf" % USERNAME)
+    runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/insight.conf" % DAEMON_USERNAME)
+    runcmd("sed -ri \"s/\!USER_HOMEDIR\!/%s/g\" /etc/init/insight.conf" % user_homedir.replace('/', '\/'))
     runcmd("cp -af %s/linux/init/insight-testnet.conf.template /etc/init/insight-testnet.conf" % dist_path)
-    runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/insight-testnet.conf" % USERNAME)
+    runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/insight-testnet.conf" % DAEMON_USERNAME)
+    runcmd("sed -ri \"s/\!USER_HOMEDIR\!/%s/g\" /etc/init/insight-testnet.conf" % user_homedir.replace('/', '\/'))
     #install logrotate file
     runcmd("cp -af %s/linux/logrotate/insight /etc/logrotate.d/insight" % dist_path)
-    runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/logrotate.d/insight" % USERNAME)
-    runcmd("sed -ri \"s/\!RUN_AS_USER_HOMEDIR\!/%s/g\" /etc/logrotate.d/insight" % user_homedir.replace('/', '\/'))
+    runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/logrotate.d/insight" % DAEMON_USERNAME)
+    runcmd("sed -ri \"s/\!USER_HOMEDIR\!/%s/g\" /etc/logrotate.d/insight" % user_homedir.replace('/', '\/'))
 
     runcmd("mkdir -p ~%s/insight-api/db" % USERNAME)
     runcmd("chown -R %s:%s ~%s/insight-api" % (USERNAME, USERNAME, USERNAME))
+    runcmd("chown -R %s:%s ~%s/insight-api/db" % (DAEMON_USERNAME, USERNAME, USERNAME))
     
     #disable upstart scripts from autostarting on system boot if necessary
     if run_mode == 't': #disable mainnet daemons from autostarting
@@ -364,14 +389,15 @@ def do_counterwallet_setup(run_as_user, branch, updateOnly=False):
     runcmd("cd ~xcp/counterwallet && npm install")
     runcmd("cd ~xcp/counterwallet && grunt build") #will generate the minified site
     runcmd("chown -R %s:%s ~xcp/counterwallet" % (USERNAME, USERNAME)) #just in case
-    runcmd("chmod -R g+rw ~xcp/counterwallet") #just in case
+    runcmd("chmod -R u+rw,g+rw,o+r,o-w ~xcp/counterwallet") #just in case
+    
 
 def do_newrelic_setup(run_as_user, base_path, dist_path, run_mode):
     NR_PREFS_LICENSE_KEY_PATH = "/etc/newrelic/LICENSE_KEY"
     NR_PREFS_HOSTNAME_PATH = "/etc/newrelic/HOSTNAME"
     
     runcmd("mkdir -p /etc/newrelic /var/log/newrelic /var/run/newrelic")
-    runcmd("chown %s:%s /etc/newrelic /var/log/newrelic /var/run/newrelic" % (USERNAME, USERNAME))
+    runcmd("chown %s:%s /etc/newrelic /var/log/newrelic /var/run/newrelic" % (DAEMON_USERNAME, USERNAME))
     
     #try to find existing license key
     nr_license_key = None
@@ -443,13 +469,13 @@ def do_newrelic_setup(run_as_user, base_path, dist_path, run_mode):
     runcmd("/etc/init.d/newrelic-sysmond restart")
     
     #install/setup meetme agent (mongo, redis)
-    runcmd("pip install newrelic-plugin-agent pymongo")
-    runcmd("cp -af %s/linux/newrelic/newrelic_plugin_agent.cfg.template /etc/newrelic/newrelic_plugin_agent.cfg" % dist_path)
-    runcmd("sed -ri \"s/\!LICENSE_KEY\!/%s/g\" /etc/newrelic/newrelic_plugin_agent.cfg" % nr_license_key)
-    runcmd("sed -ri \"s/\!HOSTNAME\!/%s/g\" /etc/newrelic/newrelic_plugin_agent.cfg" % nr_hostname)
-    runcmd("ln -sf %s/linux/newrelic/init/newrelic_plugin_agent /etc/init.d/newrelic_plugin_agent" % dist_path)
-    runcmd("update-rc.d newrelic_plugin_agent defaults")
-    runcmd("/etc/init.d/newrelic_plugin_agent restart")
+    runcmd("pip install newrelic_plugin_agent pymongo")
+    runcmd("cp -af %s/linux/newrelic/newrelic-plugin-agent.cfg.template /etc/newrelic/newrelic-plugin-agent.cfg" % dist_path)
+    runcmd("sed -ri \"s/\!LICENSE_KEY\!/%s/g\" /etc/newrelic/newrelic-plugin-agent.cfg" % nr_license_key)
+    runcmd("sed -ri \"s/\!HOSTNAME\!/%s/g\" /etc/newrelic/newrelic-plugin-agent.cfg" % nr_hostname)
+    runcmd("ln -sf %s/linux/newrelic/init/newrelic-plugin-agent /etc/init.d/newrelic-plugin-agent" % dist_path)
+    runcmd("update-rc.d newrelic-plugin-agent defaults")
+    runcmd("/etc/init.d/newrelic-plugin-agent restart")
     
     #install/setup nginx agent
     runcmd("sudo apt-get -y install ruby ruby-bundler")
@@ -567,6 +593,10 @@ def main():
             if run_mode == '': run_mode = 'b'
             break
     logging.info("Setting up to run on %s" % ('testnet' if run_mode.lower() == 't' else ('mainnet' if run_mode.lower() == 'm' else 'testnet and mainnet')))
+
+    do_newrelic_setup(run_as_user, base_path, dist_path, run_mode) #optional
+    sys.exit(1)
+
     
     command_services("stop")
 

@@ -105,7 +105,8 @@ Testing / Development
 ^^^^^^^^^^^^^^^^^^^^^^
 
 If you'd like to set up a Counterblock Federated Node system for testing and development, the requirements are minimal. Basically you
-need to set up a Virtual Machine (VM) instance (or hardware) with **Ubuntu 14.04 64-bit** and give it at least **2 GB** of memory and **90 GB** of free disk space.
+need to set up a Virtual Machine (VM) instance (or hardware) with **Ubuntu 14.04 64-bit** and give it at least **2 GB**
+of memory and **90 GB** of free disk space.
 
 Node Setup
 -----------
@@ -232,23 +233,43 @@ status of ``counterpartyd``/``counterblockd``.
 Also, you can start up the daemons in the foreground, for easier debugging, using the following sets of commands::
 
     #mainnet
-    sudo su -c 'counterpartyd --data-dir=/home/xcp/.config/counterpartyd' xcp
-    sudo su -c 'counterblockd --data-dir=/home/xcp/.config/counterblockd' xcp
+    sudo su -s /bin/bash -c 'counterpartyd --data-dir=/home/xcp/.config/counterpartyd' xcpd
+    sudo su -s /bin/bash -c 'counterblockd --data-dir=/home/xcp/.config/counterblockd' xcpd
     
     #testnet
-    sudo su -c 'counterpartyd --data-dir=/home/xcp/.config/counterpartyd-testnet --testnet' xcp
-    sudo su -c 'counterblockd --data-dir=/home/xcp/.config/counterblockd-testnet --testnet' xcp
+    sudo su -s /bin/bash -c 'counterpartyd --data-dir=/home/xcp/.config/counterpartyd-testnet --testnet' xcpd
+    sudo su -s /bin/bash -c 'counterblockd --data-dir=/home/xcp/.config/counterblockd-testnet --testnet' xcpd
 
 You can also run ``bitcoind`` commands directly, e.g.::
 
     #mainnet
-    sudo su - xcp -c "bitcoind -datadir=/home/xcp/.bitcoin getinfo"
+    sudo su - xcpd -s /bin/bash -c "bitcoind -datadir=/home/xcp/.bitcoin getinfo"
     
     #testnet
-    sudo su - xcp -c "bitcoind -datadir=/home/xcp/.bitcoin-testnet getinfo"
+    sudo su - xcpd -s /bin/bash -c "bitcoind -datadir=/home/xcp/.bitcoin-testnet getinfo"
 
 Other Topics
 --------------
+
+User Configuration
+^^^^^^^^^^^^^^^^^^^^
+
+Note that when you set up a federated node, the script creates two new users on the system: ``xcp`` and ``xcpd``. (The
+``xcp`` user also has an ``xcp`` group created for it as well.)
+
+The script installs ``counterpartyd``, ``counterwallet``, etc into the home directory of the ``xcp`` user. This
+user also owns all installed files. However, the daemons (i.e. ``bitcoind``, ``insight``, ``counterpartyd``,
+``counterblockd``, and ``nginx``) are actually run as the ``xcpd`` user, which has no write access to the files
+such as the ``counterwallet`` and ``counterpartyd`` source code files. The reason things are set up like this is so that
+even if there is a horrible bug in one of the products that allows for a RCE (or Remote Control Exploit), where the attacker
+would essentially be able to gain the ability to execute commands on the system as that user, two things should prevent this:
+
+* The ``xcpd`` user doesn't actually have write access to any sensitive files on the server (beyond the log and database
+  files for ``bitcoind``, ``counterpartyd``, etc.)
+* The ``xcpd`` user uses ``/bin/false`` as its shell, which prevents the attacker from gaining shell-level access
+
+This setup is such to minimize (and hopefully eliminate) the impact from any kind of potential system-level exploit.
+ 
 
 Easy Updating
 ^^^^^^^^^^^^^^^^
