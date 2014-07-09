@@ -127,7 +127,7 @@ Once done, start up ``bitcoind`` daemon(s)::
     
     sudo tail -f ~xcp/.bitcoin/debug.log 
 
-That last command will give you information on the Bitcoin blockchain download status. While the blockchain is
+That last command will give you information on the Bitcoin blockchain download status. After the blockchain starts
 downloading, you can launch the ``insight`` daemon(s)::
 
     sudo service insight start
@@ -135,15 +135,24 @@ downloading, you can launch the ``insight`` daemon(s)::
     
     sudo tail -f ~xcp/insight-api/insight.log 
 
-Then, watching this log, wait for the insight sync (as well as the bitcoind sync) to finish, which should take between 7 and 12 hours.
-After this is all done, reboot the box for the new services to start (which includes ``counterpartyd`` and ``counterblockd``).
+As well as ``counterpartyd`` itself::
 
-Then, check on the status of ``counterpartyd`` and ``counterblockd``'s sync with the blockchain using::
-
+    sudo service counterpartyd start
+    sudo service counterpartyd-testnet start
+    
     sudo tail -f ~xcp/.config/counterpartyd/counterpartyd.log
+
+Then, watching these log, wait for the insight sync (as well as the bitcoind sync and counterpartyd syncs) to finish,
+which should take between 7 and 12 hours. After this is all done, reboot the box for the new services to
+start (which includes both ``counterpartyd`` and ``counterblockd``).
+
+``counterblockd``, after starting up must then sync to ``counterpartyd``. It will do this automatically, and the
+process will take between 20 minutes to 1 hour most likely. You can check on the status of ``counterblockd``'s
+sync using::
+
     sudo tail -f ~xcp/.config/counterblockd/counterblockd.log
 
-Once both are fully synced up, you should be good to proceed. The next step is to simply open up a web browser, and
+Once it is fully synced up, you should be good to proceed. The next step is to simply open up a web browser, and
 go to the IP address/hostname of the server. You will then be presented to accept your self-signed SSL certificate, and
 after doing that, should see the Counterwallet login interface. From this point, you can proceed testing Counterblock/Counterwallet
 functionality on your own system(s).
