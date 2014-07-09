@@ -130,12 +130,12 @@ def do_bitcoind_setup(run_as_user, branch, base_path, dist_path, run_mode):
     bitcoind_rpc_password_testnet = pass_generator()
     
     #Install bitcoind
-    runcmd("rm -rf /tmp/bitcoind.tar.gz /tmp/bitcoin-0.9.1-linux")
-    runcmd("wget -O /tmp/bitcoind.tar.gz https://bitcoin.org/bin/0.9.1/bitcoin-0.9.1-linux.tar.gz")
+    runcmd("rm -rf /tmp/bitcoind.tar.gz /tmp/bitcoin-0.9.2.1-linux")
+    runcmd("wget -O /tmp/bitcoind.tar.gz https://bitcoin.org/bin/0.9.2.1/bitcoin-0.9.2.1-linux.tar.gz")
     runcmd("tar -C /tmp -zxvf /tmp/bitcoind.tar.gz")
-    runcmd("cp -af /tmp/bitcoin-0.9.1-linux/bin/64/bitcoind /usr/bin")
-    runcmd("cp -af /tmp/bitcoin-0.9.1-linux/bin/64/bitcoin-cli /usr/bin")
-    runcmd("rm -rf /tmp/bitcoind.tar.gz /tmp/bitcoin-0.9.1-linux")
+    runcmd("cp -af /tmp/bitcoin-0.9.2.1-linux/bin/64/bitcoind /usr/bin")
+    runcmd("cp -af /tmp/bitcoin-0.9.2.1-linux/bin/64/bitcoin-cli /usr/bin")
+    runcmd("rm -rf /tmp/bitcoind.tar.gz /tmp/bitcoin-0.9.2.1-linux")
 
     #Do basic inital bitcoin config (for both testnet and mainnet)
     runcmd("mkdir -p ~%s/.bitcoin ~%s/.bitcoin-testnet" % (USERNAME, USERNAME))
@@ -301,7 +301,7 @@ def do_insight_setup(run_as_user, base_path, dist_path, run_mode):
 def do_nginx_setup(run_as_user, base_path, dist_path):
     #Build and install nginx (openresty) on Ubuntu
     #Most of these build commands from http://brian.akins.org/blog/2013/03/19/building-openresty-on-ubuntu/
-    OPENRESTY_VER = "1.5.8.1"
+    OPENRESTY_VER = "1.7.0.1"
 
     #install deps
     runcmd("apt-get -y install make ruby1.9.1 ruby1.9.1-dev git-core libpcre3-dev libxslt1-dev libgd2-xpm-dev libgeoip-dev unzip zip build-essential libssl-dev")
