@@ -197,9 +197,9 @@ def do_counterparty_setup(run_as_user, branch, base_path, dist_path, run_mode, b
     
     #now change the counterpartyd and counterblockd directories to be owned by the xcpd user (and the xcp group),
     # so that the xcpd account can write to the database, saved image files (counterblockd), log files, etc
-    runcmd("mkdir -p ~%s/.config/counterpartyd ~%s/.config/counterblockd ~%s/.config/counterpartyd-testnet ~%s/.config/counterblockd-testnet" % (
+    runcmd("mkdir -p ~%s/.config/counterpartyd ~%s/.config/counterpartyd-testnet ~%s/.config/counterblockd ~%s/.config/counterblockd-testnet" % (
         USERNAME, USERNAME, USERNAME, USERNAME))    
-    runcmd("chown -R %s:%s ~%s/.config/counterpartyd ~%s/.config/counterpartyd ~%s/.config/counterpartyd-testnet ~%s/.config/counterblockd-testnet" % (
+    runcmd("chown -R %s:%s ~%s/.config/counterpartyd ~%s/.config/counterpartyd-testnet ~%s/.config/counterblockd ~%s/.config/counterblockd-testnet" % (
         DAEMON_USERNAME, USERNAME, USERNAME, USERNAME, USERNAME, USERNAME))
     runcmd("sed -ri \"s/USER=%s/USER=%s/g\" /etc/init/counterpartyd.conf /etc/init/counterpartyd-testnet.conf /etc/init/counterblockd.conf /etc/init/counterblockd-testnet.conf" % (
         USERNAME, DAEMON_USERNAME))
