@@ -83,7 +83,7 @@ Here are the recommendations and/or requirements when setting up a production-gr
 
 **Server Security:**
 
-`This link <http://www.thefanclub.co.za/how-to/how-secure-ubuntu-1204-lts-server-part-1-basics>`__ is a good starting point
+`This link <http://www.thefanclub.co.za/how-to/how-secure-ubuntu-1204-lts-server-part-1-basics>`__ is a good starting point.
 Specifically, see steps 1 through 5, 7, 12, and 13 though 17.
 
 Some notes:
