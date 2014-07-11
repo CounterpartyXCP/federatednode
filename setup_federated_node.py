@@ -120,11 +120,11 @@ def do_base_setup(run_as_user, branch, base_path, dist_path):
     #add the run_as_user to the xcp group
     runcmd("adduser %s %s" % (run_as_user, USERNAME))
     
-    #enhance fd limits for the xcpd user
-    runcmd("cp -af %s/linux/other/xcpd_security_limits.conf /etc/security/limits.d/" % dist_path)
-    
     #Check out counterpartyd-build repo under this user's home dir and use that for the build
     git_repo_clone(branch, "counterpartyd_build", REPO_COUNTERPARTYD_BUILD, run_as_user)
+
+    #enhance fd limits for the xcpd user
+    runcmd("cp -af %s/linux/other/xcpd_security_limits.conf /etc/security/limits.d/" % dist_path)
 
 def do_bitcoind_setup(run_as_user, branch, base_path, dist_path, run_mode):
     """Installs and configures bitcoind"""
