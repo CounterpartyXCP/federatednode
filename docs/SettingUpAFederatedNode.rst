@@ -73,7 +73,7 @@ Here are the recommendations and/or requirements when setting up a production-gr
 
 - Xeon E3+ or similar-class processor
 - 16GB+ RAM (ECC)
-- 2x SSD 120GB+ drives in RAID-0 (mirrored) configuration
+- 2x SSD 120GB+ drives in RAID-1 (mirrored) configuration
 - Hosted in a secure data center with physical security and access controls
 - DDOS protection recommended if you will be offering your service to others
 
@@ -83,7 +83,7 @@ Here are the recommendations and/or requirements when setting up a production-gr
 
 **Server Security:**
 
-`This link <http://www.thefanclub.co.za/how-to/how-secure-ubuntu-1204-lts-server-part-1-basics>`__ is a good starting point
+`This link <http://www.thefanclub.co.za/how-to/how-secure-ubuntu-1204-lts-server-part-1-basics>`__ is a good starting point.
 Specifically, see steps 1 through 5, 7, 12, and 13 though 17.
 
 Some notes:
@@ -105,7 +105,8 @@ Testing / Development
 ^^^^^^^^^^^^^^^^^^^^^^
 
 If you'd like to set up a Counterblock Federated Node system for testing and development, the requirements are minimal. Basically you
-need to set up a Virtual Machine (VM) instance (or hardware) with **Ubuntu 14.04 64-bit** and give it at least **2 GB** of memory and **90 GB** of free disk space.
+need to set up a Virtual Machine (VM) instance (or hardware) with **Ubuntu 14.04 64-bit** and give it at least **2 GB**
+of memory and **90 GB** of free disk space.
 
 Node Setup
 -----------
@@ -126,7 +127,7 @@ Once done, start up ``bitcoind`` daemon(s)::
     
     sudo tail -f ~xcp/.bitcoin/debug.log 
 
-That last command will give you information on the Bitcoin blockchain download status. While the blockchain is
+That last command will give you information on the Bitcoin blockchain download status. After the blockchain starts
 downloading, you can launch the ``insight`` daemon(s)::
 
     sudo service insight start
@@ -134,15 +135,24 @@ downloading, you can launch the ``insight`` daemon(s)::
     
     sudo tail -f ~xcp/insight-api/insight.log 
 
-Then, watching this log, wait for the insight sync (as well as the bitcoind sync) to finish, which should take between 7 and 12 hours.
-After this is all done, reboot the box for the new services to start (which includes ``counterpartyd`` and ``counterblockd``).
+As well as ``counterpartyd`` itself::
 
-Then, check on the status of ``counterpartyd`` and ``counterblockd``'s sync with the blockchain using::
-
+    sudo service counterpartyd start
+    sudo service counterpartyd-testnet start
+    
     sudo tail -f ~xcp/.config/counterpartyd/counterpartyd.log
+
+Then, watching these log, wait for the insight sync (as well as the bitcoind sync and counterpartyd syncs) to finish,
+which should take between 7 and 12 hours. After this is all done, reboot the box for the new services to
+start (which includes both ``counterpartyd`` and ``counterblockd``).
+
+``counterblockd``, after starting up must then sync to ``counterpartyd``. It will do this automatically, and the
+process will take between 20 minutes to 1 hour most likely. You can check on the status of ``counterblockd``'s
+sync using::
+
     sudo tail -f ~xcp/.config/counterblockd/counterblockd.log
 
-Once both are fully synced up, you should be good to proceed. The next step is to simply open up a web browser, and
+Once it is fully synced up, you should be good to proceed. The next step is to simply open up a web browser, and
 go to the IP address/hostname of the server. You will then be presented to accept your self-signed SSL certificate, and
 after doing that, should see the Counterwallet login interface. From this point, you can proceed testing Counterblock/Counterwallet
 functionality on your own system(s).
@@ -232,23 +242,43 @@ status of ``counterpartyd``/``counterblockd``.
 Also, you can start up the daemons in the foreground, for easier debugging, using the following sets of commands::
 
     #mainnet
-    sudo su -c 'counterpartyd --data-dir=/home/xcp/.config/counterpartyd' xcp
-    sudo su -c 'counterblockd --data-dir=/home/xcp/.config/counterblockd' xcp
+    sudo su -s /bin/bash -c 'counterpartyd --data-dir=/home/xcp/.config/counterpartyd' xcpd
+    sudo su -s /bin/bash -c 'counterblockd --data-dir=/home/xcp/.config/counterblockd' xcpd
     
     #testnet
-    sudo su -c 'counterpartyd --data-dir=/home/xcp/.config/counterpartyd-testnet --testnet' xcp
-    sudo su -c 'counterblockd --data-dir=/home/xcp/.config/counterblockd-testnet --testnet' xcp
+    sudo su -s /bin/bash -c 'counterpartyd --data-dir=/home/xcp/.config/counterpartyd-testnet --testnet' xcpd
+    sudo su -s /bin/bash -c 'counterblockd --data-dir=/home/xcp/.config/counterblockd-testnet --testnet' xcpd
 
 You can also run ``bitcoind`` commands directly, e.g.::
 
     #mainnet
-    sudo su - xcp -c "bitcoind -datadir=/home/xcp/.bitcoin getinfo"
+    sudo su - xcpd -s /bin/bash -c "bitcoind -datadir=/home/xcp/.bitcoin getinfo"
     
     #testnet
-    sudo su - xcp -c "bitcoind -datadir=/home/xcp/.bitcoin-testnet getinfo"
+    sudo su - xcpd -s /bin/bash -c "bitcoind -datadir=/home/xcp/.bitcoin-testnet getinfo"
 
 Other Topics
 --------------
+
+User Configuration
+^^^^^^^^^^^^^^^^^^^^
+
+Note that when you set up a federated node, the script creates two new users on the system: ``xcp`` and ``xcpd``. (The
+``xcp`` user also has an ``xcp`` group created for it as well.)
+
+The script installs ``counterpartyd``, ``counterwallet``, etc into the home directory of the ``xcp`` user. This
+user also owns all installed files. However, the daemons (i.e. ``bitcoind``, ``insight``, ``counterpartyd``,
+``counterblockd``, and ``nginx``) are actually run as the ``xcpd`` user, which has no write access to the files
+such as the ``counterwallet`` and ``counterpartyd`` source code files. The reason things are set up like this is so that
+even if there is a horrible bug in one of the products that allows for a RCE (or Remote Control Exploit), where the attacker
+would essentially be able to gain the ability to execute commands on the system as that user, two things should prevent this:
+
+* The ``xcpd`` user doesn't actually have write access to any sensitive files on the server (beyond the log and database
+  files for ``bitcoind``, ``counterpartyd``, etc.)
+* The ``xcpd`` user uses ``/bin/false`` as its shell, which prevents the attacker from gaining shell-level access
+
+This setup is such to minimize (and hopefully eliminate) the impact from any kind of potential system-level exploit.
+ 
 
 Easy Updating
 ^^^^^^^^^^^^^^^^

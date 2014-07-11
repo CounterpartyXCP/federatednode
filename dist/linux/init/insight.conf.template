@@ -14,7 +14,7 @@ end script
 
 script
 USER=!RUN_AS_USER!
-USER_HOME=$(eval echo ~${USER})
+USER_HOME=!USER_HOMEDIR!
 chown -R $USER $USER_HOME/insight-api
 export INSIGHT_NETWORK=livenet
 export INSIGHT_DB=$USER_HOME/insight-api/db

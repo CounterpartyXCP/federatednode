@@ -17,7 +17,7 @@ Under Linux, the data directory is normally located in ``~/.config/counterpartyd
 Under Windows, the data directory is normally located at ``%APPDATA%\Counterparty\counterpartyd``. Examples of this are:
 
 - ``C:\Users\<your username>\AppData\Roaming\Counterparty\counterpartyd`` (Windows 7/8/Server)
-- ``C:\Documents and Settings\<your username>\Application Data\Counterparty\counterparyd`` (Windows XP)
+- ``C:\Documents and Settings\<your username>\Application Data\Counterparty\counterpartyd`` (Windows XP)
 
 
 Editing the Config

@@ -14,6 +14,6 @@ end script
 
 script
 USER=!RUN_AS_USER!
-USER_HOME=$(eval echo ~${USER})
+USER_HOME=!USER_HOMEDIR!
 start-stop-daemon --start -c $USER --make-pidfile --pidfile $USER_HOME/.bitcoin-testnet/bitcoind.pid --exec /usr/bin/bitcoind -- -daemon=0 -testnet -datadir=$USER_HOME/.bitcoin-testnet
 end script

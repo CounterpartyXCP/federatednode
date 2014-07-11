@@ -32,7 +32,9 @@ gevent-socketio==0.3.6
 
 redis==2.10.1
 
-grequests==0.2.0
+#https://github.com/kennethreitz/grequests/archive/5d12c6642c5d11cb46cb6141cd87415c88de878c.zip#egg=grequests
+https://github.com/natecode/grequests/archive/ea00e193074fc11d71b4ff74138251f6055ca364.zip#egg=grequests
+#grequests (waiting until the next point release with natecode's pull request factored in)
 
 pyzmq==14.3.1
 
@@ -51,3 +53,5 @@ strict_rfc3339==0.4
 rfc3987==1.3.4
 
 aniso8601==0.82
+
+pygeoip==0.3.1
