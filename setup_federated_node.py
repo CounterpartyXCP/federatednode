@@ -97,11 +97,6 @@ def do_base_setup(run_as_user, branch, base_path, dist_path):
     runcmd("apt-get update")
     runcmd("apt-get -y install nodejs") #includes npm
     
-    #Sync time
-    runcmd("service ntp stop")
-    runcmd("ntpdate ntp.ubuntu.com")
-    runcmd("service ntp start")
-
     #Create xcp user, under which the files will be stored, and who will own the files, etc
     try:
         pwd.getpwnam(USERNAME)
