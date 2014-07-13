@@ -374,6 +374,8 @@ etc usr var''' % (OPENRESTY_VER, OPENRESTY_VER))
     #now install the .deb package that was created (along with its deps)
     runcmd("apt-get -y install libxslt1.1 libgeoip1 geoip-database libpcre3")
     runcmd("dpkg -i /tmp/nginx-openresty_%s-1_amd64.deb" % OPENRESTY_VER)
+    #remove any .dpkg-old or .dpkg-dist files that might have been installed out of the nginx config dir
+    runcmd("rm -f /etc/nginx/sites-enabled/*.dpkg-old /etc/nginx/sites-enabled/*.dpkg-dist")
     #clean up after ourselves
     runcmd("rm -rf /tmp/openresty /tmp/ngx_openresty-* /tmp/nginx-openresty.tar.gz /tmp/nginx-openresty*.deb")
     runcmd("update-rc.d nginx defaults")
