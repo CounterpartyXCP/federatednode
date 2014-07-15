@@ -1,6 +1,6 @@
 #!upstart
 description "counterblockd (mainnet)"
-limit nofile 16384 16384
+limit nofile 32768 32768
 
 # When to start the service
 start on startup
