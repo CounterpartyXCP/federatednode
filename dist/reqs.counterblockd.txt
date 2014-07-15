@@ -14,7 +14,7 @@ python-dateutil==2.2
 
 requests==2.3.0
 
-cherrypy==3.3.0
+flask==0.10.1
 
 json-rpc==1.6.0
 

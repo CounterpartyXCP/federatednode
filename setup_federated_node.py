@@ -247,10 +247,6 @@ def do_counterparty_setup(run_as_user, branch, base_path, dist_path, run_mode, b
             content += 'insight-enable=1\n'
         if not re.search(r'^insight\-connect', content, re.MULTILINE):
             content += 'insight-connect=localhost\n'
-        if not re.search(r'^api\-num\-threads', content, re.MULTILINE):
-            content += 'api-num-threads=100\n'
-        if not re.search(r'^api\-request\-queue\-size', content, re.MULTILINE):
-            content += 'api-request-queue-size=500\n'
         f = open(cfgFilename, 'w')
         f.write(content)
         f.close()
