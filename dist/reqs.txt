@@ -7,8 +7,6 @@ prettytable==0.7.2
 
 python-dateutil==2.2
 
-requests==2.3.0
-
 flask==0.10.1
 
 json-rpc==1.6.0
@@ -19,6 +17,8 @@ pytest==2.5.1
 
 #############
 #counterpartyd specific deps
+
+requests==2.3.0
 
 Flask-HTTPAuth==2.2.1
 
