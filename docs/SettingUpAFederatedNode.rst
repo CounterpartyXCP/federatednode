@@ -202,12 +202,22 @@ a number of other site specific configuration properties. For example::
       "forceTestnet": true,
       "googleAnalyticsUA": "UA-48454783-2",
       "googleAnalyticsUA-testnet": "UA-48454783-4",
-      "rollbarAccessToken": "39d23b5a512f4169c98fc922f0d1b121"
+      "rollbarAccessToken": "39d23b5a512f4169c98fc922f0d1b121",
+      "disabledFeatures": ["rps", "betting"]
     }
   
-As in the example above, each of the hosts in ``servers`` must have a "http://" or "https://" prefix (we strongly recommend using HTTPS),
+
+Here's a description of the possible fields:
+
+* **servers**: As in the example above, each of the hosts in ``servers`` must have a "http://" or "https://" prefix (we strongly recommend using HTTPS),
 and the strings must *not* end in a slash (just leave it off). The other properties are optional, and can be set if you
 make use of these services.
+* **forceTestnet**: Set to true to always use testnet (not requiring 'testnet' in the FQDN, or the '?testnet=1' parameter in the URL.
+* **googleAnalyticsUA** / **googleAnalyticsUA-testnet**: Set to enable google analytics for mainnet/testnet. You must have a google analytics account.
+* **rollbarAccessToken**: Set to enable client-side error tracking via rollbar.com. Must have a rollbar account.
+* **disabledFeatures**: Set to a list of zero or more features to disable in the UI. Possible features are:
+  ``betting``, ``rps``, ``dividend``, ``exchange``, ``leaderboard``, ``portfolio``, ``stats`` and ``history``. Normally
+  this can just be ``[]`` (an empty list) to not disable anything.
 
 Once done, save this file and make sure it exists on all servers you are hosting Counterwallet static content on. Now, when you go
 to your Counterwallet site, the server will read in this file immediately after loading the page, and set the list of
@@ -243,11 +253,11 @@ Also, you can start up the daemons in the foreground, for easier debugging, usin
 
     #mainnet
     sudo su -s /bin/bash -c 'counterpartyd --data-dir=/home/xcp/.config/counterpartyd' xcpd
-    sudo su -s /bin/bash -c 'counterblockd --data-dir=/home/xcp/.config/counterblockd' xcpd
+    sudo su -s /bin/bash -c 'counterblockd --data-dir=/home/xcp/.config/counterblockd -v' xcpd
     
     #testnet
     sudo su -s /bin/bash -c 'counterpartyd --data-dir=/home/xcp/.config/counterpartyd-testnet --testnet' xcpd
-    sudo su -s /bin/bash -c 'counterblockd --data-dir=/home/xcp/.config/counterblockd-testnet --testnet' xcpd
+    sudo su -s /bin/bash -c 'counterblockd --data-dir=/home/xcp/.config/counterblockd-testnet --testnet -v' xcpd
 
 You can also run ``bitcoind`` commands directly, e.g.::
 
