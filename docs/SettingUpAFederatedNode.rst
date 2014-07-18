@@ -1,50 +1,42 @@
 Setting up a Counterblock Federated Node
 ==============================================
 
-
 Introduction
 -------------
 
-The Counterwallet web-wallet works against one or more Counterblock Federated Node back-end servers.
-Each backend server runs ``bitcoind``, ``insight``, ``counterpartyd``, and ``counterblockd``, and exists as a fully self-contained
-node. Counterwallet utilizes these backend servers in making API calls either sequentially (i.e. failover) or in
-parallel (i.e. consensus-based). When a user logs in, this list is shuffled so that, in aggregate, user requests are
-effectively load-balanced across available servers.
+A Counterblock Federated Node is a self-contained server that runs the software necessary to support one or more "roles".
+Such roles may be:
+   * Counterwallet server
+   * Vending machine
+   * Block explorer server (future)
 
-The nodes used by Counterwallet in this way are referred to as Federated Nodes, because they are self-contained and
-independent, but (though special "multiAPI" functionality client-side) work together to provide services to Counterwallet users.
-Indeed, by setting up multiple such (Counterblock) Federated Nodes, one can utilize a similar redundancy/reliability model
-in one's own 3rd party application, that Counterwallet utilizes.  
+Each backend server runs `multiple services <components>`__ (some required, and some optional, or based on the role chosen).
+As each server is self-contained, they can be combined by the client-side software to allow for high-availability/load balancing.
 
-By default, Counterblock Federated Nodes also host Counterwallet content (this will change in the future).
-Regarding this, the Counterparty team itself operates the primary Counterwallet platform. However, as Counterwallet is open source
-software, it is possible to host your own site with Counterwallet site (for your personal use, or as an offering to
-others), or to even host your own Counterwallet servers to use with your own Counterparty wallet implementation.
-The Counterparty team supports this kind of activity (as long as the servers are secure), as it aids with increasing decentralization.
-    
-Also note that due to the nature of Counterwallet being a deterministic wallet, users using one Counterwallet platform (i.e. the
-official one, for instance) have the flexibility to start using a different Counterwallet platform instead at any time,
-and as funds (i.e. private keys) are not stored on the server in any fashion, they will be able to see their funds on either.
-(Note that the only thing that will not migrate are saved preferences, such as address aliases, the theme setting, etc.)
+For instance, software such as Counterwallet may then utilize these backend servers in making API calls either sequentially (i.e. failover) or in
+parallel (i.e. consensus-based). For instance, with Counterwallet, when a user logs in, this list is shuffled so that
+in aggregate, user requests are effectively load-balanced across available servers. Indeed, by setting up multiple such
+(Counterblock) Federated Nodes, one can utilize a similar redundancy/reliability model in one's own 3rd party application
+that Counterwallet utilizes. Or, one can utilize a simplier configuration based on a single, stand-alone server.
 
-The above being said, this document walks one though some of the inner workings of Counterwallet, as well as describing
-how one can set up their own Counterblock Federated Node server(s).
-
-This document is primarily intended for system administrators and developers.
+This document describes how one can set up their own Counterblock Federated Node server(s). It is primarily intended
+for system administrators and developers.
 
 
-Components
-----------
+.. _components:
 
-counterpartyd
-^^^^^^^^^^^^^^
+Node Services/Components
+-------------------------
+
+counterpartyd (Required)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ``counterpartyd`` is the Counterparty reference client itself. It's responsibilities include parsing out Counterparty
 transactions from the Bitcoin blockchain. It has a basic command line interface, and a reletively low-level API for
 getting information on specific transactions, or general state info.
 
-counterblockd
-^^^^^^^^^^^^^
+counterblockd (Required)
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The ``counterblockd`` daemon provides a more high-level API that layers on top of ``counterpartyd``'s API, and includes extended
 information, such as market and price data, trade operations, asset history, and more. It is used extensively by Counterwallet
@@ -53,29 +45,52 @@ what ``counterpartyd`` provides.
 
 ``counterblockd`` also provides a proxy-based interface to all ``counterpartyd`` API methods, via the ``proxy_to_counterpartyd`` API call.
 
-counterwallet
-^^^^^^^^^^^^^^
+insight (Optional)
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This is the Counterwallet source code itself. ``counterwallet`` communicates with one or more Counterblock Federated Nodes,
-and accesses API functionality of both ``counterblockd`` and ``counterpartyd``.
+``insight`` allows for local querying of balance information and UTXOs for arbitrary addresses. This is a feature not available
+to ``bitcoind`` itself. Alternatives to running ``insight`` on the server are using a service like ``blockr.io``, which
+both ``counterpartyd`` and ``counterblockd`` support. For the most reliable service, we recommend that production
+servers (at least) run ``insight`` locally.
+
+armory_utxsvr (Optional)
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This service is used by ``counterblockd`` with Counterwallet, to allow for the creation of unsigned transaction
+ASCII text blocks, which may then be used with an `Offline Armory configuration <https://bitcoinarmory.com/about/using-our-wallet/>`__.
+This service requires Armory itself, which is automatically installed as part of the Federated Node setup procedure.
+
+Counterwallet, etc.
+^^^^^^^^^^^^^^^^^^^^
+
+The specific end-functionality, that builds off of the base services provided. For instance.
 
 
-
-Counterblock Node Provisioning
+Federated Node Provisioning
 --------------------------------
 
 Production
 ^^^^^^^^^^^^
 
-Here are the recommendations and/or requirements when setting up a production-grade Counterblock Federated Node server:
+Here are the recommendations and/or requirements when setting up a production-grade Counterblock Federated Node:
 
 **Server Hardware/Network Recommendations:**
 
 - Xeon E3+ or similar-class processor
 - 16GB+ RAM (ECC)
-- 2x SSD 120GB+ drives in RAID-1 (mirrored) configuration
+- Disk drives in RAID-1 (mirrored) configuration (SSD prefered)
 - Hosted in a secure data center with physical security and access controls
 - DDOS protection recommended if you will be offering your service to others
+
+** Disk Space Requirements **
+The exact disk space required will be dependent on what services are run on the node::
+
+* Base System: **20GB** (to be safe)
+* ``counterpartyd``, ``counterblockd`` databases: **~200MB**
+* ``insight``: **~30GB** (mainnet), **~3GB** (testnet)
+* ``armory_utxsvr``: **~25GB** (mainnet), **~3GB** (testnet)
+
+Generally, we recommend building on a server with at least 120GB of available disk space.
 
 **Server Software:**
 
@@ -105,8 +120,8 @@ Testing / Development
 ^^^^^^^^^^^^^^^^^^^^^^
 
 If you'd like to set up a Counterblock Federated Node system for testing and development, the requirements are minimal. Basically you
-need to set up a Virtual Machine (VM) instance (or hardware) with **Ubuntu 14.04 64-bit** and give it at least **2 GB**
-of memory and **90 GB** of free disk space.
+need to set up a Virtual Machine (VM) instance (or hardware) at the Ubuntu version listed above, at least **2 GB**
+of memory, and enough disk space to cover the installation and use of the desired components.
 
 Node Setup
 -----------
@@ -154,8 +169,8 @@ sync using::
 
 Once it is fully synced up, you should be good to proceed. The next step is to simply open up a web browser, and
 go to the IP address/hostname of the server. You will then be presented to accept your self-signed SSL certificate, and
-after doing that, should see the Counterwallet login interface. From this point, you can proceed testing Counterblock/Counterwallet
-functionality on your own system(s).
+after doing that, should see the web interface for the role you selected (e.g. Counterwallet login screen, if Counterwallet
+was chosen at node setup time). From this point, you can proceed testing the necessary functionality on your own system(s).
 
 
 Getting a SSL Certificate
@@ -180,48 +195,6 @@ SSL certificate lines, and uncomment the production SSL cert lines, like so::
 Then restart nginx::
 
     sudo service nginx restart
-
-
-Multi-Server Setups
-------------------------------------
-
-Counterwallet should work out-of-the-box in a scenario where you have a single Counterblock Federated Node that both hosts the
-static site content, as well as the backend Counterblock API services. You will need to read and follow this section if any of the
-following apply to your situation:
-
-- You have more than one server hosting the content (i.e. javascript, html, css resources) and API services (backend ``counterblockd``, etc)
-- Or, you have a different set of hosts hosting API services than those hosting the static site content
-- Or, you are hosting the static site content on a CDN
-
-In these situations, you need to create a small file called ``servers.json`` in the ``counterblock/`` directory.
-This file will contain a valid JSON-formatted object, containing an array of all of your backend servers, as well as
-a number of other site specific configuration properties. For example::
-
-    { 
-      "servers": [ "https://counterblock1.mydomain.com", "https://counterblock2.mydomain.com", "https://counterblock3.mydomain.com" ],
-      "forceTestnet": true,
-      "googleAnalyticsUA": "UA-48454783-2",
-      "googleAnalyticsUA-testnet": "UA-48454783-4",
-      "rollbarAccessToken": "39d23b5a512f4169c98fc922f0d1b121",
-      "disabledFeatures": ["rps", "betting"]
-    }
-  
-
-Here's a description of the possible fields:
-
-* **servers**: As in the example above, each of the hosts in ``servers`` must have a "http://" or "https://" prefix (we strongly recommend using HTTPS),
-and the strings must *not* end in a slash (just leave it off). The other properties are optional, and can be set if you
-make use of these services.
-* **forceTestnet**: Set to true to always use testnet (not requiring 'testnet' in the FQDN, or the '?testnet=1' parameter in the URL.
-* **googleAnalyticsUA** / **googleAnalyticsUA-testnet**: Set to enable google analytics for mainnet/testnet. You must have a google analytics account.
-* **rollbarAccessToken**: Set to enable client-side error tracking via rollbar.com. Must have a rollbar account.
-* **disabledFeatures**: Set to a list of zero or more features to disable in the UI. Possible features are:
-  ``betting``, ``rps``, ``dividend``, ``exchange``, ``leaderboard``, ``portfolio``, ``stats`` and ``history``. Normally
-  this can just be ``[]`` (an empty list) to not disable anything.
-
-Once done, save this file and make sure it exists on all servers you are hosting Counterwallet static content on. Now, when you go
-to your Counterwallet site, the server will read in this file immediately after loading the page, and set the list of
-backend API hosts from it automatically.
 
 
 Troubleshooting
@@ -267,6 +240,34 @@ You can also run ``bitcoind`` commands directly, e.g.::
     #testnet
     sudo su - xcpd -s /bin/bash -c "bitcoind -datadir=/home/xcp/.bitcoin-testnet getinfo"
 
+
+Monitoring the Server
+----------------------
+
+To monitor the server, you can use a 3rd-party service such as [Pingdom](http://www.pingdom.com) or [StatusCake](http://statuscake.com).
+The federated node allows these (and any other monitoring service) to query the basic status of the server (e.g. the ``nginx``,
+``counterblockd`` and ``counterpartyd`` services) via making a HTTP GET call to one of the following URLs:
+
+* ``/_api/`` (for mainnet) 
+* ``/_t_api/`` (for testnet)
+
+If all services are up, a HTTP 200 response with the following data will be returned::
+
+    {"counterpartyd": "OK", "counterblockd_ver": "1.3.0", "counterpartyd_ver": "9.31.0", "counterblockd": "OK",
+    "counterblockd_check_elapsed": 0.0039348602294921875, "counterpartyd_last_block": {
+    "block_hash": "0000000000000000313c4708da5b676f453b41d566832f80809bc4cb141ab2cd", "block_index": 311234,
+    "block_time": 1405638212}, "local_online_users": 7, "counterpartyd_check_elapsed": 0.003687143325805664, 
+    "counterblockd_error": null, "counterpartyd_last_message_index": 91865}
+    
+Note the ``"counterpartyd": "OK"`` and ``"counterblockd": "OK"`` items.
+
+If all services but ``counterpartyd`` are up, a HTTP 500 response with ``"counterpartyd": "NOT OK"``, for instance.
+
+If ``counterblockd`` is not working properly, ``nginx`` will return a HTTP 503 (Gateway unavailable) or 500 response.
+
+If ``nginx`` is not working properly, either a HTTP 5xx response, or no response at all (i.e. timeout) will be returned.
+
+
 Other Topics
 --------------
 
@@ -288,21 +289,63 @@ would essentially be able to gain the ability to execute commands on the system 
 * The ``xcpd`` user uses ``/bin/false`` as its shell, which prevents the attacker from gaining shell-level access
 
 This setup is such to minimize (and hopefully eliminate) the impact from any kind of potential system-level exploit.
- 
 
 Easy Updating
 ^^^^^^^^^^^^^^^^
 
-To update the system with new ``counterpartyd``, ``counterblockd`` and ``counterwallet`` code releases, you simply need
-to rerun the ``setup_federated_node`` script, like so::
+To update the system with new code releases, you simply need to rerun the ``setup_federated_node`` script, like so::
 
     cd ~xcp/counterpartyd_build
     sudo ./setup_federated_node.py
     
-As prompted, you should be able to choose just to Update, instead of to Rebuild. However, you would choose the Rebuild
+As prompted, you should be able to choose just to update, instead of to rebuild. However, you would choose the rebuild
 option if there were updates to the ``counterpartyd_build`` system files for the federated node itself (such as the
-``nginx`` configuration, or the init scripts) that you wanted/needed to apply. Otherwise, if there are just updates
-to the daemons or ``counterwallet`` code itself, Update should be fine. 
+``nginx`` configuration, or the init scripts) that you wanted/needed to apply. Otherwise, update should be fine. 
+
+
+Counterwallet-Specific
+-----------------------
+
+Counterwallet Multi-Server Setups
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Counterwallet should work out-of-the-box in a scenario where you have a single Counterblock Federated Node that both hosts the
+static site content, as well as the backend Counterblock API services. You will need to read and follow this section if any of the
+following apply to your situation:
+
+- You have more than one server hosting the content (i.e. javascript, html, css resources) and API services (backend ``counterblockd``, etc)
+- Or, you have a different set of hosts hosting API services than those hosting the static site content
+- Or, you are hosting the static site content on a CDN
+
+In these situations, you need to create a small file called ``servers.json`` in the ``counterblock/`` directory.
+This file will contain a valid JSON-formatted object, containing an array of all of your backend servers, as well as
+a number of other site specific configuration properties. For example::
+
+    { 
+      "servers": [ "https://counterblock1.mydomain.com", "https://counterblock2.mydomain.com", "https://counterblock3.mydomain.com" ],
+      "forceTestnet": true,
+      "googleAnalyticsUA": "UA-48454783-2",
+      "googleAnalyticsUA-testnet": "UA-48454783-4",
+      "rollbarAccessToken": "39d23b5a512f4169c98fc922f0d1b121",
+      "disabledFeatures": ["rps", "betting"]
+    }
+  
+
+Here's a description of the possible fields:
+
+* **servers**: As in the example above, each of the hosts in ``servers`` must have a "http://" or "https://" prefix (we strongly recommend using HTTPS),
+and the strings must *not* end in a slash (just leave it off). The other properties are optional, and can be set if you
+make use of these services.
+* **forceTestnet**: Set to true to always use testnet (not requiring 'testnet' in the FQDN, or the '?testnet=1' parameter in the URL.
+* **googleAnalyticsUA** / **googleAnalyticsUA-testnet**: Set to enable google analytics for mainnet/testnet. You must have a google analytics account.
+* **rollbarAccessToken**: Set to enable client-side error tracking via rollbar.com. Must have a rollbar account.
+* **disabledFeatures**: Set to a list of zero or more features to disable in the UI. Possible features are:
+  ``betting``, ``rps``, ``dividend``, ``exchange``, ``leaderboard``, ``portfolio``, ``stats`` and ``history``. Normally
+  this can just be ``[]`` (an empty list) to not disable anything.
+
+Once done, save this file and make sure it exists on all servers you are hosting Counterwallet static content on. Now, when you go
+to your Counterwallet site, the server will read in this file immediately after loading the page, and set the list of
+backend API hosts from it automatically.
 
 Giving Op Chat Access
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -322,31 +365,21 @@ command line for every node in the cluster::
     mongo counterblockd_testnet
     db.chat_handles.update({handle: "testuser1"}, {$set: {op: true}})
 
-Monitoring the Server
-----------------------
+Counterwallet MultiAPI specifics
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To monitor the server, you can use a 3rd-party service such as [Pingdom](http://www.pingdom.com) or [StatusCake](http://statuscake.com).
-The federated node allows these (and any other monitoring service) to query the basic status of the server (e.g. the ``nginx``,
-``counterblockd`` and ``counterpartyd`` services) via making a HTTP GET call to one of the following URLs:
+.. note::
 
-* ``/_api/`` (for mainnet) 
-* ``/_t_api/`` (for testnet)
-
-If all services are up, a HTTP 200 response with the following data will be returned::
-
-    {"counterpartyd": "OK", "counterblockd": "OK"}
-    
-If all services but ``counterpartyd`` are up, a HTTP 500 response with the following data will be returned::
-
-    {"counterpartyd": "NOT OK", "counterblockd": "OK"}
-
-If ``counterblockd`` is not working properly, ``nginx`` will return a HTTP 503 (Gateway unavailable) or 500 response.
-
-If ``nginx`` is not working properly, either a HTTP 5xx response, or no response at all (i.e. timeout) will be returned.
-
-
-MultiAPI specifics
--------------------
+    By default, Counterblock Federated Nodes can also host Counterwallet content (this will change in the future).
+    Regarding this, the Counterparty team itself operates the primary Counterwallet platform. However, as Counterwallet is open source
+    software, it is possible to host your own site with Counterwallet site (for your personal use, or as an offering to
+    others), or to even host your own Counterwallet servers to use with your own Counterparty wallet implementation.
+    The Counterparty team supports this kind of activity (as long as the servers are secure), as it aids with increasing decentralization.
+        
+    Also note that due to the nature of Counterwallet being a deterministic wallet, users using one Counterwallet platform (i.e. the
+    official one, for instance) have the flexibility to start using a different Counterwallet platform instead at any time,
+    and as funds (i.e. private keys) are not stored on the server in any fashion, they will be able to see their funds on either.
+    (Note that the only thing that will not migrate are saved preferences, such as address aliases, the theme setting, etc.)
 
 Counterwallet utilizes a sort of a "poor man's load balancing/failover" implementation called multiAPI (and implemented
 [here](https://github.com/CounterpartyXCP/counterwallet/blob/master/src/js/util.api.js)). multiAPI can operate in a number of fashions.

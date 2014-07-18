@@ -45,6 +45,49 @@ def runcmd(command, abort_on_failure=True):
     if abort_on_failure and ret != 0:
         logging.error("Command failed: '%s'" % command)
         sys.exit(1) 
+
+def add_to_config(param_re, content_to_add, testnet=True, replace_if_exists=True, config='counterpartyd'):
+    assert config in ('counterpartyd', 'counterblockd')
+    cfgFilenames = []
+    if config in ('counterpartyd', 'both'):
+        cfgFilenames.append(os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterpartyd", "counterpartyd.conf"))
+        if testnet:
+            cfgFilenames.append(os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterpartyd-testnet", "counterpartyd.conf"))
+    if config in ('counterblockd', 'both'):
+        cfgFilenames.append(os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterblockd", "counterblockd.conf"))
+        if testnet:
+            cfgFilenames.append(os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterblockd-testnet", "counterblockd.conf"))
+        
+    if not content_to_add.endswith('\n'):
+        content_to_add += '\n'
+    
+    for cfgFilename in cfgFilenames:
+        f = open(cfgFilename, 'r')
+        content = f.read()
+        f.close()
+        if content[-1] != '\n':
+            content += '\n'
+        if not re.match(param_re, content, re.MULTILINE): #missing; add to config 
+            content += content_to_add 
+        elif replace_if_exists: #replace in config
+            re.sub(param_re, content_to_add, content, re.MULTILINE)
+        f = open(cfgFilename, 'w')
+        f.write(content)
+        f.close()
+
+def ask_question(question, options, default_option):
+    assert isinstance(options, (list, tuple))
+    assert default_option in options
+    answer = None
+    while True:
+        answer = input(question + ": ")
+        answer = answer.lower()
+        if answer and answer not in options:
+            logging.error("Please enter one of: " + ', '.join(options))
+        else:
+            if answer == '': answer = default_option
+            break
+    return answer
         
 def git_repo_clone(branch, repo_dir, repo_url, run_as_user, hash=None):
     if branch == 'AUTO':
@@ -233,64 +276,58 @@ def do_counterparty_setup(run_as_user, branch, base_path, dist_path, run_mode, b
         runcmd(r"""bash -c "echo 'manual' >> /etc/init/counterblockd-testnet.override" """)
     else:
         runcmd("rm -f /etc/init/counterpartyd-testnet.override /etc/init/counterblockd-testnet.override")
+
+def do_blockchain_service_setup(run_as_user, base_path, dist_path, run_mode, blockchain_service):
+    def do_insight_setup():
+        """This installs and configures insight"""
+        user_homedir = os.path.expanduser("~" + USERNAME)
+        gypdir = None
+        try:
+            import gyp
+            gypdir = os.path.dirname(gyp.__file__)
+        except:
+            pass
+        else:
+            runcmd("mv %s %s_bkup" % (gypdir, gypdir))
+            #^ fix for https://github.com/TooTallNate/node-gyp/issues/363
+        git_repo_clone("master", "insight-api", "https://github.com/bitpay/insight-api.git",
+            run_as_user, hash="c05761b98b70886d0700563628a510f89f87c03e") #insight 0.2.7
+        runcmd("rm -rf ~%s/insight-api/node-modules && cd ~%s/insight-api && npm install" % (USERNAME, USERNAME))
+        #Set up insight startup scripts (will be disabled later from autostarting on system startup if necessary)
+        runcmd("cp -af %s/linux/init/insight.conf.template /etc/init/insight.conf" % dist_path)
+        runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/insight.conf" % DAEMON_USERNAME)
+        runcmd("sed -ri \"s/\!USER_HOMEDIR\!/%s/g\" /etc/init/insight.conf" % user_homedir.replace('/', '\/'))
+        runcmd("cp -af %s/linux/init/insight-testnet.conf.template /etc/init/insight-testnet.conf" % dist_path)
+        runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/insight-testnet.conf" % DAEMON_USERNAME)
+        runcmd("sed -ri \"s/\!USER_HOMEDIR\!/%s/g\" /etc/init/insight-testnet.conf" % user_homedir.replace('/', '\/'))
+        #install logrotate file
+        runcmd("cp -af %s/linux/logrotate/insight /etc/logrotate.d/insight" % dist_path)
+        runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/logrotate.d/insight" % DAEMON_USERNAME)
+        runcmd("sed -ri \"s/\!USER_HOMEDIR\!/%s/g\" /etc/logrotate.d/insight" % user_homedir.replace('/', '\/'))
     
-    #append insight enablement param and API performance params to counterpartyd's configs
-    for cfgFilename in [
-        os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterpartyd", "counterpartyd.conf"),
-        os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterpartyd-testnet", "counterpartyd.conf") ]:
-        f = open(cfgFilename, 'r')
-        content = f.read()
-        f.close()
-        if content[-1] != '\n':
-            content += '\n'
-        if not re.search(r'^insight\-enable', content, re.MULTILINE):
-            content += 'insight-enable=1\n'
-        if not re.search(r'^insight\-connect', content, re.MULTILINE):
-            content += 'insight-connect=localhost\n'
-        f = open(cfgFilename, 'w')
-        f.write(content)
-        f.close()
-
-def do_insight_setup(run_as_user, base_path, dist_path, run_mode):
-    """This installs and configures insight"""
-    user_homedir = os.path.expanduser("~" + USERNAME)
-    gypdir = None
-    try:
-        import gyp
-        gypdir = os.path.dirname(gyp.__file__)
-    except:
-        pass
-    else:
-        runcmd("mv %s %s_bkup" % (gypdir, gypdir))
-        #^ fix for https://github.com/TooTallNate/node-gyp/issues/363
-    git_repo_clone("master", "insight-api", "https://github.com/bitpay/insight-api.git",
-        run_as_user, hash="c05761b98b70886d0700563628a510f89f87c03e") #insight 0.2.7
-    runcmd("rm -rf ~%s/insight-api/node-modules && cd ~%s/insight-api && npm install" % (USERNAME, USERNAME))
-    #Set up insight startup scripts (will be disabled later from autostarting on system startup if necessary)
-    runcmd("cp -af %s/linux/init/insight.conf.template /etc/init/insight.conf" % dist_path)
-    runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/insight.conf" % DAEMON_USERNAME)
-    runcmd("sed -ri \"s/\!USER_HOMEDIR\!/%s/g\" /etc/init/insight.conf" % user_homedir.replace('/', '\/'))
-    runcmd("cp -af %s/linux/init/insight-testnet.conf.template /etc/init/insight-testnet.conf" % dist_path)
-    runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/insight-testnet.conf" % DAEMON_USERNAME)
-    runcmd("sed -ri \"s/\!USER_HOMEDIR\!/%s/g\" /etc/init/insight-testnet.conf" % user_homedir.replace('/', '\/'))
-    #install logrotate file
-    runcmd("cp -af %s/linux/logrotate/insight /etc/logrotate.d/insight" % dist_path)
-    runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/logrotate.d/insight" % DAEMON_USERNAME)
-    runcmd("sed -ri \"s/\!USER_HOMEDIR\!/%s/g\" /etc/logrotate.d/insight" % user_homedir.replace('/', '\/'))
-
-    runcmd("mkdir -p ~%s/insight-api/db" % USERNAME)
-    runcmd("chown -R %s:%s ~%s/insight-api" % (USERNAME, USERNAME, USERNAME))
-    runcmd("chown -R %s:%s ~%s/insight-api/db" % (DAEMON_USERNAME, USERNAME, USERNAME))
+        runcmd("mkdir -p ~%s/insight-api/db" % USERNAME)
+        runcmd("chown -R %s:%s ~%s/insight-api" % (USERNAME, USERNAME, USERNAME))
+        runcmd("chown -R %s:%s ~%s/insight-api/db" % (DAEMON_USERNAME, USERNAME, USERNAME))
+        add_to_config(r'^blockchain-service-name=.*?$', 'blockchain-service-name=insight', config='both')
+        
+    def do_blockr_setup():
+        add_to_config(r'^blockchain-service-name=.*?$', 'blockchain-service-name=blockr', config='both')
     
     #disable upstart scripts from autostarting on system boot if necessary
-    if run_mode == 't': #disable mainnet daemons from autostarting
-        runcmd(r"""bash -c "echo 'manual' >> /etc/init/insight.override" """)
-    else:
-        runcmd("rm -f /etc/init/insight.override")
-    if run_mode == 'm': #disable testnet daemons from autostarting
-        runcmd(r"""bash -c "echo 'manual' >> /etc/init/insight-testnet.override" """)
-    else:
-        runcmd("rm -f /etc/init/insight-testnet.override")
+    if blockchain_service == 'i':
+        do_insight_setup()
+        if run_mode == 't': #disable mainnet daemons from autostarting
+            runcmd(r"""bash -c "echo 'manual' >> /etc/init/insight.override" """)
+        else:
+            runcmd("rm -f /etc/init/insight.override")
+        if run_mode == 'm': #disable testnet daemons from autostarting
+            runcmd(r"""bash -c "echo 'manual' >> /etc/init/insight-testnet.override" """)
+        else:
+            runcmd("rm -f /etc/init/insight-testnet.override")
+    else: #insight not being used as blockchain service
+        runcmd("rm -f /etc/init/insight.override /etc/init/insight-testnet.override")
+        #^ so insight doesn't start if it was in use before
+        do_blockr_setup()
 
 def do_nginx_setup(run_as_user, base_path, dist_path):
     #Build and install nginx (openresty) on Ubuntu
@@ -375,18 +412,56 @@ etc usr var''' % (OPENRESTY_VER, OPENRESTY_VER))
     #clean up after ourselves
     runcmd("rm -rf /tmp/openresty /tmp/ngx_openresty-* /tmp/nginx-openresty.tar.gz /tmp/nginx-openresty*.deb")
     runcmd("update-rc.d nginx defaults")
+
+def do_armory_utxsvr_setup(run_as_user, base_path, dist_path, run_mode, run_armory_utxsvr):
+    runcmd("apt-get install xvfb")
+    runcmd("rm -f /tmp/armory.deb")
+    runcmd("wget -O /tmp/armory.deb https://s3.amazonaws.com/bitcoinarmory-releases/armory_0.91.99.8-beta_ubuntu-64bit.deb")
+    runcmd("dpkg -i /tmp/armory.deb")
+    runcmd("rm -f /tmp/armory.deb")
+
+    runcmd("mkdir ~%s/.armory" % USERNAME)
+    runcmd("chown -R %s:%s ~%s/.armory" % (DAEMON_USERNAME, USERNAME))
     
+    #make a short script to launch armory_utxsvr
+    f = open("/usr/local/bin/armory_utxsvr", 'w')
+    f.write("#!/bin/sh\n%s/run.py armory_utxsvr \"$@\"" % base_path)
+    f.close()
+    runcmd("chmod +x /usr/local/bin/armory_utxsvr")
+
+    #Set up upstart scripts (will be disabled later from autostarting on system startup if necessary)
+    if run_armory_utxsvr:
+        runcmd("cp -af %s/linux/init/armory_utxsvr.conf.template /etc/init/armory_utxsvr.conf" % dist_path)
+        runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/armory_utxsvr.conf" % DAEMON_USERNAME)
+        runcmd("sed -ri \"s/\!USER_HOMEDIR\!/%s/g\" /etc/init/armory_utxsvr.conf" % user_homedir.replace('/', '\/'))
+        runcmd("cp -af %s/linux/init/armory_utxsvr-testnet.conf.template /etc/init/armory_utxsvr-testnet.conf" % dist_path)
+        runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/armory_utxsvr-testnet.conf" % DAEMON_USERNAME)
+        runcmd("sed -ri \"s/\!USER_HOMEDIR\!/%s/g\" /etc/init/armory_utxsvr-testnet.conf" % user_homedir.replace('/', '\/'))
+        add_to_config(r'^armory-utxsvr-enable=.*?$', 'armory-utxsvr-enable=1', config='counterblockd')
+    else: #disable
+        runcmd("rm -f /etc/init/armory_utxsvr.conf /etc/init/armory_utxsvr-testnet.conf")
+        add_to_config(r'^armory-utxsvr-enable=.*?$', 'armory-utxsvr-enable=0', config='counterblockd')
+
+    #disable upstart scripts from autostarting on system boot if necessary
+    if run_mode == 't': #disable mainnet daemons from autostarting
+        runcmd(r"""bash -c "echo 'manual' >> /etc/init/armory_utxsvr.override" """)
+    else:
+        runcmd("rm -f /etc/init/armory_utxsvr.override")
+    if run_mode == 'm': #disable testnet daemons from autostarting
+        runcmd(r"""bash -c "echo 'manual' >> /etc/init/armory_utxsvr-testnet.override" """)
+    else:
+        runcmd("rm -f /etc/init/armory_utxsvr-testnet.override")
+
 def do_counterwallet_setup(run_as_user, branch, updateOnly=False):
     #check out counterwallet from git
     git_repo_clone(branch, "counterwallet", REPO_COUNTERWALLET, run_as_user)
     if not updateOnly:
         runcmd("npm install -g grunt-cli bower")
-    runcmd("cd ~xcp/counterwallet/src && bower --allow-root --config.interactive=false install")
-    runcmd("cd ~xcp/counterwallet && npm install")
-    runcmd("cd ~xcp/counterwallet && grunt build") #will generate the minified site
-    runcmd("chown -R %s:%s ~xcp/counterwallet" % (USERNAME, USERNAME)) #just in case
-    runcmd("chmod -R u+rw,g+rw,o+r,o-w ~xcp/counterwallet") #just in case
-    
+    runcmd("cd ~%s/counterwallet/src && bower --allow-root --config.interactive=false install" % USERNAME)
+    runcmd("cd ~%s/counterwallet && npm install" % USERNAME)
+    runcmd("cd ~%s/counterwallet && grunt build" % USERNAME) #will generate the minified site
+    runcmd("chown -R %s:%s ~%s/counterwallet" % (USERNAME, USERNAME, USERNAME)) #just in case
+    runcmd("chmod -R u+rw,g+rw,o+r,o-w ~%s/counterwallet" % USERNAME) #just in case
 
 def do_newrelic_setup(run_as_user, base_path, dist_path, run_mode):
     NR_PREFS_LICENSE_KEY_PATH = "/etc/newrelic/LICENSE_KEY"
@@ -515,6 +590,35 @@ def command_services(command, prompt=False):
         runcmd("service counterblockd %s" % command, abort_on_failure=False)
         runcmd("service counterblockd-testnet %s" % command, abort_on_failure=False)
 
+
+def gather_build_questions():
+    role = ask_question("Build (C)ounterwallet server, (v)ending machine, or (b)lockexplorer server? (C/v/b)", ('c', 'v', 'b'), 'c')
+    logging.info("Building a %s" % ('counterwallet server' if role == 'c' else ('vending machine' if role == 'v' else 'blockexplorer server')))
+    if role == 'c': role = 'counterwallet'
+    elif role == 'v': role = 'vendingmachine'
+    elif role == 'b': role = 'blockexplorer'
+    
+    if role in ('vendingmachine', 'blockexplorer'):
+        raise NotImplementedError("This role not implemented yet...")
+
+    branch = ask_question("Build from branch (M)aster or (d)evelop? (M/d)", ('m', 'd'), 'm')
+    if branch == 'm': branch = 'master'
+    elif branch == 'd': branch = 'develop'
+    logging.info("Working with branch: %s" % branch)
+
+    run_mode = ask_question("Run as (t)estnet node, (m)ainnet node, or (B)oth? (t/m/B)", ('t', 'm', 'b'), 'b')
+    logging.info("Setting up to run on %s" % ('testnet' if run_mode.lower() == 't' else ('mainnet' if run_mode.lower() == 'm' else 'testnet and mainnet')))
+
+    blockchain_service = ask_question("Blockchain services, use (B)lockr.io (remote) or (i)nsight (local)? (B/i)", ('b', 'i'), 'b')
+    logging.info("Using %s" % ('blockr.io' if blockchain_service == 'b' else 'insight'))
+
+    if role == 'counterwallet':
+        run_armory_utxsvr = ask_question("Run armory_utxsvr for allowing offline armory tx creation in counterwallet? (Y/n)", ('y', 'n'), 'y')
+    else:
+        run_armory_utxsvr = None
+
+    return (role, branch, run_mode, blockchain_service, run_armory_utxsvr)
+
 def main():
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s|%(levelname)s: %(message)s')
     do_prerun_checks()
@@ -566,29 +670,7 @@ def main():
         sys.exit(0) #all done
 
     #If here, a) federated node has not been set up yet or b) the user wants a rebuild
-    branch = None
-    while True:
-        branch = input("Build from branch (m)aster or (d)evelop? (M/d): ")
-        branch = branch.lower()
-        if branch not in ('m', 'd', ''):
-            logging.error("Please enter 'm' or 'd'")
-        else:
-            if branch == '': branch = 'm'
-            break
-    if branch == 'm': branch = 'master'
-    elif branch == 'd': branch = 'develop'
-    logging.info("Working with branch: %s" % branch)
-
-    run_mode = None
-    while True:
-        run_mode = input("Run as (t)estnet node, (m)ainnet node, or (b)oth? (t/m/B): ")
-        run_mode = run_mode.lower()
-        if run_mode.lower() not in ('t', 'm', 'b', ''):
-            logging.error("Please enter 't' or 'm' or 'b'")
-        else:
-            if run_mode == '': run_mode = 'b'
-            break
-    logging.info("Setting up to run on %s" % ('testnet' if run_mode.lower() == 't' else ('mainnet' if run_mode.lower() == 'm' else 'testnet and mainnet')))
+    (role, branch, run_mode, blockchain_service, run_armory_utxsvr) = gather_build_questions()
 
     command_services("stop")
 
@@ -599,11 +681,13 @@ def main():
     
     do_counterparty_setup(run_as_user, branch, base_path, dist_path, run_mode, bitcoind_rpc_password, bitcoind_rpc_password_testnet)
     
-    do_insight_setup(run_as_user, base_path, dist_path, run_mode)
+    do_blockchain_service_setup(run_as_user, base_path, dist_path, run_mode, blockchain_service)
     
     do_nginx_setup(run_as_user, base_path, dist_path)
     
-    do_counterwallet_setup(run_as_user, branch)
+    if role == 'counterwallet':
+        do_armory_utxsvr_setup(run_as_user, base_path, dist_path, run_mode, run_armory_utxsvr)
+        do_counterwallet_setup(run_as_user, branch)
 
     do_newrelic_setup(run_as_user, base_path, dist_path, run_mode) #optional
     

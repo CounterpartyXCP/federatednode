@@ -24,7 +24,8 @@ pytest==2.5.1
 
 pymongo==2.7.1
 
-gevent==1.0.1
+gevent==0.13.8
+#^ note, DO NOT use gevent 1.x, due to CLOSE_WAIT issues with pywsgi after some time running. TODO: Figure out why...
 
 gevent-socketio==0.3.6
 
