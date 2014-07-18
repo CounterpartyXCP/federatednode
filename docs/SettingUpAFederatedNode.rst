@@ -143,14 +143,21 @@ Once done, start up ``bitcoind`` daemon(s)::
     sudo tail -f ~xcp/.bitcoin/debug.log 
 
 That last command will give you information on the Bitcoin blockchain download status. After the blockchain starts
-downloading, you can launch the ``insight`` daemon(s)::
+downloading, **if you've elected to install and use** ``insight``, you can launch the ``insight`` daemon(s)::
 
     sudo service insight start
     sudo service insight-testnet start
     
     sudo tail -f ~xcp/insight-api/insight.log 
 
-As well as ``counterpartyd`` itself::
+As well as ``armory_utxsvr``, if you're using that (Counterwallet role only)::
+
+    sudo service armory_utxsvr start
+    sudo service armory_utxsvr-testnet start
+    
+    sudo tail -f ~xcp/.config/armory/armory_utxsvr.log
+
+And ``counterpartyd`` itself::
 
     sudo service counterpartyd start
     sudo service counterpartyd-testnet start

@@ -289,11 +289,13 @@ def create_virtualenv(paths, with_counterblockd):
         #install packages from manifest via pip
         runcmd("%s install -r %s" % (pip_path, os.path.join(paths['dist_path'], reqs_filename)))
 
-    create_venv(paths['env_path'], paths['pip_path'], paths['python_path'], paths['virtualenv_args'], 'reqs.txt')    
+    create_venv(paths['env_path'], paths['pip_path'], paths['python_path'], paths['virtualenv_args'],
+        os.path.join(paths['dist_path'], "counterpartyd", "pip-requirements.txt")) 
     if with_counterblockd: #as counterblockd uses python 2.x, it needs its own virtualenv
         runcmd("rm -rf %s && mkdir -p %s" % (paths['env_path.counterblockd'], paths['env_path.counterblockd']))
         create_venv(paths['env_path.counterblockd'], paths['pip_path.counterblockd'], paths['python_path.counterblockd'],
-            paths['virtualenv_args.counterblockd'], 'reqs.counterblockd.txt', delete_if_exists=False)    
+            paths['virtualenv_args.counterblockd'],
+            os.path.join(paths['dist_path'], "counterblockd", "pip-requirements.txt"), delete_if_exists=False)    
 
 def setup_startup(paths, run_as_user, with_counterblockd, with_testnet, assume_yes):
     if os.name == "posix":
