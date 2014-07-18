@@ -47,7 +47,7 @@ def runcmd(command, abort_on_failure=True):
         sys.exit(1) 
 
 def add_to_config(param_re, content_to_add, testnet=True, replace_if_exists=True, config='counterpartyd'):
-    assert config in ('counterpartyd', 'counterblockd')
+    assert config in ('counterpartyd', 'counterblockd', 'both')
     cfgFilenames = []
     if config in ('counterpartyd', 'both'):
         cfgFilenames.append(os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterpartyd", "counterpartyd.conf"))
@@ -67,10 +67,10 @@ def add_to_config(param_re, content_to_add, testnet=True, replace_if_exists=True
         f.close()
         if content[-1] != '\n':
             content += '\n'
-        if not re.match(param_re, content, re.MULTILINE): #missing; add to config 
+        if not re.search(param_re, content, re.MULTILINE): #missing; add to config 
             content += content_to_add 
         elif replace_if_exists: #replace in config
-            re.sub(param_re, content_to_add, content, re.MULTILINE)
+            content = re.sub(param_re, content_to_add, content, flags=re.MULTILINE)
         f = open(cfgFilename, 'w')
         f.write(content)
         f.close()
@@ -195,6 +195,7 @@ def do_bitcoind_setup(run_as_user, branch, base_path, dist_path, run_mode):
             % USERNAME, shell=True).strip().decode('utf-8')
     
     #Set up bitcoind startup scripts (will be disabled later from autostarting on system startup if necessary)
+    runcmd("rm -f /etc/init/bitcoin.conf /etc/init/bitcoin-testnet.conf")
     runcmd("cp -af %s/linux/init/bitcoind.conf.template /etc/init/bitcoind.conf" % dist_path)
     runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/bitcoind.conf" % DAEMON_USERNAME)
     runcmd("sed -ri \"s/\!USER_HOMEDIR\!/%s/g\" /etc/init/bitcoind.conf" % user_homedir.replace('/', '\/'))
@@ -294,6 +295,8 @@ def do_blockchain_service_setup(run_as_user, base_path, dist_path, run_mode, blo
             run_as_user, hash="c05761b98b70886d0700563628a510f89f87c03e") #insight 0.2.7
         runcmd("rm -rf ~%s/insight-api/node-modules && cd ~%s/insight-api && npm install" % (USERNAME, USERNAME))
         #Set up insight startup scripts (will be disabled later from autostarting on system startup if necessary)
+        
+        runcmd("rm -f /etc/init/insight.conf /etc/init/insight-testnet.conf")
         runcmd("cp -af %s/linux/init/insight.conf.template /etc/init/insight.conf" % dist_path)
         runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/insight.conf" % DAEMON_USERNAME)
         runcmd("sed -ri \"s/\!USER_HOMEDIR\!/%s/g\" /etc/init/insight.conf" % user_homedir.replace('/', '\/'))
@@ -308,10 +311,10 @@ def do_blockchain_service_setup(run_as_user, base_path, dist_path, run_mode, blo
         runcmd("mkdir -p ~%s/insight-api/db" % USERNAME)
         runcmd("chown -R %s:%s ~%s/insight-api" % (USERNAME, USERNAME, USERNAME))
         runcmd("chown -R %s:%s ~%s/insight-api/db" % (DAEMON_USERNAME, USERNAME, USERNAME))
-        add_to_config(r'^blockchain-service-name=.*?$', 'blockchain-service-name=insight', config='both')
+        add_to_config(r'^blockchain\-service\-name=.*?$', 'blockchain-service-name=insight', config='both')
         
     def do_blockr_setup():
-        add_to_config(r'^blockchain-service-name=.*?$', 'blockchain-service-name=blockr', config='both')
+        add_to_config(r'^blockchain\-service\-name=.*?$', 'blockchain-service-name=blockr', config='both')
     
     #disable upstart scripts from autostarting on system boot if necessary
     if blockchain_service == 'i':
@@ -414,14 +417,17 @@ etc usr var''' % (OPENRESTY_VER, OPENRESTY_VER))
     runcmd("update-rc.d nginx defaults")
 
 def do_armory_utxsvr_setup(run_as_user, base_path, dist_path, run_mode, run_armory_utxsvr):
-    runcmd("apt-get install xvfb")
+    user_homedir = os.path.expanduser("~" + USERNAME)
+    
+    runcmd("apt-get -y install xvfb")
     runcmd("rm -f /tmp/armory.deb")
     runcmd("wget -O /tmp/armory.deb https://s3.amazonaws.com/bitcoinarmory-releases/armory_0.91.99.8-beta_ubuntu-64bit.deb")
+    runcmd("mkdir -p /usr/share/desktop-directories/") #bug fix (see http://askubuntu.com/a/406015)
     runcmd("dpkg -i /tmp/armory.deb")
     runcmd("rm -f /tmp/armory.deb")
 
-    runcmd("mkdir ~%s/.armory" % USERNAME)
-    runcmd("chown -R %s:%s ~%s/.armory" % (DAEMON_USERNAME, USERNAME))
+    runcmd("mkdir -p ~%s/.armory" % USERNAME)
+    runcmd("chown -R %s:%s ~%s/.armory" % (DAEMON_USERNAME, USERNAME, USERNAME))
     
     #make a short script to launch armory_utxsvr
     f = open("/usr/local/bin/armory_utxsvr", 'w')
@@ -431,16 +437,17 @@ def do_armory_utxsvr_setup(run_as_user, base_path, dist_path, run_mode, run_armo
 
     #Set up upstart scripts (will be disabled later from autostarting on system startup if necessary)
     if run_armory_utxsvr:
+        runcmd("rm -f /etc/init/armory_utxsvr.conf /etc/init/armory_utxsvr-testnet.conf")
         runcmd("cp -af %s/linux/init/armory_utxsvr.conf.template /etc/init/armory_utxsvr.conf" % dist_path)
         runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/armory_utxsvr.conf" % DAEMON_USERNAME)
         runcmd("sed -ri \"s/\!USER_HOMEDIR\!/%s/g\" /etc/init/armory_utxsvr.conf" % user_homedir.replace('/', '\/'))
         runcmd("cp -af %s/linux/init/armory_utxsvr-testnet.conf.template /etc/init/armory_utxsvr-testnet.conf" % dist_path)
         runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/armory_utxsvr-testnet.conf" % DAEMON_USERNAME)
         runcmd("sed -ri \"s/\!USER_HOMEDIR\!/%s/g\" /etc/init/armory_utxsvr-testnet.conf" % user_homedir.replace('/', '\/'))
-        add_to_config(r'^armory-utxsvr-enable=.*?$', 'armory-utxsvr-enable=1', config='counterblockd')
+        add_to_config(r'^armory\-utxsvr\-enable=.*?$', 'armory-utxsvr-enable=1', config='counterblockd')
     else: #disable
         runcmd("rm -f /etc/init/armory_utxsvr.conf /etc/init/armory_utxsvr-testnet.conf")
-        add_to_config(r'^armory-utxsvr-enable=.*?$', 'armory-utxsvr-enable=0', config='counterblockd')
+        add_to_config(r'^armory\-utxsvr\-enable=.*?$', 'armory-utxsvr-enable=0', config='counterblockd')
 
     #disable upstart scripts from autostarting on system boot if necessary
     if run_mode == 't': #disable mainnet daemons from autostarting
@@ -583,12 +590,16 @@ def command_services(command, prompt=False):
         logging.warn("STOPPING SERVICES" if command == 'stop' else "RESTARTING SERVICES")
         runcmd("service bitcoind %s" % command, abort_on_failure=False)
         runcmd("service bitcoind-testnet %s" % command, abort_on_failure=False)
-        runcmd("service insight %s" % command, abort_on_failure=False)
-        runcmd("service insight-testnet %s" % command, abort_on_failure=False)
         runcmd("service counterpartyd %s" % command, abort_on_failure=False)
         runcmd("service counterpartyd-testnet %s" % command, abort_on_failure=False)
         runcmd("service counterblockd %s" % command, abort_on_failure=False)
         runcmd("service counterblockd-testnet %s" % command, abort_on_failure=False)
+        if os.path.exists("/etc/init/insight.conf"):
+            runcmd("service insight %s" % command, abort_on_failure=False)
+            runcmd("service insight-testnet %s" % command, abort_on_failure=False)
+        if os.path.exists("/etc/init/armory_utxsvr.conf"):
+            runcmd("service armory_utxsvr %s" % command, abort_on_failure=False)
+            runcmd("service armory_utxsvr-testnet %s" % command, abort_on_failure=False)
 
 
 def gather_build_questions():
@@ -671,7 +682,7 @@ def main():
 
     #If here, a) federated node has not been set up yet or b) the user wants a rebuild
     (role, branch, run_mode, blockchain_service, run_armory_utxsvr) = gather_build_questions()
-
+    
     command_services("stop")
 
     do_base_setup(run_as_user, branch, base_path, dist_path)

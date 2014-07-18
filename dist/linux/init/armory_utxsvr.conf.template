@@ -1,0 +1,15 @@
+#!upstart
+description "armory-utxsvr (mainnet)"
+
+start on startup
+stop on shutdown
+oom never
+
+respawn
+respawn limit 10 60 # 10 times in 60 seconds
+
+script
+USER=!RUN_AS_USER!
+USER_HOME=!USER_HOMEDIR!
+start-stop-daemon --start -c $USER -d $USER_HOME --pidfile $USER_HOME/.armory/armory_utxsvr.pid --make-pidfile --exec /usr/local/bin/armory_utxsvr -- >> $USER_HOME/.armory/armory_utxsvr.log 2>&1
+end script
