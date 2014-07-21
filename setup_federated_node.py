@@ -419,7 +419,7 @@ etc usr var''' % (OPENRESTY_VER, OPENRESTY_VER))
 def do_armory_utxsvr_setup(run_as_user, base_path, dist_path, run_mode, run_armory_utxsvr):
     user_homedir = os.path.expanduser("~" + USERNAME)
     
-    runcmd("apt-get -y install xvfb")
+    runcmd("apt-get -y install xvfb python-qt4 python-twisted python-psutil xdg-utils")
     runcmd("rm -f /tmp/armory.deb")
     runcmd("wget -O /tmp/armory.deb https://s3.amazonaws.com/bitcoinarmory-releases/armory_0.91.99.8-beta_ubuntu-64bit.deb")
     runcmd("mkdir -p /usr/share/desktop-directories/") #bug fix (see http://askubuntu.com/a/406015)
@@ -428,6 +428,9 @@ def do_armory_utxsvr_setup(run_as_user, base_path, dist_path, run_mode, run_armo
 
     runcmd("mkdir -p ~%s/.armory" % USERNAME)
     runcmd("chown -R %s:%s ~%s/.armory" % (DAEMON_USERNAME, USERNAME, USERNAME))
+    
+    runcmd("sudo ln -sf ~%s/.bitcoin-testnet/testnet3 ~%s/.bitcoin/" % (USERNAME, USERNAME))
+    #^ ghetto hack, as armory has hardcoded dir settings in certain place
     
     #make a short script to launch armory_utxsvr
     f = open("/usr/local/bin/armory_utxsvr", 'w')

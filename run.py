@@ -44,7 +44,7 @@ elif run_armory_utxsvr:
     armory_utxsvr_env_path = os.path.join(base_path, "env.counterblockd") #use the counterblock venv
     armory_utxsvr_python_path = os.path.join(armory_utxsvr_env_path, "Scripts" if os.name == "nt" else "bin", "python.exe" if os.name == "nt" else "python")
     armory_utxsvr_path = os.path.join(dist_path, "counterblockd", "armory_utxsvr.py")
-    command = "DISPLAY=localhost:1.0 xvfb-run %s %s %s" % (armory_utxsvr_python_path, armory_utxsvr_path, ' '.join(args))
+    command = "DISPLAY=localhost:1.0 xvfb-run --auto-servernum %s %s %s" % (armory_utxsvr_python_path, armory_utxsvr_path, ' '.join(args))
 else: #run counterpartyd
     counterpartyd_path = os.path.join(dist_path, "counterpartyd", "counterpartyd.py")
     command = "%s %s %s" % (python_path, counterpartyd_path, ' '.join(args))
