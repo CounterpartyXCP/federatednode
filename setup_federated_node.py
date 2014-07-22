@@ -46,7 +46,30 @@ def runcmd(command, abort_on_failure=True):
         logging.error("Command failed: '%s'" % command)
         sys.exit(1) 
 
-def add_to_config(param_re, content_to_add, testnet=True, replace_if_exists=True, config='counterpartyd'):
+def modify_config(param_re, content_to_add, filenames, replace_if_exists=True, dotall=False):
+    if not isinstance(filenames, (list, tuple)):
+        filenames = [filenames,]
+        
+    re_flags = re.MULTILINE | re.DOTALL if dotall else re.MULTILINE
+        
+    if not content_to_add.endswith('\n'):
+        content_to_add += '\n'
+
+    for filename in filenames:
+        f = open(filename, 'r')
+        content = f.read()
+        f.close()
+        if content[-1] != '\n':
+            content += '\n'
+        if not re.search(param_re, content, re_flags): #missing; add to config 
+            content += content_to_add 
+        elif replace_if_exists: #replace in config
+            content = re.sub(param_re, content_to_add, content, flags=re_flags)
+        f = open(filename, 'w')
+        f.write(content)
+        f.close()
+
+def modify_cp_config(param_re, content_to_add, testnet=True, replace_if_exists=True, config='counterpartyd'):
     assert config in ('counterpartyd', 'counterblockd', 'both')
     cfgFilenames = []
     if config in ('counterpartyd', 'both'):
@@ -58,22 +81,7 @@ def add_to_config(param_re, content_to_add, testnet=True, replace_if_exists=True
         if testnet:
             cfgFilenames.append(os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterblockd-testnet", "counterblockd.conf"))
         
-    if not content_to_add.endswith('\n'):
-        content_to_add += '\n'
-    
-    for cfgFilename in cfgFilenames:
-        f = open(cfgFilename, 'r')
-        content = f.read()
-        f.close()
-        if content[-1] != '\n':
-            content += '\n'
-        if not re.search(param_re, content, re.MULTILINE): #missing; add to config 
-            content += content_to_add 
-        elif replace_if_exists: #replace in config
-            content = re.sub(param_re, content_to_add, content, flags=re.MULTILINE)
-        f = open(cfgFilename, 'w')
-        f.write(content)
-        f.close()
+    modify_config(param_re, content_to_add, replace_if_exists=replace_if_exists, config=cfgFilenames)
 
 def ask_question(question, options, default_option):
     assert isinstance(options, (list, tuple))
@@ -163,6 +171,57 @@ def do_base_setup(run_as_user, branch, base_path, dist_path):
 
     #enhance fd limits for the xcpd user
     runcmd("cp -af %s/linux/other/xcpd_security_limits.conf /etc/security/limits.d/" % dist_path)
+
+def do_security_setup(run_as_user, branch, base_path, dist_path):
+    """Some helpful security-related tasks, to tighten up the box"""
+    #modify host.conf
+    modify_config(r'^nospoof on$', 'nospoof on', '/etc/host.conf')
+    
+    #change time to UTC
+    runcmd("ln -sf /usr/share/zoneinfo/UTC /etc/localtime")
+    
+    #set up fail2ban
+    runcmd("apt-get -y install fail2ban")
+    runcmd("install -m 0644 -o root -g root -D %s/linux/other/fail2ban.jail.conf /etc/fail2ban/jail.d/counterblock.conf" % dist_path)
+    runcmd("service fail2ban restart")
+    
+    #set up chkrootkit, rkhunter
+    runcmd("apt-get -y install rkhunter chkrootkit")
+    runcmd("rkhunter --update && rkhunter --propupd")
+    runcmd('bash -c "rkhunter --check --sk; exit 0"')
+    runcmd("rkhunter --propupd")
+    
+    #set up psad
+    runcmd("apt-get -y install psad")
+    modify_config(r'^ENABLE_AUTO_IDS\s+?N;$', 'ENABLE_AUTO_IDS\tY;', '/etc/psad/psad.conf')
+    modify_config(r'^ENABLE_AUTO_IDS_EMAILS\s+?Y;$', 'ENABLE_AUTO_IDS_EMAILS\tN;', '/etc/psad/psad.conf')
+
+    modify_config(r'^#CUSTOM: for psad\n-A INPUT -j LOG\n-A FORWARD -j LOG$',
+        '\n#CUSTOM: for psad\n-A INPUT -j LOG\n-A FORWARD -j LOG\n\nCOMMIT\n', '/etc/ufw/before.rules', dotall=True)
+    modify_config(r'^#CUSTOM: for psad\n-A INPUT -j LOG\n-A FORWARD -j LOG\n.*?COMMIT$',
+        '\n#CUSTOM: for psad\n-A INPUT -j LOG\n-A FORWARD -j LOG\n\nCOMMIT\n', '/etc/ufw/before6.rules', dotall=True)
+    modify_config(r'^COMMIT.*?#CUSTOM: for psad', '#CUSTOM: for psad', '/etc/ufw/before.rules', dotall=True)
+    modify_config(r'^COMMIT.*?#CUSTOM: for psad', '#CUSTOM: for psad', '/etc/ufw/before6.rules', dotall=True)
+    
+    runcmd("psad -R && psad --sig-update")
+    runcmd("service ufw restart")
+    runcmd("service psad restart")
+    
+    #sysctl
+    runcmd("install -m 0644 -o root -g root -D %s/linux/other/sysctl_rules.conf /etc/sysctl.d/60-tweaks.conf" % dist_path)
+    runcmd("service auditd restart")
+    
+    #logwatch
+    runcmd("apt-get -y install logwatch libdate-manip-perl")
+    
+    #apparmory
+    runcmd("apt-get -y install apparmor apparmor-profiles")
+    
+    #auditd
+    #note that auditd will need a reboot to fully apply the rules, due to it operating in "immutable mode" by default
+    runcmd("apt-get -y install auditd audispd-plugins")
+    runcmd("install -m 0640 -o root -g root -D %s/linux/other/audit.rules /etc/audit/rules.d/counterblock.rules" % dist_path)
+    runcmd("service auditd restart")
 
 def do_bitcoind_setup(run_as_user, branch, base_path, dist_path, run_mode):
     """Installs and configures bitcoind"""
@@ -311,10 +370,10 @@ def do_blockchain_service_setup(run_as_user, base_path, dist_path, run_mode, blo
         runcmd("mkdir -p ~%s/insight-api/db" % USERNAME)
         runcmd("chown -R %s:%s ~%s/insight-api" % (USERNAME, USERNAME, USERNAME))
         runcmd("chown -R %s:%s ~%s/insight-api/db" % (DAEMON_USERNAME, USERNAME, USERNAME))
-        add_to_config(r'^blockchain\-service\-name=.*?$', 'blockchain-service-name=insight', config='both')
+        modify_cp_config(r'^blockchain\-service\-name=.*?$', 'blockchain-service-name=insight', config='both')
         
     def do_blockr_setup():
-        add_to_config(r'^blockchain\-service\-name=.*?$', 'blockchain-service-name=blockr', config='both')
+        modify_cp_config(r'^blockchain\-service\-name=.*?$', 'blockchain-service-name=blockr', config='both')
     
     #disable upstart scripts from autostarting on system boot if necessary
     if blockchain_service == 'i':
@@ -447,10 +506,10 @@ def do_armory_utxsvr_setup(run_as_user, base_path, dist_path, run_mode, run_armo
         runcmd("cp -af %s/linux/init/armory_utxsvr-testnet.conf.template /etc/init/armory_utxsvr-testnet.conf" % dist_path)
         runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/armory_utxsvr-testnet.conf" % DAEMON_USERNAME)
         runcmd("sed -ri \"s/\!USER_HOMEDIR\!/%s/g\" /etc/init/armory_utxsvr-testnet.conf" % user_homedir.replace('/', '\/'))
-        add_to_config(r'^armory\-utxsvr\-enable=.*?$', 'armory-utxsvr-enable=1', config='counterblockd')
+        modify_cp_config(r'^armory\-utxsvr\-enable=.*?$', 'armory-utxsvr-enable=1', config='counterblockd')
     else: #disable
         runcmd("rm -f /etc/init/armory_utxsvr.conf /etc/init/armory_utxsvr-testnet.conf")
-        add_to_config(r'^armory\-utxsvr\-enable=.*?$', 'armory-utxsvr-enable=0', config='counterblockd')
+        modify_cp_config(r'^armory\-utxsvr\-enable=.*?$', 'armory-utxsvr-enable=0', config='counterblockd')
 
     #disable upstart scripts from autostarting on system boot if necessary
     if run_mode == 't': #disable mainnet daemons from autostarting
@@ -607,7 +666,7 @@ def command_services(command, prompt=False):
 
 def gather_build_questions():
     role = ask_question("Build (C)ounterwallet server, (v)ending machine, or (b)lockexplorer server? (C/v/b)", ('c', 'v', 'b'), 'c')
-    logging.info("Building a %s" % ('counterwallet server' if role == 'c' else ('vending machine' if role == 'v' else 'blockexplorer server')))
+    print("Building a %s" % ('counterwallet server' if role == 'c' else ('vending machine' if role == 'v' else 'blockexplorer server')))
     if role == 'c': role = 'counterwallet'
     elif role == 'v': role = 'vendingmachine'
     elif role == 'b': role = 'blockexplorer'
@@ -618,20 +677,22 @@ def gather_build_questions():
     branch = ask_question("Build from branch (M)aster or (d)evelop? (M/d)", ('m', 'd'), 'm')
     if branch == 'm': branch = 'master'
     elif branch == 'd': branch = 'develop'
-    logging.info("Working with branch: %s" % branch)
+    print("\tWorking with branch: %s" % branch)
 
     run_mode = ask_question("Run as (t)estnet node, (m)ainnet node, or (B)oth? (t/m/B)", ('t', 'm', 'b'), 'b')
-    logging.info("Setting up to run on %s" % ('testnet' if run_mode.lower() == 't' else ('mainnet' if run_mode.lower() == 'm' else 'testnet and mainnet')))
+    print("\tSetting up to run on %s" % ('testnet' if run_mode.lower() == 't' else ('mainnet' if run_mode.lower() == 'm' else 'testnet and mainnet')))
 
     blockchain_service = ask_question("Blockchain services, use (B)lockr.io (remote) or (i)nsight (local)? (B/i)", ('b', 'i'), 'b')
-    logging.info("Using %s" % ('blockr.io' if blockchain_service == 'b' else 'insight'))
+    print("\tUsing %s" % ('blockr.io' if blockchain_service == 'b' else 'insight'))
 
     if role == 'counterwallet':
         run_armory_utxsvr = ask_question("Run armory_utxsvr for allowing offline armory tx creation in counterwallet? (Y/n)", ('y', 'n'), 'y')
     else:
         run_armory_utxsvr = None
 
-    return (role, branch, run_mode, blockchain_service, run_armory_utxsvr)
+    security_hardening = ask_question("Set up security hardening? (Y/n)", ('y', 'n'), 'y')
+
+    return (role, branch, run_mode, blockchain_service, run_armory_utxsvr, security_hardening)
 
 def main():
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s|%(levelname)s: %(message)s')
@@ -684,7 +745,7 @@ def main():
         sys.exit(0) #all done
 
     #If here, a) federated node has not been set up yet or b) the user wants a rebuild
-    (role, branch, run_mode, blockchain_service, run_armory_utxsvr) = gather_build_questions()
+    (role, branch, run_mode, blockchain_service, run_armory_utxsvr, security_hardening) = gather_build_questions()
     
     command_services("stop")
 
@@ -704,6 +765,9 @@ def main():
         do_counterwallet_setup(run_as_user, branch)
 
     do_newrelic_setup(run_as_user, base_path, dist_path, run_mode) #optional
+    
+    if security_hardening:
+        do_security_setup(run_as_user, branch, base_path, dist_path)
     
     logging.info("Counterblock Federated Node Build Complete (whew).")
 

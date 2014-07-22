@@ -215,7 +215,7 @@ def install_dependencies(paths, with_counterblockd, assume_yes):
             
             if with_counterblockd:
                 #counterblockd currently uses Python 2.7 due to gevent-socketio's lack of support for Python 3
-                runcmd("apt-get -y install python python-dev python-setuptools python-pip python-sphinx python-zmq libzmq3 libzmq3-dev libxml2-dev libxslt-dev zlib1g-dev libimage-exiftool-perl libevent-dev")
+                runcmd("apt-get -y install python python-dev python-setuptools python-pip python-sphinx python-zmq libzmq3 libzmq3-dev libxml2-dev libxslt-dev zlib1g-dev libimage-exiftool-perl libevent-dev cython")
                 if assume_yes:
                     db_locally = 'y'
                 else:
