@@ -46,13 +46,13 @@ def runcmd(command, abort_on_failure=True):
         logging.error("Command failed: '%s'" % command)
         sys.exit(1) 
 
-def modify_config(param_re, content_to_add, filenames, replace_if_exists=True, dotall=False):
+def modify_config(param_re, content_to_add, filenames, replace_if_exists=True, dotall=False, add_newline=True):
     if not isinstance(filenames, (list, tuple)):
         filenames = [filenames,]
         
     re_flags = re.MULTILINE | re.DOTALL if dotall else re.MULTILINE
         
-    if not content_to_add.endswith('\n'):
+    if add_newline and not content_to_add.endswith('\n'):
         content_to_add += '\n'
 
     for filename in filenames:
@@ -185,10 +185,26 @@ def do_security_setup(run_as_user, branch, base_path, dist_path):
     runcmd('''bash -c "echo -e 'APT::Periodic::Update-Package-Lists "1";\nAPT::Periodic::Unattended-Upgrade "1";' > /etc/apt/apt.conf.d/20auto-upgrades" ''')
     runcmd("dpkg-reconfigure -fnoninteractive -plow unattended-upgrades")
     
+    #sysctl
+    runcmd("install -m 0644 -o root -g root -D %s/linux/other/sysctl_rules.conf /etc/sysctl.d/60-tweaks.conf" % dist_path)
+    runcmd("service auditd restart")
+
     #set up fail2ban
     runcmd("apt-get -y install fail2ban")
     runcmd("install -m 0644 -o root -g root -D %s/linux/other/fail2ban.jail.conf /etc/fail2ban/jail.d/counterblock.conf" % dist_path)
     runcmd("service fail2ban restart")
+    
+    #set up psad
+    runcmd("apt-get -y install psad")
+    modify_config(r'^ENABLE_AUTO_IDS\s+?N;$', 'ENABLE_AUTO_IDS\tY;', '/etc/psad/psad.conf')
+    modify_config(r'^ENABLE_AUTO_IDS_EMAILS\s+?Y;$', 'ENABLE_AUTO_IDS_EMAILS\tN;', '/etc/psad/psad.conf')
+    for f in ['/etc/ufw/before.rules', '/etc/ufw/before6.rules']:
+        modify_config(r'^# End required lines.*?# allow all on loopback$',
+            '# End required lines\n\n#CUSTOM: for psad\n-A INPUT -j LOG\n-A FORWARD -j LOG\n\n# allow all on loopback',
+            f, dotall=True, add_newline=False)
+    runcmd("psad -R && psad --sig-update")
+    runcmd("service ufw restart")
+    runcmd("service psad restart")
     
     #set up chkrootkit, rkhunter
     runcmd("apt-get -y install rkhunter chkrootkit")
@@ -196,30 +212,10 @@ def do_security_setup(run_as_user, branch, base_path, dist_path):
     runcmd('bash -c "rkhunter --check --sk; exit 0"')
     runcmd("rkhunter --propupd")
     
-    #set up psad
-    runcmd("apt-get -y install psad")
-    modify_config(r'^ENABLE_AUTO_IDS\s+?N;$', 'ENABLE_AUTO_IDS\tY;', '/etc/psad/psad.conf')
-    modify_config(r'^ENABLE_AUTO_IDS_EMAILS\s+?Y;$', 'ENABLE_AUTO_IDS_EMAILS\tN;', '/etc/psad/psad.conf')
-
-    modify_config(r'^#CUSTOM: for psad\n-A INPUT -j LOG\n-A FORWARD -j LOG$',
-        '\n#CUSTOM: for psad\n-A INPUT -j LOG\n-A FORWARD -j LOG\n\nCOMMIT\n', '/etc/ufw/before.rules', dotall=True)
-    modify_config(r'^#CUSTOM: for psad\n-A INPUT -j LOG\n-A FORWARD -j LOG\n.*?COMMIT$',
-        '\n#CUSTOM: for psad\n-A INPUT -j LOG\n-A FORWARD -j LOG\n\nCOMMIT\n', '/etc/ufw/before6.rules', dotall=True)
-    modify_config(r'^COMMIT.*?#CUSTOM: for psad', '#CUSTOM: for psad', '/etc/ufw/before.rules', dotall=True)
-    modify_config(r'^COMMIT.*?#CUSTOM: for psad', '#CUSTOM: for psad', '/etc/ufw/before6.rules', dotall=True)
-    
-    runcmd("psad -R && psad --sig-update")
-    runcmd("service ufw restart")
-    runcmd("service psad restart")
-    
-    #sysctl
-    runcmd("install -m 0644 -o root -g root -D %s/linux/other/sysctl_rules.conf /etc/sysctl.d/60-tweaks.conf" % dist_path)
-    runcmd("service auditd restart")
-    
     #logwatch
     runcmd("apt-get -y install logwatch libdate-manip-perl")
     
-    #apparmory
+    #apparmor
     runcmd("apt-get -y install apparmor apparmor-profiles")
     
     #auditd
@@ -663,13 +659,17 @@ def command_services(command, prompt=False):
         logging.warn("STOPPING SERVICES" if command == 'stop' else "RESTARTING SERVICES")
         runcmd("service bitcoind %s" % command, abort_on_failure=False)
         runcmd("service bitcoind-testnet %s" % command, abort_on_failure=False)
+        
+        if os.path.exists("/etc/init/insight.conf"):
+            logging.info("Waiting 45 seconds before starting insight, to allow bitcoind to fully initialize...")
+            time.sleep(45)
+            runcmd("service insight %s" % command, abort_on_failure=False)
+            runcmd("service insight-testnet %s" % command, abort_on_failure=False)
+        
         runcmd("service counterpartyd %s" % command, abort_on_failure=False)
         runcmd("service counterpartyd-testnet %s" % command, abort_on_failure=False)
         runcmd("service counterblockd %s" % command, abort_on_failure=False)
         runcmd("service counterblockd-testnet %s" % command, abort_on_failure=False)
-        if os.path.exists("/etc/init/insight.conf"):
-            runcmd("service insight %s" % command, abort_on_failure=False)
-            runcmd("service insight-testnet %s" % command, abort_on_failure=False)
         if os.path.exists("/etc/init/armory_utxsvr.conf"):
             runcmd("service armory_utxsvr %s" % command, abort_on_failure=False)
             runcmd("service armory_utxsvr-testnet %s" % command, abort_on_failure=False)
@@ -775,6 +775,7 @@ def main():
         do_security_setup(run_as_user, branch, base_path, dist_path)
     
     logging.info("Counterblock Federated Node Build Complete (whew).")
+    command_services("restart", prompt=True)
 
 
 if __name__ == "__main__":
