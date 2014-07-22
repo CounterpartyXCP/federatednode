@@ -1,0 +1,35 @@
+<?xml version="1.0" ?>
+<!DOCTYPE config SYSTEM "/etc/iwatch/iwatch.dtd" >
+
+<config>
+  <guard email="root@localhost" name="IWatch"></guard>
+  <watchlist>
+    <title>Operating System</title>
+    <contactpoint email="root@localhost" name="Administrator"/>
+    <path type="single" syslog="on">/bin</path>
+    <path type="single" syslog="on">/sbin</path>
+    <path type="single">/etc</path>
+    <path type="recursive">/lib</path>
+    <path type="exception">/lib/modules</path>
+  </watchlist>  
+  
+  <!-- <watchlist>
+  <title>System Files</title>
+  <contactpoint email="root@localhost" name="Administrator"/>
+    <path type="single">/etc/passwd</path>
+    <path type="single">/etc/shadow</path>
+    <path type="single">/etc/ssh/sshd_config</path>
+    <path type="recursive">/etc/security</path>
+    <path type="single">/bin/su</path>
+    <path type="single">/bin/bash</path>
+    <path type="single">/etc/sudoers</path>
+  </watchlist> -->
+  
+  <watchlist>
+  <title>Counterblock-Related</title>
+  <contactpoint email="root@localhost" name="Administrator"/>
+    <path type="recursive">/etc/nginx</path>
+    <path type="recursive">/home/xcp/counterpartyd_build</path>
+    <path type="recursive">/home/xcp/counterwallet</path>
+  </watchlist>
+</config>
