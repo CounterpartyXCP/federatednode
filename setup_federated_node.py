@@ -188,7 +188,6 @@ def do_security_setup(run_as_user, branch, base_path, dist_path):
     
     #sysctl
     runcmd("install -m 0644 -o root -g root -D %s/linux/other/sysctl_rules.conf /etc/sysctl.d/60-tweaks.conf" % dist_path)
-    runcmd("service auditd restart")
 
     #set up fail2ban
     runcmd("apt-get -y install fail2ban")
@@ -662,8 +661,9 @@ def command_services(command, prompt=False):
         runcmd("service bitcoind-testnet %s" % command, abort_on_failure=False)
         
         if os.path.exists("/etc/init/insight.conf"):
-            logging.info("Waiting 45 seconds before starting insight, to allow bitcoind to fully initialize...")
-            time.sleep(45)
+            if command == "restart":
+                logging.info("Waiting 45 seconds before starting insight, to allow bitcoind to fully initialize...")
+                time.sleep(45)
             runcmd("service insight %s" % command, abort_on_failure=False)
             runcmd("service insight-testnet %s" % command, abort_on_failure=False)
         
