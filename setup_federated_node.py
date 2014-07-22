@@ -71,17 +71,17 @@ def modify_config(param_re, content_to_add, filenames, replace_if_exists=True, d
 
 def modify_cp_config(param_re, content_to_add, testnet=True, replace_if_exists=True, config='counterpartyd'):
     assert config in ('counterpartyd', 'counterblockd', 'both')
-    cfgFilenames = []
+    cfg_filenames = []
     if config in ('counterpartyd', 'both'):
-        cfgFilenames.append(os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterpartyd", "counterpartyd.conf"))
+        cfg_filenames.append(os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterpartyd", "counterpartyd.conf"))
         if testnet:
-            cfgFilenames.append(os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterpartyd-testnet", "counterpartyd.conf"))
+            cfg_filenames.append(os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterpartyd-testnet", "counterpartyd.conf"))
     if config in ('counterblockd', 'both'):
-        cfgFilenames.append(os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterblockd", "counterblockd.conf"))
+        cfg_filenames.append(os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterblockd", "counterblockd.conf"))
         if testnet:
-            cfgFilenames.append(os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterblockd-testnet", "counterblockd.conf"))
+            cfg_filenames.append(os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterblockd-testnet", "counterblockd.conf"))
         
-    modify_config(param_re, content_to_add, replace_if_exists=replace_if_exists, config=cfgFilenames)
+    modify_config(param_re, content_to_add, cfg_filenames, replace_if_exists=replace_if_exists)
 
 def ask_question(question, options, default_option):
     assert isinstance(options, (list, tuple))
