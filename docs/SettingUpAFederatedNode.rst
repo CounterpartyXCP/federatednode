@@ -98,22 +98,24 @@ Generally, we recommend building on a server with at least 120GB of available di
 
 **Server Security:**
 
-`This link <http://www.thefanclub.co.za/how-to/how-secure-ubuntu-1204-lts-server-part-1-basics>`__ is a good starting point.
-Specifically, see steps 1 through 5, 7, 12, and 13 though 17.
+The build script includes basic automated security hardening.
 
-Some notes:
+Before running this script, we strongly advise the following:
 
 - SSH should run on a different port, with root access disabled
-- Use iptables/ufw (software firewall) in addition to any hardware firewalls
-- Utilize ``fail2ban``, ``psad``, ``chkrootkit`` and ``rkhunter``
-- Utilize modified ``sysctl`` settings for improved security and DDOS protection 
+- Use ufw (software firewall) in addition to any hardware firewalls:
+
+  - sudo ufw allow ssh   #(or whatever your ssh port is, as '12345/tcp', in place of 'ssh')
+  - sudo ufw allow http
+  - sudo ufw allow https
+  - sudo ufw enable
+
 - Only one or two trusted individuals should have access to the box. All root access through ``sudo``.
-- Consider utilizing 2FA (two-factor authentication) on SSH and any other services that require login.
+- Utilize 2FA (two-factor authentication) on SSH and any other services that require login.
   `Duo <https://www.duosecurity.com/>`__ is a good choice for this (and has great `SSH integration <https://www.duosecurity.com/unix>`__).
 - The system should have a proper hostname (e.g. counterblock.myorganization.org), and your DNS provider should be DDOS resistant
-- System timezone should be set to UTC
-- Enable Ubuntu's  `automated security updates <http://askubuntu.com/a/204>`__
 - If running multiple servers, consider other tweaks on a per-server basis to reduce homogeneity.  
+- Enable Ubuntu's  `automated security updates <http://askubuntu.com/a/204>`__ (our script will do this if you didn't)
 
 
 Testing / Development
@@ -133,7 +135,7 @@ installation script for this, that is fully automated **and installs ALL depende
     sudo python3 setup_federated_node.py
 
 Then just follow the on-screen prompts (choosing to build from *master* if you are building a production node,
-or from *develop* **only** if you are a developer).
+or from *develop* **only** if you are a developer or want access to bleeding edge code that is not fully tested).
 
 Once done, start up ``bitcoind`` daemon(s)::
 
@@ -231,11 +233,15 @@ status of ``counterpartyd``/``counterblockd``.
 
 Also, you can start up the daemons in the foreground, for easier debugging, using the following sets of commands::
 
-    #mainnet
+    #bitcoind
+    sudo su -s /bin/bash -c 'bitcoind -datadir=/home/xcp/.bitcoin' xcpd
+    sudo su -s /bin/bash -c 'bitcoind -datadir=/home/xcp/.bitcoin-testnet' xcpd
+
+    #counterpartyd & counterblockd mainnet
     sudo su -s /bin/bash -c 'counterpartyd --data-dir=/home/xcp/.config/counterpartyd' xcpd
     sudo su -s /bin/bash -c 'counterblockd --data-dir=/home/xcp/.config/counterblockd -v' xcpd
     
-    #testnet
+    #counterpartyd & counterblockd testnet
     sudo su -s /bin/bash -c 'counterpartyd --data-dir=/home/xcp/.config/counterpartyd-testnet --testnet' xcpd
     sudo su -s /bin/bash -c 'counterblockd --data-dir=/home/xcp/.config/counterblockd-testnet --testnet -v' xcpd
 
@@ -305,7 +311,7 @@ To update the system with new code releases, you simply need to rerun the ``setu
     cd ~xcp/counterpartyd_build
     sudo ./setup_federated_node.py
     
-As prompted, you should be able to choose just to update, instead of to rebuild. However, you would choose the rebuild
+As prompted, you should be able to choose just to update from git ("G"), instead of to rebuild. However, you would choose the rebuild
 option if there were updates to the ``counterpartyd_build`` system files for the federated node itself (such as the
 ``nginx`` configuration, or the init scripts) that you wanted/needed to apply. Otherwise, update should be fine. 
 

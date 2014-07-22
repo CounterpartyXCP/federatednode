@@ -151,6 +151,7 @@
 ##COUNTERPARTY SPECIFIC
 ##
 -w /etc/nginx/ -p wa
+-w /etc/security/login_duo.conf -p wa
 -w /home/xcp/counterpartyd_build -p wa
 -w /home/xcp/counterwallet -p wa
 

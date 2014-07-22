@@ -138,6 +138,9 @@ def do_prerun_checks():
 
 def do_base_setup(run_as_user, branch, base_path, dist_path):
     """This creates the xcp and xcpd users and checks out the counterpartyd_build system from git"""
+    #change time to UTC
+    runcmd("ln -sf /usr/share/zoneinfo/UTC /etc/localtime")
+
     #install some necessary base deps
     runcmd("apt-get update")
     runcmd("apt-get -y install git-core software-properties-common python-software-properties build-essential ssl-cert ntp")
@@ -177,8 +180,10 @@ def do_security_setup(run_as_user, branch, base_path, dist_path):
     #modify host.conf
     modify_config(r'^nospoof on$', 'nospoof on', '/etc/host.conf')
     
-    #change time to UTC
-    runcmd("ln -sf /usr/share/zoneinfo/UTC /etc/localtime")
+    #enable automatic security updates
+    runcmd("apt-get -y install unattended-upgrades")
+    runcmd('''bash -c "echo -e 'APT::Periodic::Update-Package-Lists "1";\nAPT::Periodic::Unattended-Upgrade "1";' > /etc/apt/apt.conf.d/20auto-upgrades" ''')
+    runcmd("dpkg-reconfigure -fnoninteractive -plow unattended-upgrades")
     
     #set up fail2ban
     runcmd("apt-get -y install fail2ban")
@@ -222,6 +227,12 @@ def do_security_setup(run_as_user, branch, base_path, dist_path):
     runcmd("apt-get -y install auditd audispd-plugins")
     runcmd("install -m 0640 -o root -g root -D %s/linux/other/audit.rules /etc/audit/rules.d/counterblock.rules" % dist_path)
     runcmd("service auditd restart")
+
+    #iwatch
+    runcmd("apt-get -y install iwatch")
+    modify_config(r'^START_DAEMON=false$', 'START_DAEMON=true', '/etc/default/iwatch')
+    runcmd("install -m 0644 -o root -g root -D %s/linux/other/iwatch.xml /etc/iwatch/iwatch.xml" % dist_path)
+    runcmd("service iwatch restart")
 
 def do_bitcoind_setup(run_as_user, branch, base_path, dist_path, run_mode):
     """Installs and configures bitcoind"""
@@ -718,21 +729,15 @@ def main():
     dist_path = os.path.join(base_path, "dist")
 
     #Detect if we should ask the user if they just want to update the source and not do a rebuild
-    do_rebuild = None
+    do_rebuild = 'r'
     try:
         pwd.getpwnam(USERNAME) #hacky check ...as this user is created by the script
     except:
         pass
     else: #setup has already been run at least once
-        while True:
-            do_rebuild = input("It appears this setup has been run already. (r)ebuild node, or just refresh from (g)it? (r/G): ")
-            do_rebuild = do_rebuild.lower()
-            if do_rebuild not in ('r', 'g', ''):
-                logging.error("Please enter 'r' or 'g'")
-            else:
-                if do_rebuild == '': do_rebuild = 'g'
-                break
-    if do_rebuild == 'g': #just refresh counterpartyd, counterblockd, and counterwallet from github
+        do_rebuild = ask_question("It appears this setup has been run already. (r)ebuild node, or just (U)pdate from git? (r/U)", ('r', 'u'), 'u')
+
+    if do_rebuild == 'u': #just refresh counterpartyd, counterblockd, and counterwallet, etc. from github
         #refresh counterpartyd_build
         git_repo_clone("AUTO", "counterpartyd_build", REPO_COUNTERPARTYD_BUILD, run_as_user)
         #refresh counterpartyd and counterblockd
