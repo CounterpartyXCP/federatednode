@@ -215,7 +215,7 @@ def install_dependencies(paths, with_counterblockd, assume_yes):
             
             if with_counterblockd:
                 #counterblockd currently uses Python 2.7 due to gevent-socketio's lack of support for Python 3
-                runcmd("apt-get -y install python python-dev python-setuptools python-pip python-sphinx python-zmq libzmq3 libzmq3-dev libxml2-dev libxslt-dev zlib1g-dev libimage-exiftool-perl")
+                runcmd("apt-get -y install python python-dev python-setuptools python-pip python-sphinx python-zmq libzmq3 libzmq3-dev libxml2-dev libxslt-dev zlib1g-dev libimage-exiftool-perl libevent-dev cython")
                 if assume_yes:
                     db_locally = 'y'
                 else:
@@ -289,11 +289,13 @@ def create_virtualenv(paths, with_counterblockd):
         #install packages from manifest via pip
         runcmd("%s install -r %s" % (pip_path, os.path.join(paths['dist_path'], reqs_filename)))
 
-    create_venv(paths['env_path'], paths['pip_path'], paths['python_path'], paths['virtualenv_args'], 'reqs.txt')    
+    create_venv(paths['env_path'], paths['pip_path'], paths['python_path'], paths['virtualenv_args'],
+        os.path.join(paths['dist_path'], "counterpartyd", "pip-requirements.txt")) 
     if with_counterblockd: #as counterblockd uses python 2.x, it needs its own virtualenv
         runcmd("rm -rf %s && mkdir -p %s" % (paths['env_path.counterblockd'], paths['env_path.counterblockd']))
         create_venv(paths['env_path.counterblockd'], paths['pip_path.counterblockd'], paths['python_path.counterblockd'],
-            paths['virtualenv_args.counterblockd'], 'reqs.counterblockd.txt', delete_if_exists=False)    
+            paths['virtualenv_args.counterblockd'],
+            os.path.join(paths['dist_path'], "counterblockd", "pip-requirements.txt"), delete_if_exists=False)    
 
 def setup_startup(paths, run_as_user, with_counterblockd, with_testnet, assume_yes):
     if os.name == "posix":
@@ -351,18 +353,22 @@ def setup_startup(paths, run_as_user, with_counterblockd, with_testnet, assume_y
         logging.info("Setting up init scripts...")
         assert run_as_user
         user_homedir = os.path.expanduser("~" + run_as_user)
+        runcmd("rm -f /etc/init/counterpartyd.conf")
         runcmd("cp -af %s/linux/init/counterpartyd.conf.template /etc/init/counterpartyd.conf" % paths['dist_path'])
         runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterpartyd.conf" % run_as_user)
         runcmd("sed -ri \"s/\!USER_HOMEDIR\!/%s/g\" /etc/init/counterpartyd.conf" % user_homedir.replace('/', '\/'))
         if with_testnet:
+            runcmd("rm -f /etc/init/counterpartyd-testnet.conf")
             runcmd("cp -af %s/linux/init/counterpartyd-testnet.conf.template /etc/init/counterpartyd-testnet.conf" % paths['dist_path'])
             runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterpartyd-testnet.conf" % run_as_user)
             runcmd("sed -ri \"s/\!USER_HOMEDIR\!/%s/g\" /etc/init/counterpartyd-testnet.conf" % user_homedir.replace('/', '\/'))
         if with_counterblockd:
+            runcmd("rm -f /etc/init/counterblockd.conf")
             runcmd("cp -af %s/linux/init/counterblockd.conf.template /etc/init/counterblockd.conf" % paths['dist_path'])
             runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterblockd.conf" % run_as_user)
             runcmd("sed -ri \"s/\!USER_HOMEDIR\!/%s/g\" /etc/init/counterblockd.conf" % user_homedir.replace('/', '\/'))
             if with_testnet:
+                runcmd("rm -f /etc/init/counterblockd-testnet.conf")
                 runcmd("cp -af %s/linux/init/counterblockd-testnet.conf.template /etc/init/counterblockd-testnet.conf" % paths['dist_path'])
                 runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterblockd-testnet.conf" % run_as_user)
                 runcmd("sed -ri \"s/\!USER_HOMEDIR\!/%s/g\" /etc/init/counterblockd-testnet.conf" % user_homedir.replace('/', '\/'))
