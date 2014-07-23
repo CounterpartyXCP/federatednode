@@ -208,7 +208,8 @@ def do_security_setup(run_as_user, branch, base_path, dist_path):
     
     #set up chkrootkit, rkhunter
     runcmd("apt-get -y install rkhunter chkrootkit")
-    runcmd("rkhunter --update && rkhunter --propupd")
+    runcmd('bash -c "rkhunter --update; exit 0"')
+    runcmd("rkhunter --propupd")
     runcmd('bash -c "rkhunter --check --sk; exit 0"')
     runcmd("rkhunter --propupd")
     
