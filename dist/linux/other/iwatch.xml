@@ -6,30 +6,28 @@
   <watchlist>
     <title>Operating System</title>
     <contactpoint email="root@localhost" name="Administrator"/>
-    <path type="single" syslog="on">/bin</path>
-    <path type="single" syslog="on">/sbin</path>
-    <path type="single">/etc</path>
-    <path type="recursive">/lib</path>
-    <path type="exception">/lib/modules</path>
-  </watchlist>  
-  
-  <!-- <watchlist>
-  <title>System Files</title>
-  <contactpoint email="root@localhost" name="Administrator"/>
-    <path type="single">/etc/passwd</path>
-    <path type="single">/etc/shadow</path>
-    <path type="single">/etc/ssh/sshd_config</path>
-    <path type="recursive">/etc/security</path>
+    <path type="single" alert="off" syslog="on">/bin</path>
+    <path type="single" alert="off" syslog="on">/sbin</path>
     <path type="single">/bin/su</path>
     <path type="single">/bin/bash</path>
+    <path type="single" filter="shadow|passwd">/etc</path>
+    <path type="single">/etc/ssh/sshd_config</path>
+    <path type="single">/etc/security/login_duo.conf</path>
+    <path type="recursive">/etc/duo</path>
     <path type="single">/etc/sudoers</path>
-  </watchlist> -->
-  
+    <path type="single">/etc/sudoers.d</path>
+    <path type="recursive">/etc/iwatch</path>
+  </watchlist>
+
   <watchlist>
   <title>Counterblock-Related</title>
   <contactpoint email="root@localhost" name="Administrator"/>
-    <path type="recursive">/etc/nginx</path>
-    <path type="recursive">/home/xcp/counterpartyd_build</path>
-    <path type="recursive">/home/xcp/counterwallet</path>
+    <path type="recursive" events="modify">/etc/nginx</path>
+    <path type="recursive" events="modify">/home/xcp/counterpartyd_build</path>
+    <path type="recursive" events="modify">/home/xcp/counterwallet</path>
+    <path type="regexception">\.git</path>
+    <path type="regexception">.*?\.swp</path>
+    <path type="regexception">.*?\.swx</path>
+    <path type="regexception">.*?~</path>
   </watchlist>
 </config>

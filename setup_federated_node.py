@@ -14,6 +14,7 @@ import time
 import getopt
 import logging
 import shutil
+import socket
 import urllib
 import zipfile
 import platform
@@ -227,8 +228,9 @@ def do_security_setup(run_as_user, branch, base_path, dist_path):
 
     #iwatch
     runcmd("apt-get -y install iwatch")
-    modify_config(r'^START_DAEMON=false$', 'START_DAEMON=true', '/etc/default/iwatch')
+    modify_config(r'^START_DAEMON=.*?$', 'START_DAEMON=true', '/etc/default/iwatch')
     runcmd("install -m 0644 -o root -g root -D %s/linux/other/iwatch.xml /etc/iwatch/iwatch.xml" % dist_path)
+    modify_config(r'guard email="root@localhost"', 'guard email="noreply@%s"' % socket.gethostname(), '/etc/iwatch/iwatch.xml')
     runcmd("service iwatch restart")
 
 def do_bitcoind_setup(run_as_user, branch, base_path, dist_path, run_mode):
@@ -643,19 +645,13 @@ def command_services(command, prompt=False):
     assert command in ("stop", "restart")
     
     if prompt:
-        confirmation = None
-        while True:
-            confirmation = input("%s services? (Y/n): " % command.capitalize())
-            confirmation = confirmation.lower()
-            if confirmation.lower() not in ('y', 'n', ''):
-                logging.error("Please enter 'y' or 'n'")
-            else:
-                if confirmation == '': confirmation = 'y'
-                break
+        confirmation = ask_question("%s services? (y/N)" % command.capitalize(), ('y', 'n',), 'n')
         if confirmation == 'n':
-            return
+            return False
     
     #restart/shutdown services if they may be running on the box
+    if os.path.exists("/etc/init.d/iwatch"):
+        runcmd("service iwatch %s" % command, abort_on_failure=False)
     if os.path.exists("/etc/init/counterpartyd.conf"):
         logging.warn("STOPPING SERVICES" if command == 'stop' else "RESTARTING SERVICES")
         runcmd("service bitcoind %s" % command, abort_on_failure=False)
@@ -675,7 +671,7 @@ def command_services(command, prompt=False):
         if os.path.exists("/etc/init/armory_utxsvr.conf"):
             runcmd("service armory_utxsvr %s" % command, abort_on_failure=False)
             runcmd("service armory_utxsvr-testnet %s" % command, abort_on_failure=False)
-
+        return True
 
 def gather_build_questions():
     role = ask_question("Build (C)ounterwallet server, (v)ending machine, or (b)lockexplorer server? (C/v/b)", ('c', 'v', 'b'), 'c')
@@ -740,6 +736,8 @@ def main():
         do_rebuild = ask_question("It appears this setup has been run already. (r)ebuild node, or just (U)pdate from git? (r/U)", ('r', 'u'), 'u')
 
     if do_rebuild == 'u': #just refresh counterpartyd, counterblockd, and counterwallet, etc. from github
+        if os.path.exists("/etc/init.d/iwatch"):
+            runcmd("service iwatch stop", abort_on_failure=False)
         #refresh counterpartyd_build
         git_repo_clone("AUTO", "counterpartyd_build", REPO_COUNTERPARTYD_BUILD, run_as_user)
         #refresh counterpartyd and counterblockd
@@ -748,7 +746,9 @@ def main():
         assert(os.path.exists(os.path.expanduser("~%s/counterwallet" % USERNAME)))
         do_counterwallet_setup(run_as_user, "AUTO", updateOnly=True)
         #offer to restart services
-        command_services("restart", prompt=True)
+        restarted = command_services("restart", prompt=True)
+        if not restarted and os.path.exists("/etc/init.d/iwatch"):
+            runcmd("service iwatch start", abort_on_failure=False)
         sys.exit(0) #all done
 
     #If here, a) federated node has not been set up yet or b) the user wants a rebuild
