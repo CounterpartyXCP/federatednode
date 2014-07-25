@@ -25,15 +25,15 @@ Prerequisites
 
 Minimally required to build ``counterpartyd`` from source is the following:
 
-- Python 3.2.x -- grab the `32-bit version <http://www.python.org/ftp/python/3.2.5/python-3.2.5.msi>`__
-  or `64-bit version <http://www.python.org/ftp/python/3.2.5/python-3.2.5.amd64.msi>`__.
+- Python 3.3.5 -- grab the `32-bit version <http://www.python.org/ftp/python/3.2.5/python-3.2.5.msi>`__
+  or `64-bit version <https://www.python.org/downloads/release/python-335/>`__.
   Install to the default ``C:\Python32`` location
 - Python Win32 extensions -- grab the `32-bit version <http://sourceforge.net/projects/pywin32/files/pywin32/Build%20218/pywin32-218.win32-py3.2.exe/download>`__
-  or `64-bit version <http://sourceforge.net/projects/pywin32/files/pywin32/Build%20218/pywin32-218.win-amd64-py3.2.exe/download>`__
+  or `64-bit version <http://sourceforge.net/projects/pywin32/files/pywin32/Build%20219/pywin32-219.win-amd64-py3.3.exe/download>`__
 - APSW for Windows -- grab the `32-bit version <https://apsw.googlecode.com/files/apsw-3.8.2-r1.win32-py3.2.exe>`__
-  or `64-bit version <https://apsw.googlecode.com/files/apsw-3.8.2-r1.win-amd64-py3.2.exe>`__
+  or `64-bit version <https://github.com/rogerbinns/apsw/releases/download/3.8.5-r1/apsw-3.8.5-r1.win-amd64-py3.3.exe>`__
 - Pycrypto for Windows -- grab the `32-bit version <http://www.voidspace.org.uk/downloads/pycrypto26/pycrypto-2.6.win32-py3.2.exe>`__
-  or `64-bit version <http://www.voidspace.org.uk/downloads/pycrypto26/pycrypto-2.6.win-amd64-py3.2.exe>`__
+  or `64-bit version <http://www.voidspace.org.uk/downloads/pycrypto26/pycrypto-2.6.win-amd64-py3.3.exe>`__
 - Git for Windows (should have already been downloaded for the ``insight`` setup).
   Download `here <http://git-scm.com/download/win>`__ and install. Use the default installer
   options (except, select *"Run Git from the Windows Command Prompt"* on the appropriate screen)
@@ -45,7 +45,7 @@ If you want to be able to build the Counterpartyd installer, also download the f
 - Download the NSIS SimpleService plugin from `here <http://nsis.sourceforge.net/mediawiki/images/c/c9/NSIS_Simple_Service_Plugin_1.30.zip>`__
   and save the .dll file contained in that zip to your NSIS ``plugins`` directory (e.g. ``C:\Program Files (X86)\NSIS\plugins``)
 - cx_freeze -- grab the `32-bit version <http://prdownloads.sourceforge.net/cx-freeze/cx_Freeze-4.3.2.win32-py3.2.msi?download>`__
-  or `64-bit version <http://prdownloads.sourceforge.net/cx-freeze/cx_Freeze-4.3.2.win-amd64-py3.2.msi?download>`__ as appropriate
+  or `64-bit version <http://downloads.sourceforge.net/project/cx-freeze/4.3.3/cx_Freeze-4.3.3.win-amd64-py3.3.msi>`__ as appropriate
 
 
 Installing
