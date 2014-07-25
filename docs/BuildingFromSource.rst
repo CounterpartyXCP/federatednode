@@ -23,20 +23,27 @@ Prerequisites
    everything below. The only exception would be if you want to create a 32-bit installer for Counterpartyd.
    In that case, go with the 32-bit versions of all of the dependencies below.
 
+.. note::
+
+   As of counterpartyd v9.34.0 due to issues with some Python modules, a 64-bit version of Python cannot be used
+   to build Counterparty out-of-the-box.  For time being it is recommended to use a 32-bit version of Python 3.3
+   on both the 32-bit and 64-bit version of Microsoft Windows (confirmed to work with Windows 7 SP1 x64).
+
 Minimally required to build ``counterpartyd`` from source is the following:
 
-- Python 3.2.x -- grab the `32-bit version <http://www.python.org/ftp/python/3.2.5/python-3.2.5.msi>`__
-  or `64-bit version <http://www.python.org/ftp/python/3.2.5/python-3.2.5.amd64.msi>`__.
-  Install to the default ``C:\Python32`` location
-- Python Win32 extensions -- grab the `32-bit version <http://sourceforge.net/projects/pywin32/files/pywin32/Build%20218/pywin32-218.win32-py3.2.exe/download>`__
-  or `64-bit version <http://sourceforge.net/projects/pywin32/files/pywin32/Build%20218/pywin32-218.win-amd64-py3.2.exe/download>`__
-- APSW for Windows -- grab the `32-bit version <https://apsw.googlecode.com/files/apsw-3.8.2-r1.win32-py3.2.exe>`__
-  or `64-bit version <https://apsw.googlecode.com/files/apsw-3.8.2-r1.win-amd64-py3.2.exe>`__
-- Pycrypto for Windows -- grab the `32-bit version <http://www.voidspace.org.uk/downloads/pycrypto26/pycrypto-2.6.win32-py3.2.exe>`__
-  or `64-bit version <http://www.voidspace.org.uk/downloads/pycrypto26/pycrypto-2.6.win-amd64-py3.2.exe>`__
+- Python 3.3.5 -- grab the `32-bit version <http://www.python.org/ftp/python/3.3.5/python-3.3.5.msi>`__
+  or `64-bit version <http://www.python.org/ftp/python/3.3.5/python-3.3.5.amd64.msi>`__.
+  Install to the default ``C:\Python33`` location
+- Python Win32 extensions -- grab the `32-bit version <http://sourceforge.net/projects/pywin32/files/pywin32/Build%20219/pywin32-219.win32-py3.3.exe/download>`__
+  or `64-bit version <http://sourceforge.net/projects/pywin32/files/pywin32/Build%20219/pywin32-219.win-amd64-py3.3.exe/download>`__
+- APSW for Windows -- grab the `32-bit version <https://github.com/rogerbinns/apsw/releases/download/3.8.5-r1/apsw-3.8.5-r1.win32-py3.3.exe>`__
+  or `64-bit version <https://github.com/rogerbinns/apsw/releases/download/3.8.5-r1/apsw-3.8.5-r1.win-amd64-py3.3.exe>`__
+- Pycrypto for Windows -- grab the `32-bit version <http://www.voidspace.org.uk/downloads/pycrypto26/pycrypto-2.6.win32-py3.3.exe>`__
+  or `64-bit version <http://www.voidspace.org.uk/downloads/pycrypto26/pycrypto-2.6.win-amd64-py3.3.exe>`__
 - Git for Windows (should have already been downloaded for the ``insight`` setup).
   Download `here <http://git-scm.com/download/win>`__ and install. Use the default installer
   options (except, select *"Run Git from the Windows Command Prompt"* on the appropriate screen)
+- You may need to install `Visual C++ 2010 Express <http://go.microsoft.com/?linkid=9709949>`__
 
 If you want to be able to build the Counterpartyd installer, also download the following:
 
@@ -44,8 +51,8 @@ If you want to be able to build the Counterpartyd installer, also download the f
   options during installation, and install to the default path
 - Download the NSIS SimpleService plugin from `here <http://nsis.sourceforge.net/mediawiki/images/c/c9/NSIS_Simple_Service_Plugin_1.30.zip>`__
   and save the .dll file contained in that zip to your NSIS ``plugins`` directory (e.g. ``C:\Program Files (X86)\NSIS\plugins``)
-- cx_freeze -- grab the `32-bit version <http://prdownloads.sourceforge.net/cx-freeze/cx_Freeze-4.3.2.win32-py3.2.msi?download>`__
-  or `64-bit version <http://prdownloads.sourceforge.net/cx-freeze/cx_Freeze-4.3.2.win-amd64-py3.2.msi?download>`__ as appropriate
+- cx_freeze -- grab the `32-bit version <http://sourceforge.net/projects/cx-freeze/files/4.3.3/cx_Freeze-4.3.3.win32-py3.3.msi/download>`__
+  or `64-bit version <http://downloads.sourceforge.net/project/cx-freeze/4.3.3/cx_Freeze-4.3.3.win-amd64-py3.3.msi>`__ as appropriate
 
 
 Installing
