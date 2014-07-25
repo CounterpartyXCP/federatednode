@@ -41,7 +41,7 @@ Say Yes to when Notepad asks if you want to create a new file, then paste in the
     
 Once done, press CTRL-S to save, and close Notepad.  The config file will be saved here:
 
-    %AppData%\Roaming\Counterparty\counterpartyd\counterpartyd.conf
+    ``%AppData%\Roaming\Counterparty\counterpartyd\counterpartyd.conf``
 
 New Blockchain Download
 ^^^^^^^^^^^^^^^^^^^^^^^^
