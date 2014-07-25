@@ -234,15 +234,14 @@ def install_dependencies(paths, with_counterblockd, assume_yes):
                 if db_locally.lower() == 'y':
                     runcmd("apt-get -y install mongodb mongodb-server redis-server")
         elif ubuntu_release == "12.04":
-            # What a freaking mess. Can't wait to retire Ubuntu 12.04...
+            #12.04 deps. 12.04 doesn't include python3-pip, so we need to use the workaround at http://stackoverflow.com/a/12262143
+            runcmd("apt-get -y install software-properties-common python-software-properties git-core wget cx-freeze \
+            python3 python3-setuptools python3-dev build-essential python3-sphinx python-virtualenv libsqlite3-dev")
+
             #install python 3.3 (required for flask)
             runcmd("add-apt-repository -y ppa:fkrull/deadsnakes")
             runcmd("apt-get update; apt-get -y install python3.3 python3.3-dev")
             runcmd("ln -sf /usr/bin/python3.3 /usr/bin/python3")
-
-            #12.04 deps. 12.04 doesn't include python3-pip, so we need to use the workaround at http://stackoverflow.com/a/12262143
-            runcmd("apt-get -y install software-properties-common python-software-properties git-core wget cx-freeze \
-            python3 python3-setuptools python3-dev build-essential python3-sphinx python-virtualenv libsqlite3-dev")
             
             #now actually run the distribute_setup.py script as pip3 is broken
             runcmd("rm -f /tmp/distribute_setup.py; curl -o /tmp/distribute_setup.py http://python-distribute.org/distribute_setup.py")
