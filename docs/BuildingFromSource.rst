@@ -110,6 +110,9 @@ If, upon running counterpartyd, you get a missing dependency or some other error
     cd counterpartyd_build
     C:\Python33\python.exe setup.py
 
+In case of a problem, refer to the list of requirements in `pip-requirements` and update as necessary. Then rerun
+the build script again.
+
 Building your own Installer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
