@@ -19,15 +19,9 @@ Prerequisites
 
 .. note::
 
-   If you are on a computer with a 64-bit version of Windows, it's normally best to get the 64-bit version of
-   everything below. The only exception would be if you want to create a 32-bit installer for Counterpartyd.
-   In that case, go with the 32-bit versions of all of the dependencies below.
-
-.. note::
-
-   As of counterpartyd v9.34.0 due to issues with some Python modules, a 64-bit version of Python cannot be used
-   to build Counterparty out-of-the-box.  For time being it is recommended to use a 32-bit version of Python 3.3
-   on both the 32-bit and 64-bit version of Microsoft Windows (confirmed to work with Windows 7 SP1 x64).
+    As of counterpartyd v9.34.0 due to issues with some Python modules, a 64-bit version of Python cannot be used
+    to build Counterparty out-of-the-box. For time being it is recommended to use a 32-bit version of Python 3.3.5
+    on both the 32-bit and 64-bit version of Microsoft Windows (confirmed to work with Windows 7 SP1 x64).
 
 Minimally required to build ``counterpartyd`` from source is the following:
 
@@ -53,7 +47,7 @@ If you want to be able to build the Counterpartyd installer, also download the f
   and save the .dll file contained in that zip to your NSIS ``plugins`` directory (e.g. ``C:\Program Files (X86)\NSIS\plugins``)
 - cx_freeze -- grab the `32-bit version <http://sourceforge.net/projects/cx-freeze/files/4.3.3/cx_Freeze-4.3.3.win32-py3.3.msi/download>`__
   or `64-bit version <http://downloads.sourceforge.net/project/cx-freeze/4.3.3/cx_Freeze-4.3.3.win-amd64-py3.3.msi>`__ as appropriate
-
+- Install a binary build of cherrypy-wsgiserver `such as this (for 32-bit Python) <https://bitbucket.org/cherrypy/cherrypy/issue-attachment/1110/cherrypy/cherrypy/1322273715.09/1110/CherryPy-3.2.2.win32.exe>`__ 
 
 Installing
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -70,7 +64,7 @@ After launching a DOS command window using the instructions in the note above, t
     cd C:\
     git clone https://github.com/CounterpartyXCP/counterpartyd_build
     cd counterpartyd_build
-    C:\Python32\python.exe setup.py
+    C:\Python33\python.exe setup.py
      
 The above steps will check out the build scripts to ``C:\counterpartyd_build``, and run the ``setup.py`` script, which
 will check out the newest version of ``counterpartyd`` itself from git, create a virtual environment with the
@@ -107,14 +101,14 @@ Updating to the newest source
 As the code is enhanced and improved on Github, you can refresh your local copy of the repositories like so::
 
     cd C:\counterpartyd_build
-    C:\Python32\python.exe setup.py update
+    C:\Python33\python.exe setup.py update
 
 If, upon running counterpartyd, you get a missing dependency or some other error, you can always rerun
 ``setup.py``, which will regenerate your dependencies listing to the libraries and versions as listed in
 `reqs.txt <https://github.com/CounterpartyXCP/counterpartyd_build/blob/master/dist/reqs.txt>`__::
 
     cd counterpartyd_build
-    C:\Python32\python.exe setup.py
+    C:\Python33\python.exe setup.py
 
 
 Building your own Installer
@@ -124,7 +118,7 @@ Complete the instructions under **Prerequisites** above.
 Then, execute the following commands to build the installer package::
 
     cd C:\counterpartyd_build
-    C:\Python32\python.exe setup.py build
+    C:\Python33\python.exe setup.py build
     
 If successful, you will be provided the location of the resulting installer package.
 
