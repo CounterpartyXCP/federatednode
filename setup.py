@@ -115,19 +115,24 @@ def do_prerun_checks():
         
     if os.name == "posix" and "SUDO_USER" not in os.environ:
         logging.error("Please use `sudo` to run this script.")
-        
+    
     #establish python version
     global PYTHON3_VER
     if os.name == "nt":
-        PYTHON3_VER = "3.2"
+        PYTHON3_VER = "3.3"
+    elif os.name == "posix" and platform.dist()[0] == "Ubuntu" and platform.linux_distribution()[1] == "12.04":
+        #ubuntu 12.04 -- python 3.3 will be installed in install_dependencies, as flask requires it
+        PYTHON3_VER = "3.3"
     else:
-        for ver in ["3.4", "3.3", "3.2", "3.1"]:
+        allowed_vers = ["3.4", "3.3"]
+        for ver in allowed_vers:
             if which("python%s" % ver):
                 PYTHON3_VER = ver
                 logging.info("Found Python version %s" % PYTHON3_VER)
                 break
         else:
-            logging.error("Cannot find your Python version in your path")
+            logging.error("Cannot find your Python version in your path. You need one of the following versions: %s"
+                % ', '.join(allowed_vers))
             sys.exit(1)
 
 def get_paths(with_counterblockd):
@@ -203,6 +208,7 @@ def checkout(paths, run_as_user, with_counterblockd, is_update):
     
     sys.path.insert(0, os.path.join(paths['dist_path'], "counterpartyd")) #can now import counterparty modules
 
+
 def install_dependencies(paths, with_counterblockd, assume_yes):
     if os.name == "posix" and platform.dist()[0] == "Ubuntu":
         ubuntu_release = platform.linux_distribution()[1]
@@ -228,6 +234,11 @@ def install_dependencies(paths, with_counterblockd, assume_yes):
                 if db_locally.lower() == 'y':
                     runcmd("apt-get -y install mongodb mongodb-server redis-server")
         elif ubuntu_release == "12.04":
+            #first, install python 3.3
+            runcmd("add-apt-repository -y ppa:fkrull/deadsnakes")
+            runcmd("apt-get update; apt-get -y install python3.3")
+            runcmd("ln -sf /usr/bin/python3.3 /usr/bin/python3")
+            
             #12.04 deps. 12.04 doesn't include python3-pip, so we need to use the workaround at http://stackoverflow.com/a/12262143
             runcmd("apt-get -y install software-properties-common python-software-properties git-core wget cx-freeze \
             python3 python3-setuptools python3-dev build-essential python3-sphinx python-virtualenv libsqlite3-dev")
