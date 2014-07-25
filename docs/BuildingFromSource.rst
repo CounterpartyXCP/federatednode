@@ -105,7 +105,7 @@ As the code is enhanced and improved on Github, you can refresh your local copy 
 
 If, upon running counterpartyd, you get a missing dependency or some other error, you can always rerun
 ``setup.py``, which will regenerate your dependencies listing to the libraries and versions as listed in
-`reqs.txt <https://github.com/CounterpartyXCP/counterpartyd/blob/master/pip-requirements.txt>`__::
+`pip-requirements.txt <https://github.com/CounterpartyXCP/counterpartyd/blob/master/pip-requirements.txt>`__::
 
     cd counterpartyd_build
     C:\Python33\python.exe setup.py
@@ -193,7 +193,7 @@ Counterparty for Windows must also be updated from a console window started with
 
 If, upon running counterpartyd, you get a missing dependency or some other error, you can always rerun
 ``setup.py``, which will regenerate your dependencies listing to the libraries and versions as listed in
-`reqs.txt <https://github.com/CounterpartyXCP/counterpartyd/blob/master/pip-requirements.txt>`__::
+`pip-requirements.txt <https://github.com/CounterpartyXCP/counterpartyd/blob/master/pip-requirements.txt>`__::
 
     cd ~/counterpartyd_build
     sudo python3 setup.py
