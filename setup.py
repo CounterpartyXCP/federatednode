@@ -115,19 +115,24 @@ def do_prerun_checks():
         
     if os.name == "posix" and "SUDO_USER" not in os.environ:
         logging.error("Please use `sudo` to run this script.")
-        
+    
     #establish python version
     global PYTHON3_VER
     if os.name == "nt":
-        PYTHON3_VER = "3.2"
+        PYTHON3_VER = "3.3"
+    elif os.name == "posix" and platform.dist()[0] == "Ubuntu" and platform.linux_distribution()[1] == "12.04":
+        #ubuntu 12.04 -- python 3.3 will be installed in install_dependencies, as flask requires it
+        PYTHON3_VER = "3.3"
     else:
-        for ver in ["3.4", "3.3", "3.2", "3.1"]:
+        allowed_vers = ["3.4", "3.3"]
+        for ver in allowed_vers:
             if which("python%s" % ver):
                 PYTHON3_VER = ver
                 logging.info("Found Python version %s" % PYTHON3_VER)
                 break
         else:
-            logging.error("Cannot find your Python version in your path")
+            logging.error("Cannot find your Python version in your path. You need one of the following versions: %s"
+                % ', '.join(allowed_vers))
             sys.exit(1)
 
 def get_paths(with_counterblockd):
@@ -203,6 +208,7 @@ def checkout(paths, run_as_user, with_counterblockd, is_update):
     
     sys.path.insert(0, os.path.join(paths['dist_path'], "counterpartyd")) #can now import counterparty modules
 
+
 def install_dependencies(paths, with_counterblockd, assume_yes):
     if os.name == "posix" and platform.dist()[0] == "Ubuntu":
         ubuntu_release = platform.linux_distribution()[1]
@@ -231,11 +237,22 @@ def install_dependencies(paths, with_counterblockd, assume_yes):
             #12.04 deps. 12.04 doesn't include python3-pip, so we need to use the workaround at http://stackoverflow.com/a/12262143
             runcmd("apt-get -y install software-properties-common python-software-properties git-core wget cx-freeze \
             python3 python3-setuptools python3-dev build-essential python3-sphinx python-virtualenv libsqlite3-dev")
+
+            #install python 3.3 (required for flask)
+            runcmd("add-apt-repository -y ppa:fkrull/deadsnakes")
+            runcmd("apt-get update; apt-get -y install python3.3 python3.3-dev")
+            runcmd("ln -sf /usr/bin/python3.3 /usr/bin/python3")
+            
+            #now actually run the distribute_setup.py script as pip3 is broken
+            runcmd("rm -f /tmp/distribute_setup.py; curl -o /tmp/distribute_setup.py http://python-distribute.org/distribute_setup.py")
+            runcmd("python3 /tmp/distribute_setup.py")
+            runcmd("rm -f ./distribute-*.tar.gz") #the script above likes to create this file in the local dir
+            
             if not os.path.exists("/usr/local/bin/pip3"):
                 runcmd("easy_install3 pip==1.4.1") #pip1.5 breaks things due to its use of wheel by default
                 #for some reason, it installs "pip" to /usr/local/bin, instead of "pip3"
                 runcmd("mv /usr/local/bin/pip /usr/local/bin/pip3")
-            
+
             ##ASPW
             #12.04 also has no python3-apsw module as well (unlike 13.10), so we need to do this one manually
             # Ubuntu 12.04 (Precise) ships with sqlite3 version 3.7.9 - the apsw version needs to match that exactly
@@ -244,7 +261,11 @@ def install_dependencies(paths, with_counterblockd, assume_yes):
             ##LIBZMQ
             #12.04 has no python3-zmq module
             runcmd("apt-get -y install libzmq-dev")
-            runcmd("easy_install3 pyzmq")
+            runcmd("pip3 install pyzmq")
+            
+            #also update virtualenv
+            runcmd("pip3 install virtualenv")
+            paths['virtualenv_path'] = "/usr/local/bin/virtualenv-3.3" #HACK
         else:
             logging.error("Unsupported Ubuntu version, please use 14.04 LTS, 13.10 or 12.04 LTS")
             sys.exit(1)
