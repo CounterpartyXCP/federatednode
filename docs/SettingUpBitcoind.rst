@@ -39,9 +39,9 @@ Say Yes to when Notepad asks if you want to create a new file, then paste in the
 - If you want ``bitcoind`` to be on testnet, not mainnet, see the section entitled **Running counterpartyd on testnet** in :doc:`Additional Topics <AdditionalTopics>`.
 - You should change the RPC password above to something more secure.
     
-Once done, press CTRL-S to save, and close Notepad.  The config file will be saved here:
+Once done, press CTRL-S to save, and close Notepad.  The config file will be saved here::
 
-    %AppData%\Roaming\Counterparty\counterpartyd\counterpartyd.conf
+    ``%AppData%\Roaming\Counterparty\counterpartyd\counterpartyd.conf``
 
 New Blockchain Download
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -52,9 +52,9 @@ you can just launch ``bitcoind`` or ``bitcoin-qt`` and wait for the blockchain t
 Already have Blockchain
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you have already downloaded the blockchain on your computer (e.g. you're already using the Bitcoin client),
-you will probably need to open up a command prompt window, change to the Bitcoin program directory (e.g. ``C:\Program Files (x86)\Bitcoin\``)
-and run::
+If you have already downloaded the blockchain on your computer (e.g. you're already using the Bitcoin client) **and** 
+you did not have the configuration parameter ``txindex=1`` enabled, you will probably need to open up a command prompt
+window, change to the Bitcoin program directory (e.g. ``C:\Program Files (x86)\Bitcoin\``) and run::
 
     bitcoin-qt.exe --reindex
     
@@ -62,8 +62,8 @@ or::
 
     daemon\bitcoind.exe --reindex
     
-This will start up bitcoin to do a one time reindexing of the blockchain on disk. The reason this is is because we added the
-``txindex=1`` configuration parameter above to the bitcoin config file, which means that it will need to
+This will start up bitcoin to do a one time reindexing of the blockchain on disk. The reason this is is because we 
+added the ``txindex=1`` configuration parameter above to the bitcoin config file, which means that it will need to
 run through the blockchain again to generate the necessary indexes, which may take a few hours. After doing
 this once, you shouldn't have to do it again.   
 
@@ -77,7 +77,7 @@ Once this is done, you have two options:
 - You can simply restart Bitcoin-QT (for the configuration changes to take effect) and use that. This is
   fine for development/test setups, but not normally suitable for production systems. (You can have
   Bitcoin-QT start up automatically by clicking on Settings, then Options and checking the
-  box titled "Start Bitcoin on system startup".
+  box titled "Start Bitcoin on system startup".)
 
 
 On Ubuntu Linux
@@ -93,7 +93,8 @@ to install it (on Ubuntu, other distros will have similar instructions)::
     mkdir -p ~/.bitcoin/
     echo -e "rpcuser=rpc\nrpcpassword=rpcpw1234\nserver=1\ndaemon=1\ntxindex=1" > ~/.bitcoin/bitcoin.conf
 
-Please then edit the ``~/.bitcoin/bitcoin.conf`` file and set the file to the contents specified above.
+Please then edit the ``~/.bitcoin/bitcoin.conf`` file and set the file to the same contents specified above in 
+bitcoin.conf example for Windows.
 
 New Blockchain Download
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -114,7 +115,8 @@ When done, the block count returned by this command will match the value given f
 Already have Blockchain
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you *have* already downloaded the blockchain before you modified your config, you'll probably need to launch ``bitcoind`` as follows::
+If you *have* already downloaded the blockchain before you modified your config and you did not have ``txindex=1`` 
+enabled, you'll probably need to launch ``bitcoind`` as follows:
 
     bitcoind --reindex
 
@@ -123,6 +125,8 @@ This will start up bitcoin to do a one time reindexing of the blockchain on disk
 ``txindex=1`` configuration parameter above to the bitcoin config file, which means that it will need to
 run through the blockchain again to generate the necessary indexes, which may take a few hours. After doing
 this once, you shouldn't have to do it again.
+
+If you had the blockchain index parameter always turned on before, reindexing should not be necessary.
 
 Next steps
 ^^^^^^^^^^^
