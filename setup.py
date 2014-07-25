@@ -234,19 +234,25 @@ def install_dependencies(paths, with_counterblockd, assume_yes):
                 if db_locally.lower() == 'y':
                     runcmd("apt-get -y install mongodb mongodb-server redis-server")
         elif ubuntu_release == "12.04":
-            #first, install python 3.3
+            # What a freaking mess. Can't wait to retire Ubuntu 12.04...
+            #install python 3.3 (required for flask)
             runcmd("add-apt-repository -y ppa:fkrull/deadsnakes")
-            runcmd("apt-get update; apt-get -y install python3.3")
+            runcmd("apt-get update; apt-get -y install python3.3 python3.3-dev")
             runcmd("ln -sf /usr/bin/python3.3 /usr/bin/python3")
-            
+
             #12.04 deps. 12.04 doesn't include python3-pip, so we need to use the workaround at http://stackoverflow.com/a/12262143
             runcmd("apt-get -y install software-properties-common python-software-properties git-core wget cx-freeze \
             python3 python3-setuptools python3-dev build-essential python3-sphinx python-virtualenv libsqlite3-dev")
+            
+            #now actually run the distribute_setup.py script as pip3 is broken
+            runcmd("rm -f /tmp/distribute_setup.py; curl -o /tmp/distribute_setup.py http://python-distribute.org/distribute_setup.py")
+            runcmd("python3 /tmp/distribute_setup.py")
+            
             if not os.path.exists("/usr/local/bin/pip3"):
                 runcmd("easy_install3 pip==1.4.1") #pip1.5 breaks things due to its use of wheel by default
                 #for some reason, it installs "pip" to /usr/local/bin, instead of "pip3"
                 runcmd("mv /usr/local/bin/pip /usr/local/bin/pip3")
-            
+
             ##ASPW
             #12.04 also has no python3-apsw module as well (unlike 13.10), so we need to do this one manually
             # Ubuntu 12.04 (Precise) ships with sqlite3 version 3.7.9 - the apsw version needs to match that exactly
@@ -255,7 +261,11 @@ def install_dependencies(paths, with_counterblockd, assume_yes):
             ##LIBZMQ
             #12.04 has no python3-zmq module
             runcmd("apt-get -y install libzmq-dev")
-            runcmd("easy_install3 pyzmq")
+            runcmd("pip3 install pyzmq")
+            
+            #also update virtualenv
+            runcmd("pip3 install virtualenv")
+            paths['virtualenv_path'] = "/usr/local/bin/virtualenv-3.3" #HACK
         else:
             logging.error("Unsupported Ubuntu version, please use 14.04 LTS, 13.10 or 12.04 LTS")
             sys.exit(1)
