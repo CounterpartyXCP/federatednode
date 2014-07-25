@@ -46,7 +46,7 @@ If you want to be able to build the Counterpartyd installer, also download the f
   and save the .dll file contained in that zip to your NSIS ``plugins`` directory (e.g. ``C:\Program Files (X86)\NSIS\plugins``)
 - cx_freeze -- grab the `32-bit version <http://prdownloads.sourceforge.net/cx-freeze/cx_Freeze-4.3.2.win32-py3.2.msi?download>`__
   or `64-bit version <http://prdownloads.sourceforge.net/cx-freeze/cx_Freeze-4.3.2.win-amd64-py3.2.msi?download>`__ as appropriate
-
+- Binary build of cherrypy-wsgiserver `such as this (32-bit Python) <https://bitbucket.org/cherrypy/cherrypy/issue-attachment/1110/cherrypy/cherrypy/1322273715.09/1110/CherryPy-3.2.2.win32.exe>`__ 
 
 Installing
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -63,7 +63,7 @@ After launching a DOS command window using the instructions in the note above, t
     cd C:\
     git clone https://github.com/CounterpartyXCP/counterpartyd_build
     cd counterpartyd_build
-    C:\Python32\python.exe setup.py
+    C:\Python33\python.exe setup.py
      
 The above steps will check out the build scripts to ``C:\counterpartyd_build``, and run the ``setup.py`` script, which
 will check out the newest version of ``counterpartyd`` itself from git, create a virtual environment with the
@@ -107,7 +107,7 @@ If, upon running counterpartyd, you get a missing dependency or some other error
 `reqs.txt <https://github.com/CounterpartyXCP/counterpartyd_build/blob/master/dist/reqs.txt>`__::
 
     cd counterpartyd_build
-    C:\Python32\python.exe setup.py
+    C:\Python33\python.exe setup.py
 
 
 Building your own Installer
@@ -117,7 +117,7 @@ Complete the instructions under **Prerequisites** above.
 Then, execute the following commands to build the installer package::
 
     cd C:\counterpartyd_build
-    C:\Python32\python.exe setup.py build
+    C:\Python33\python.exe setup.py build
     
 If successful, you will be provided the location of the resulting installer package.
 
