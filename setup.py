@@ -248,10 +248,9 @@ def install_dependencies(paths, with_counterblockd, assume_yes):
             runcmd("python3 /tmp/distribute_setup.py")
             runcmd("rm -f ./distribute-*.tar.gz") #the script above likes to create this file in the local dir
             
-            if not os.path.exists("/usr/local/bin/pip3"):
-                runcmd("easy_install3 pip==1.4.1") #pip1.5 breaks things due to its use of wheel by default
-                #for some reason, it installs "pip" to /usr/local/bin, instead of "pip3"
-                runcmd("mv /usr/local/bin/pip /usr/local/bin/pip3")
+            runcmd("easy_install3 pip==1.4.1") #pip1.5 breaks things due to its use of wheel by default
+            #for some reason, it installs "pip" to /usr/local/bin, instead of "pip3"
+            runcmd("cp -a /usr/local/bin/pip /usr/local/bin/pip3")
 
             ##ASPW
             #12.04 also has no python3-apsw module as well (unlike 13.10), so we need to do this one manually
