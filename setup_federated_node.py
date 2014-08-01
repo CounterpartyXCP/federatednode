@@ -780,13 +780,15 @@ def main():
     if do_rebuild == 'u': #just refresh counterpartyd, counterblockd, and counterwallet, etc. from github
         if os.path.exists("/etc/init.d/iwatch"):
             runcmd("service iwatch stop", abort_on_failure=False)
-        #refresh counterpartyd_build
-        git_repo_clone("AUTO", "counterpartyd_build", REPO_COUNTERPARTYD_BUILD, run_as_user)
-        #refresh counterpartyd and counterblockd
-        runcmd("%s/setup.py --with-counterblockd --for-user=xcp update" % base_path)
-        #refresh counterwallet
-        assert(os.path.exists(os.path.expanduser("~%s/counterwallet" % USERNAME)))
-        do_counterwallet_setup(run_as_user, "AUTO", updateOnly=True)
+        
+        #refresh counterpartyd_build, counterpartyd and counterblockd (if available)
+        runcmd("%s/setup.py %s --for-user=xcp update" % (base_path,
+            '--with-counterblockd' if os.path.exists(os.path.join(dist_path, "counterblockd")) else ''))
+        
+        #refresh counterwallet (if available)
+        if os.path.exists(os.path.exists(os.path.expanduser("~%s/counterwallet" % USERNAME))):
+            do_counterwallet_setup(run_as_user, "AUTO", updateOnly=True)
+
         #offer to restart services
         restarted = command_services("restart", prompt=True)
         if not restarted and os.path.exists("/etc/init.d/iwatch"):
