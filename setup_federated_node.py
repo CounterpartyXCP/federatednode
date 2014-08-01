@@ -290,7 +290,8 @@ def do_bitcoind_setup(run_as_user, branch, base_path, dist_path, run_mode):
     
     return bitcoind_rpc_password, bitcoind_rpc_password_testnet
 
-def do_counterparty_setup(role, run_as_user, branch, base_path, dist_path, run_mode, bitcoind_rpc_password, bitcoind_rpc_password_testnet):
+def do_counterparty_setup(role, run_as_user, branch, base_path, dist_path, run_mode, bitcoind_rpc_password,
+bitcoind_rpc_password_testnet, counterpartyd_public):
     """Installs and configures counterpartyd and counterblockd"""
     user_homedir = os.path.expanduser("~" + USERNAME)
     counterpartyd_rpc_password = pass_generator()
@@ -323,9 +324,12 @@ def do_counterparty_setup(role, run_as_user, branch, base_path, dist_path, run_m
     
     #modify the counterpartyd API rpc password in counterpartyd.conf
     runcmd(r"""sed -ri "s/^rpc\-password=.*?$/rpc-password=%s/g" ~%s/.config/counterpartyd/counterpartyd.conf""" % (
-        counterpartyd_rpc_password, USERNAME))
+        '1234' if role == 'counterpartyd_only' and counterpartyd_public == 'y' else counterpartyd_rpc_password, USERNAME))
     runcmd(r"""sed -ri "s/^rpc\-password=.*?$/rpc-password=%s/g" ~%s/.config/counterpartyd-testnet/counterpartyd.conf""" % (
-        counterpartyd_rpc_password_testnet, USERNAME))
+        '1234' if role == 'counterpartyd_only' and counterpartyd_public == 'y' else counterpartyd_rpc_password_testnet, USERNAME))
+
+    if role == 'counterpartyd_only' and counterpartyd_public == 'y':
+        modify_cp_config(r'^rpc\-host=.*?$', 'rpc-host=0.0.0.0', config='counterpartyd')
     
     #disable upstart scripts from autostarting on system boot if necessary
     if run_mode == 't': #disable mainnet daemons from autostarting
@@ -336,7 +340,7 @@ def do_counterparty_setup(role, run_as_user, branch, base_path, dist_path, run_m
         runcmd(r"""bash -c "echo 'manual' >> /etc/init/counterpartyd-testnet.override" """)
     else:
         runcmd("rm -f /etc/init/counterpartyd-testnet.override")
-
+        
     if role != 'counterpartyd_only':
         #now change the counterblockd directories to be owned by the xcpd user (and the xcp group),
         runcmd("mkdir -p ~%s/.config/counterblockd ~%s/.config/counterblockd-testnet" % (USERNAME, USERNAME))    
@@ -728,14 +732,18 @@ def gather_build_questions():
 
     blockchain_service = ask_question("Blockchain services, use (B)lockr.io (remote) or (i)nsight (local)? (B/i)", ('b', 'i'), 'b')
     print("\tUsing %s" % ('blockr.io' if blockchain_service == 'b' else 'insight'))
-
+    
     run_armory_utxsvr = None
     if role == 'counterwallet':
         run_armory_utxsvr = ask_question("Run armory_utxsvr for allowing offline armory tx creation in counterwallet? (Y/n)", ('y', 'n'), 'y')
 
+    counterpartyd_public = None
+    if role == 'counterpartyd_only':
+        counterpartyd_public = ask_question("Enable public Counterpartyd setup (listen on all hosts w/ rpc/1234 user) (Y/n)", ('y', 'n'), 'y')
+
     security_hardening = ask_question("Set up security hardening? (Y/n)", ('y', 'n'), 'y')
 
-    return (role, branch, run_mode, blockchain_service, run_armory_utxsvr, security_hardening)
+    return (role, branch, run_mode, blockchain_service, run_armory_utxsvr, security_hardening, counterpartyd_public)
 
 def main():
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s|%(levelname)s: %(message)s')
@@ -786,7 +794,8 @@ def main():
         sys.exit(0) #all done
 
     #If here, a) federated node has not been set up yet or b) the user wants a rebuild
-    (role, branch, run_mode, blockchain_service, run_armory_utxsvr, security_hardening) = gather_build_questions()
+    (role, branch, run_mode, blockchain_service, run_armory_utxsvr, security_hardening,
+        counterpartyd_public) = gather_build_questions()
     
     command_services("stop")
 
@@ -795,7 +804,8 @@ def main():
     bitcoind_rpc_password, bitcoind_rpc_password_testnet \
         = do_bitcoind_setup(run_as_user, branch, base_path, dist_path, run_mode)
     
-    do_counterparty_setup(role, run_as_user, branch, base_path, dist_path, run_mode, bitcoind_rpc_password, bitcoind_rpc_password_testnet)
+    do_counterparty_setup(role, run_as_user, branch, base_path, dist_path, run_mode,
+        bitcoind_rpc_password, bitcoind_rpc_password_testnet, counterpartyd_public)
     
     do_blockchain_service_setup(run_as_user, base_path, dist_path, run_mode, blockchain_service)
     
