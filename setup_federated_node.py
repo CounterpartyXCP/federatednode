@@ -711,7 +711,7 @@ def gather_build_questions():
         role = 'blockexplorer'
         role_desc = "Block explorer server"
     elif role == 'o':
-        role = 'counterpartyd'
+        role = 'counterpartyd_only'
         role_desc = "Counterpartyd server"
     print("\tBuilding a %s" % role_desc)
     
@@ -726,10 +726,8 @@ def gather_build_questions():
     run_mode = ask_question("Run as (t)estnet node, (m)ainnet node, or (B)oth? (t/m/B)", ('t', 'm', 'b'), 'b')
     print("\tSetting up to run on %s" % ('testnet' if run_mode.lower() == 't' else ('mainnet' if run_mode.lower() == 'm' else 'testnet and mainnet')))
 
-    blockchain_service = None
-    if role != 'counterpartyd':
-        blockchain_service = ask_question("Blockchain services, use (B)lockr.io (remote) or (i)nsight (local)? (B/i)", ('b', 'i'), 'b')
-        print("\tUsing %s" % ('blockr.io' if blockchain_service == 'b' else 'insight'))
+    blockchain_service = ask_question("Blockchain services, use (B)lockr.io (remote) or (i)nsight (local)? (B/i)", ('b', 'i'), 'b')
+    print("\tUsing %s" % ('blockr.io' if blockchain_service == 'b' else 'insight'))
 
     run_armory_utxsvr = None
     if role == 'counterwallet':
@@ -799,8 +797,7 @@ def main():
     
     do_counterparty_setup(role, run_as_user, branch, base_path, dist_path, run_mode, bitcoind_rpc_password, bitcoind_rpc_password_testnet)
     
-    if blockchain_service:
-        do_blockchain_service_setup(run_as_user, base_path, dist_path, run_mode, blockchain_service)
+    do_blockchain_service_setup(run_as_user, base_path, dist_path, run_mode, blockchain_service)
     
     if role != "counterpartyd_only":
         do_nginx_setup(run_as_user, base_path, dist_path)
