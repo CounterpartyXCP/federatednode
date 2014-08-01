@@ -7,8 +7,9 @@ Introduction
 A Counterblock Federated Node is a self-contained server that runs the software necessary to support one or more "roles".
 Such roles may be:
    * Counterwallet server
-   * Vending machine
+   * Vending machine (future)
    * Block explorer server (future)
+   * A plain old ``counterpartyd`` server
 
 Each backend server runs `multiple services <components>`__ (some required, and some optional, or based on the role chosen).
 As each server is self-contained, they can be combined by the client-side software to allow for high-availability/load balancing.
@@ -35,8 +36,8 @@ counterpartyd (Required)
 transactions from the Bitcoin blockchain. It has a basic command line interface, and a reletively low-level API for
 getting information on specific transactions, or general state info.
 
-counterblockd (Required)
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+counterblockd (Required, unless counterpartyd only)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The ``counterblockd`` daemon provides a more high-level API that layers on top of ``counterpartyd``'s API, and includes extended
 information, such as market and price data, trade operations, asset history, and more. It is used extensively by Counterwallet
