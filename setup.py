@@ -283,7 +283,7 @@ def install_dependencies(paths, with_counterblockd, assume_yes):
                 os.path.join(paths['dist_path'], "windows", "ez_setup.py")))
         
         #now easy_install is installed, install virtualenv, and pip
-        runcmd("%s virtualenv==1.10.1 pip==1.4.1" % (os.path.join(paths['sys_python_path'], "Scripts", "easy_install.exe")))
+        runcmd("%s virtualenv==1.11.6 pip==1.4.1" % (os.path.join(paths['sys_python_path'], "Scripts", "easy_install.exe")))
 
         #now that pip is installed, install necessary deps outside of the virtualenv (e.g. for this script)
         runcmd("%s install appdirs==1.2.0" % (os.path.join(paths['sys_python_path'], "Scripts", "pip.exe")))
