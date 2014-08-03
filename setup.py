@@ -26,13 +26,13 @@ except ImportError:
     pass
 
 PYTHON3_VER = None
-DEFAULT_CONFIG = "[Default]\nbitcoind-rpc-connect=localhost\nbitcoind-rpc-port=8332\nbitcoind-rpc-user=rpc\nbitcoind-rpc-password=rpcpw1234\nrpc-host=localhost\nrpc-port=4000\nrpc-user=rpc\nrpc-password=xcppw1234"
-DEFAULT_CONFIG_TESTNET = "[Default]\nbitcoind-rpc-connect=localhost\nbitcoind-rpc-port=18332\nbitcoind-rpc-user=rpc\nbitcoind-rpc-password=rpcpw1234\nrpc-host=localhost\nrpc-port=14000\nrpc-user=rpc\nrpc-password=xcppw1234\ntestnet=1"
-DEFAULT_CONFIG_INSTALLER = "[Default]\nbitcoind-rpc-connect=BITCOIND_RPC_CONNECT\nbitcoind-rpc-port=BITCOIND_RPC_PORT\nbitcoind-rpc-user=BITCOIND_RPC_USER\nbitcoind-rpc-password=BITCOIND_RPC_PASSWORD\nrpc-host=RPC_HOST\nrpc-port=RPC_PORT\nrpc-user=RPC_USER\nrpc-password=RPC_PASSWORD"
+DEFAULT_CONFIG = "[Default]\nbackend-rpc-connect=localhost\nbackend-rpc-port=8332\nbackend-rpc-user=rpc\nbackend-rpc-password=1234\nrpc-host=localhost\nrpc-port=4000\nrpc-user=rpc\nrpc-password=xcppw1234"
+DEFAULT_CONFIG_TESTNET = "[Default]\nbackend-rpc-connect=localhost\nbackend-rpc-port=18332\nbackend-rpc-user=rpc\nbackend-rpc-password=1234\nrpc-host=localhost\nrpc-port=14000\nrpc-user=rpc\nrpc-password=xcppw1234\ntestnet=1"
+DEFAULT_CONFIG_INSTALLER = "[Default]\nbackend-rpc-connect=BITCOIND_RPC_CONNECT\nbackend-rpc-port=BITCOIND_RPC_PORT\nbackend-rpc-user=BITCOIND_RPC_USER\nbackend-rpc-password=BITCOIND_RPC_PASSWORD\nrpc-host=RPC_HOST\nrpc-port=RPC_PORT\nrpc-user=RPC_USER\nrpc-password=RPC_PASSWORD"
 
-DEFAULT_CONFIG_COUNTERWALLETD = "[Default]\nbitcoind-rpc-connect=localhost\nbitcoind-rpc-port=8332\nbitcoind-rpc-user=rpc\nbitcoind-rpc-password=rpcpw1234\ncounterpartyd-rpc-host=localhost\ncounterpartyd-rpc-port=4000\ncounterpartyd-rpc-user=rpc\ncounterpartyd-rpc-password=xcppw1234\nrpc-host=0.0.0.0\nsocketio-host=0.0.0.0\nsocketio-chat-host=0.0.0.0\nredis-enable-apicache=0"
-DEFAULT_CONFIG_COUNTERWALLETD_TESTNET = "[Default]\nbitcoind-rpc-connect=localhost\nbitcoind-rpc-port=18332\nbitcoind-rpc-user=rpc\nbitcoind-rpc-password=rpcpw1234\ncounterpartyd-rpc-host=localhost\ncounterpartyd-rpc-port=14000\ncounterpartyd-rpc-user=rpc\ncounterpartyd-rpc-password=xcppw1234\nrpc-host=0.0.0.0\nsocketio-host=0.0.0.0\nsocketio-chat-host=0.0.0.0\nredis-enable-apicache=0\ntestnet=1"
-DEFAULT_CONFIG_INSTALLER_COUNTERWALLETD = "[Default]\nbitcoind-rpc-connect=localhost\nbitcoind-rpc-port=8332\nbitcoind-rpc-user=rpc\nbitcoind-rpc-password=rpcpw1234\ncounterpartyd-rpc-host=RPC_HOST\ncounterpartyd-rpc-port=RPC_PORT\ncounterpartyd-rpc-user=RPC_USER\ncounterpartyd-rpc-password=RPC_PASSWORD"
+DEFAULT_CONFIG_COUNTERWALLETD = "[Default]\nbackend-rpc-connect=localhost\nbackend-rpc-port=8332\nbackend-rpc-user=rpc\nbackend-rpc-password=rpcpw1234\ncounterpartyd-rpc-host=localhost\ncounterpartyd-rpc-port=4000\ncounterpartyd-rpc-user=rpc\ncounterpartyd-rpc-password=xcppw1234\nrpc-host=0.0.0.0\nsocketio-host=0.0.0.0\nsocketio-chat-host=0.0.0.0\nredis-enable-apicache=0"
+DEFAULT_CONFIG_COUNTERWALLETD_TESTNET = "[Default]\nbackend-rpc-connect=localhost\nbackend-rpc-port=18332\nbackend-rpc-user=rpc\nbackend-rpc-password=1234\ncounterpartyd-rpc-host=localhost\ncounterpartyd-rpc-port=14000\ncounterpartyd-rpc-user=rpc\ncounterpartyd-rpc-password=xcppw1234\nrpc-host=0.0.0.0\nsocketio-host=0.0.0.0\nsocketio-chat-host=0.0.0.0\nredis-enable-apicache=0\ntestnet=1"
+DEFAULT_CONFIG_INSTALLER_COUNTERWALLETD = "[Default]\nbackend-rpc-connect=localhost\nbackend-rpc-port=8332\nbackend-rpc-user=rpc\nbackend-rpc-password=1234\ncounterpartyd-rpc-host=RPC_HOST\ncounterpartyd-rpc-port=RPC_PORT\ncounterpartyd-rpc-user=RPC_USER\ncounterpartyd-rpc-password=RPC_PASSWORD"
 
 def which(filename):
     """docstring for which"""

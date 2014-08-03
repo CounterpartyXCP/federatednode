@@ -320,20 +320,11 @@ option if there were updates to the ``counterpartyd_build`` system files for the
 Counterwallet-Specific
 -----------------------
 
-Counterwallet Multi-Server Setups
+Counterwallet Configuration File
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Counterwallet should work out-of-the-box in a scenario where you have a single Counterblock Federated Node that both hosts the
-static site content, as well as the backend Counterblock API services. You will need to read and follow this section if any of the
-following apply to your situation:
-
-- You have more than one server hosting the content (i.e. javascript, html, css resources) and API services (backend ``counterblockd``, etc)
-- Or, you have a different set of hosts hosting API services than those hosting the static site content
-- Or, you are hosting the static site content on a CDN
-
-In these situations, you need to create a small file called ``servers.json`` in the ``counterblock/`` directory.
-This file will contain a valid JSON-formatted object, containing an array of all of your backend servers, as well as
-a number of other site specific configuration properties. For example::
+Counterwallet can be configured via creating a small file called ``counterwallet.conf.json`` in the ``counterwallet/`` directory.
+This file will contain a valid JSON-formatted object, containing an a number of possible configuration properties. For example::
 
     { 
       "servers": [ "https://counterblock1.mydomain.com", "https://counterblock2.mydomain.com", "https://counterblock3.mydomain.com" ],
@@ -341,21 +332,42 @@ a number of other site specific configuration properties. For example::
       "googleAnalyticsUA": "UA-48454783-2",
       "googleAnalyticsUA-testnet": "UA-48454783-4",
       "rollbarAccessToken": "39d23b5a512f4169c98fc922f0d1b121",
-      "disabledFeatures": ["rps", "betting"]
+      "disabledFeatures": ["rps", "betting"],
+      "restrictedAreas": {
+        "pages/betting.html": ["US"],
+        "pages/openbets.html": ["US"],
+        "pages/matchedbets.html": ["US"],
+        "pages/rps.html": ["US"],
+        "dividend": ["US"]
+      },
+      "autoBTCEscrowServer": "btcescrow.counterwallet.co"
     }
-  
 
 Here's a description of the possible fields:
 
-* **servers**: As in the example above, each of the hosts in ``servers`` must have a "http://" or "https://" prefix (we strongly recommend using HTTPS),
-and the strings must *not* end in a slash (just leave it off). The other properties are optional, and can be set if you
-make use of these services.
+**Required fields:**
+
+* **servers**: Counterwallet should work out-of-the-box in a scenario where you have a single Counterblock Federated Node that both hosts the
+static site content, as well as the backend Counterblock API services. However, Counterwallet can also be set up to work
+in MultiAPI mode, where it can query more than one server (to allow for both redundancy and load balancing). To do this,
+set this ``servers`` parameter as a list of multiple server URIs. Each URI must have a "http://" or "https://" prefix
+(we strongly recommend using HTTPS), and the strings must *not* end in a slash (just leave it off).
+
+*If you just want to use the current server (and don't have a multi-server setup), just specify this as ``[]`` (empty list).*
+
+**Optional fields:**
+
 * **forceTestnet**: Set to true to always use testnet (not requiring 'testnet' in the FQDN, or the '?testnet=1' parameter in the URL.
 * **googleAnalyticsUA** / **googleAnalyticsUA-testnet**: Set to enable google analytics for mainnet/testnet. You must have a google analytics account.
 * **rollbarAccessToken**: Set to enable client-side error tracking via rollbar.com. Must have a rollbar account.
 * **disabledFeatures**: Set to a list of zero or more features to disable in the UI. Possible features are:
   ``betting``, ``rps``, ``dividend``, ``exchange``, ``leaderboard``, ``portfolio``, ``stats`` and ``history``. Normally
   this can just be ``[]`` (an empty list) to not disable anything.
+* **restrictedAreas**: Set to an object containing a specific page path as the key (or "dividend" for dividend functionality),
+  and a list of one or more ISO 2-letter country codes as the key value, to allow for country-level blacklisting of pages/features.
+* **autoBTCEscrowServer**: The hostname to use for automatic BTC escrow services (where an external server will hold the BTC
+  related to open orders selling BTC and make BTCpays from it automatically). If not specified, or left blank, then
+  automatic BTC escrows will be disabled.
 
 Once done, save this file and make sure it exists on all servers you are hosting Counterwallet static content on. Now, when you go
 to your Counterwallet site, the server will read in this file immediately after loading the page, and set the list of

@@ -71,16 +71,19 @@ def modify_config(param_re, content_to_add, filenames, replace_if_exists=True, d
         f.write(content)
         f.close()
 
-def modify_cp_config(param_re, content_to_add, testnet=True, replace_if_exists=True, config='counterpartyd'):
+def modify_cp_config(param_re, content_to_add, replace_if_exists=True, config='counterpartyd', net='both'):
     assert config in ('counterpartyd', 'counterblockd', 'both')
+    assert net in ('mainnet', 'testnet', 'both')
     cfg_filenames = []
     if config in ('counterpartyd', 'both'):
-        cfg_filenames.append(os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterpartyd", "counterpartyd.conf"))
-        if testnet:
+        if net in ('mainnet', 'both'):
+            cfg_filenames.append(os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterpartyd", "counterpartyd.conf"))
+        if net in ('testnet', 'both'):
             cfg_filenames.append(os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterpartyd-testnet", "counterpartyd.conf"))
     if config in ('counterblockd', 'both'):
-        cfg_filenames.append(os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterblockd", "counterblockd.conf"))
-        if testnet:
+        if net in ('mainnet', 'both'):
+            cfg_filenames.append(os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterblockd", "counterblockd.conf"))
+        if net in ('testnet', 'both'):
             cfg_filenames.append(os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterblockd-testnet", "counterblockd.conf"))
         
     modify_config(param_re, content_to_add, cfg_filenames, replace_if_exists=replace_if_exists)
@@ -240,12 +243,13 @@ def do_bitcoind_setup(run_as_user, branch, base_path, dist_path, run_mode):
     bitcoind_rpc_password_testnet = pass_generator()
     
     #Install bitcoind
-    runcmd("rm -rf /tmp/bitcoind.tar.gz /tmp/bitcoin-0.9.2.1-linux")
-    runcmd("wget -O /tmp/bitcoind.tar.gz https://bitcoin.org/bin/0.9.2.1/bitcoin-0.9.2.1-linux.tar.gz")
+    BITCOIND_VER = "0.9.2.1"
+    runcmd("rm -rf /tmp/bitcoind.tar.gz /tmp/bitcoin-%s-linux" % BITCOIND_VER)
+    runcmd("wget -O /tmp/bitcoind.tar.gz https://bitcoin.org/bin/%s/bitcoin-%s-linux.tar.gz" % (BITCOIND_VER, BITCOIND_VER))
     runcmd("tar -C /tmp -zxvf /tmp/bitcoind.tar.gz")
-    runcmd("cp -af /tmp/bitcoin-0.9.2.1-linux/bin/64/bitcoind /usr/bin")
-    runcmd("cp -af /tmp/bitcoin-0.9.2.1-linux/bin/64/bitcoin-cli /usr/bin")
-    runcmd("rm -rf /tmp/bitcoind.tar.gz /tmp/bitcoin-0.9.2.1-linux")
+    runcmd("cp -af /tmp/bitcoin-%s-linux/bin/64/bitcoind /usr/bin" % BITCOIND_VER)
+    runcmd("cp -af /tmp/bitcoin-%s-linux/bin/64/bitcoin-cli /usr/bin" % BITCOIND_VER)
+    runcmd("rm -rf /tmp/bitcoind.tar.gz /tmp/bitcoin-%s-linux" % BITCOIND_VER)
 
     #Do basic inital bitcoin config (for both testnet and mainnet)
     runcmd("mkdir -p ~%s/.bitcoin ~%s/.bitcoin-testnet" % (USERNAME, USERNAME))
@@ -291,11 +295,11 @@ def do_bitcoind_setup(run_as_user, branch, base_path, dist_path, run_mode):
     return bitcoind_rpc_password, bitcoind_rpc_password_testnet
 
 def do_counterparty_setup(role, run_as_user, branch, base_path, dist_path, run_mode, bitcoind_rpc_password,
-bitcoind_rpc_password_testnet, counterpartyd_public):
+bitcoind_rpc_password_testnet, counterpartyd_public, counterwallet_support_email):
     """Installs and configures counterpartyd and counterblockd"""
     user_homedir = os.path.expanduser("~" + USERNAME)
-    counterpartyd_rpc_password = pass_generator()
-    counterpartyd_rpc_password_testnet = pass_generator()
+    counterpartyd_rpc_password = '1234' if role == 'counterpartyd_only' and counterpartyd_public == 'y' else pass_generator()
+    counterpartyd_rpc_password_testnet = '1234' if role == 'counterpartyd_only' and counterpartyd_public == 'y' else pass_generator()
     
     #Run setup.py (as the XCP user, who runs it sudoed) to install and set up counterpartyd, counterblockd
     # as -y is specified, this will auto install counterblockd full node (mongo and redis) as well as setting
@@ -317,16 +321,16 @@ bitcoind_rpc_password_testnet, counterpartyd_public):
         USERNAME, DAEMON_USERNAME))
 
     #modify the default stored bitcoind passwords in counterpartyd.conf
-    runcmd(r"""sed -ri "s/^bitcoind\-rpc\-password=.*?$/bitcoind-rpc-password=%s/g" ~%s/.config/counterpartyd/counterpartyd.conf""" % (
-        bitcoind_rpc_password, USERNAME))
-    runcmd(r"""sed -ri "s/^bitcoind\-rpc\-password=.*?$/bitcoind-rpc-password=%s/g" ~%s/.config/counterpartyd-testnet/counterpartyd.conf""" % (
-        bitcoind_rpc_password_testnet, USERNAME))
-    
+    modify_cp_config(r'^(backend|bitcoind)\-rpc\-password=.*?$',
+        'backend-rpc-password=%s' % bitcoind_rpc_password, config='counterpartyd', net='mainnet')
+    modify_cp_config(r'^(backend|bitcoind)\-rpc\-password=.*?$',
+        'backend-rpc-password=%s' % bitcoind_rpc_password_testnet, config='counterpartyd', net='testnet')
+
     #modify the counterpartyd API rpc password in counterpartyd.conf
-    runcmd(r"""sed -ri "s/^rpc\-password=.*?$/rpc-password=%s/g" ~%s/.config/counterpartyd/counterpartyd.conf""" % (
-        '1234' if role == 'counterpartyd_only' and counterpartyd_public == 'y' else counterpartyd_rpc_password, USERNAME))
-    runcmd(r"""sed -ri "s/^rpc\-password=.*?$/rpc-password=%s/g" ~%s/.config/counterpartyd-testnet/counterpartyd.conf""" % (
-        '1234' if role == 'counterpartyd_only' and counterpartyd_public == 'y' else counterpartyd_rpc_password_testnet, USERNAME))
+    modify_cp_config(r'^rpc\-password=.*?$', 'rpc-password=%s' % counterpartyd_rpc_password,
+        config='counterpartyd', net='mainnet')
+    modify_cp_config(r'^rpc\-password=.*?$', 'rpc-password=%s' % counterpartyd_rpc_password_testnet,
+        config='counterpartyd', net='testnet')
 
     if role == 'counterpartyd_only' and counterpartyd_public == 'y':
         modify_cp_config(r'^rpc\-host=.*?$', 'rpc-host=0.0.0.0', config='counterpartyd')
@@ -350,16 +354,25 @@ bitcoind_rpc_password_testnet, counterpartyd_public):
             USERNAME, DAEMON_USERNAME))
         
         #modify the default stored bitcoind passwords in counterblockd.conf
-        runcmd(r"""sed -ri "s/^bitcoind\-rpc\-password=.*?$/bitcoind-rpc-password=%s/g" ~%s/.config/counterblockd/counterblockd.conf""" % (
-            bitcoind_rpc_password, USERNAME))
-        runcmd(r"""sed -ri "s/^bitcoind\-rpc\-password=.*?$/bitcoind-rpc-password=%s/g" ~%s/.config/counterblockd-testnet/counterblockd.conf""" % (
-            bitcoind_rpc_password_testnet, USERNAME))
+        modify_cp_config(r'^(backend|bitcoind)\-rpc\-password=.*?$',
+            'backend-rpc-password=%s' % bitcoind_rpc_password, config='counterblockd', net='mainnet')
+        modify_cp_config(r'^(backend|bitcoind)\-rpc\-password=.*?$',
+            'backend-rpc-password=%s' % bitcoind_rpc_password_testnet, config='counterblockd', net='testnet')
     
         #modify the counterpartyd API rpc password in counterblockd.conf
-        runcmd(r"""sed -ri "s/^counterpartyd\-rpc\-password=.*?$/counterpartyd-rpc-password=%s/g" ~%s/.config/counterblockd/counterblockd.conf""" % (
-            counterpartyd_rpc_password, USERNAME))
-        runcmd(r"""sed -ri "s/^counterpartyd\-rpc\-password=.*?$/counterpartyd-rpc-password=%s/g" ~%s/.config/counterblockd-testnet/counterblockd.conf""" % (
-            counterpartyd_rpc_password_testnet, USERNAME))
+        modify_cp_config(r'^counterpartyd\-rpc\-password=.*?$',
+            'counterpartyd-rpc-password=%s' % counterpartyd_rpc_password, config='counterblockd', net='mainnet')
+        modify_cp_config(r'^counterpartyd\-rpc\-password=.*?$',
+            'counterpartyd-rpc-password=%s' % counterpartyd_rpc_password_testnet, config='counterblockd', net='testnet')
+        
+        #role-specific counterblockd.conf values
+        modify_cp_config(r'^auto\-btc\-escrow\-enable=.*?$', 'auto-btc-escrow-enable=%s' %
+            '1' if role == 'btcpayescrow' else '0', config='counterblockd')
+        modify_cp_config(r'^armory\-utxsvr\-enable=.*?$', 'armory-utxsvr-enable=%s' % 
+            '1' if role == 'counterwallet' else '0', config='counterblockd')
+        if role == 'counterwallet':
+            modify_cp_config(r'^support\-email=.*?$', 'support-email=%s' % counterwallet_support_email,
+                config='counterblockd') #may be blank string
 
         #disable upstart scripts from autostarting on system boot if necessary
         if run_mode == 't': #disable mainnet daemons from autostarting
@@ -510,7 +523,7 @@ etc usr var''' % (OPENRESTY_VER, OPENRESTY_VER))
     runcmd("rm -rf /tmp/openresty /tmp/ngx_openresty-* /tmp/nginx-openresty.tar.gz /tmp/nginx-openresty*.deb")
     runcmd("update-rc.d nginx defaults")
 
-def do_armory_utxsvr_setup(run_as_user, base_path, dist_path, run_mode, run_armory_utxsvr):
+def do_armory_utxsvr_setup(run_as_user, base_path, dist_path, run_mode, enable=True):
     user_homedir = os.path.expanduser("~" + USERNAME)
     
     runcmd("apt-get -y install xvfb python-qt4 python-twisted python-psutil xdg-utils")
@@ -533,7 +546,7 @@ def do_armory_utxsvr_setup(run_as_user, base_path, dist_path, run_mode, run_armo
     runcmd("chmod +x /usr/local/bin/armory_utxsvr")
 
     #Set up upstart scripts (will be disabled later from autostarting on system startup if necessary)
-    if run_armory_utxsvr:
+    if enable:
         runcmd("rm -f /etc/init/armory_utxsvr.conf /etc/init/armory_utxsvr-testnet.conf")
         runcmd("cp -af %s/linux/init/armory_utxsvr.conf.template /etc/init/armory_utxsvr.conf" % dist_path)
         runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/armory_utxsvr.conf" % DAEMON_USERNAME)
@@ -541,10 +554,8 @@ def do_armory_utxsvr_setup(run_as_user, base_path, dist_path, run_mode, run_armo
         runcmd("cp -af %s/linux/init/armory_utxsvr-testnet.conf.template /etc/init/armory_utxsvr-testnet.conf" % dist_path)
         runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/armory_utxsvr-testnet.conf" % DAEMON_USERNAME)
         runcmd("sed -ri \"s/\!USER_HOMEDIR\!/%s/g\" /etc/init/armory_utxsvr-testnet.conf" % user_homedir.replace('/', '\/'))
-        modify_cp_config(r'^armory\-utxsvr\-enable=.*?$', 'armory-utxsvr-enable=1', config='counterblockd')
     else: #disable
         runcmd("rm -f /etc/init/armory_utxsvr.conf /etc/init/armory_utxsvr-testnet.conf")
-        modify_cp_config(r'^armory\-utxsvr\-enable=.*?$', 'armory-utxsvr-enable=0', config='counterblockd')
 
     #disable upstart scripts from autostarting on system boot if necessary
     if run_mode == 't': #disable mainnet daemons from autostarting
@@ -588,12 +599,8 @@ def do_newrelic_setup(run_as_user, base_path, dist_path, run_mode):
             nr_license_key = nr_license_key.strip()
             if not nr_license_key:
                 return #skipping new relic
-            nr_license_key_confirm = input("You entererd '%s', is that right? (Y/n): " % nr_license_key)
-            nr_license_key_confirm = nr_license_key_confirm.lower()
-            if nr_license_key_confirm not in ('y', 'n', ''):
-                logging.error("Please enter 'y' or 'n'")
-            else:
-                if nr_license_key_confirm in ['', 'y']: break
+            nr_license_key_confirm = ask_question("You entererd '%s', is that right? (Y/n): " % nr_license_key, ('y', 'n'), 'y') 
+            if nr_license_key_confirm == 'y': break
         open(NR_PREFS_LICENSE_KEY_PATH, 'w').write(nr_license_key)
     assert nr_license_key
     logging.info("NewRelic license key: %s" % nr_license_key)
@@ -606,12 +613,8 @@ def do_newrelic_setup(run_as_user, base_path, dist_path, run_mode):
         while True:
             nr_hostname = input("Enter newrelic hostname/app prefix (e.g. 'cw01'): ") #gather app prefix
             nr_hostname = nr_hostname.strip()
-            nr_hostname_confirm = input("You entererd '%s', is that right? (Y/n): " % nr_hostname)
-            nr_hostname_confirm = nr_hostname_confirm.lower()
-            if nr_hostname_confirm not in ('y', 'n', ''):
-                logging.error("Please enter 'y' or 'n'")
-            else:
-                if nr_hostname_confirm in ['', 'y']: break
+            nr_hostname_confirm = ask_question("You entererd '%s', is that right? (Y/n): " % nr_hostname, ('y', 'n'), 'y')
+            if nr_hostname_confirm == 'y': break
         open(NR_PREFS_HOSTNAME_PATH, 'w').write(nr_hostname)
     assert nr_hostname
     logging.info("NewRelic hostname/app prefix: %s" % nr_hostname)
@@ -703,20 +706,26 @@ def command_services(command, prompt=False):
         return True
 
 def gather_build_questions():
-    role = ask_question("Build (C)ounterwallet server, (v)ending machine, (b)lockexplorer server or c(o)unterpartyd-only? (C/v/b/o)",
-        ('c', 'v', 'b', 'o'), 'c')
-    if role == 'c':
+    role = ask_question("Enter the number for the role you want to build:\n"
+            + "\t1: Counterwallet server\n\t2: Vending machine\n\t3: Blockexplorer server\n"
+            + "\t4: counterpartyd-only\n\t5: BTCPay Escrow Server\n"
+            + "Your choice",
+        ('1', '2', '3', '4', '5'), '1')
+    if role == '1':
         role = 'counterwallet'
         role_desc = "Counterwallet server"
-    elif role == 'v':
+    elif role == '2':
         role = 'vendingmachine'
         role_desc = "Vending machine/gateway"
-    elif role == 'b':
+    elif role == '3':
         role = 'blockexplorer'
         role_desc = "Block explorer server"
-    elif role == 'o':
+    elif role == '4':
         role = 'counterpartyd_only'
         role_desc = "Counterpartyd server"
+    elif role == '5':
+        role = 'btcpayescrow'
+        role_desc = "BTCPay escrow server"
     print("\tBuilding a %s" % role_desc)
     
     if role in ('vendingmachine', 'blockexplorer'):
@@ -733,17 +742,24 @@ def gather_build_questions():
     blockchain_service = ask_question("Blockchain services, use (B)lockr.io (remote) or (i)nsight (local)? (B/i)", ('b', 'i'), 'b')
     print("\tUsing %s" % ('blockr.io' if blockchain_service == 'b' else 'insight'))
     
-    run_armory_utxsvr = None
-    if role == 'counterwallet':
-        run_armory_utxsvr = ask_question("Run armory_utxsvr for allowing offline armory tx creation in counterwallet? (Y/n)", ('y', 'n'), 'y')
-
     counterpartyd_public = None
     if role == 'counterpartyd_only':
         counterpartyd_public = ask_question("Enable public Counterpartyd setup (listen on all hosts w/ rpc/1234 user) (Y/n)", ('y', 'n'), 'y')
 
+    counterwallet_support_email = None
+    if role == 'counterwallet':
+        counterwallet_support_email = ask_question("Email address where support cases should go (blank to disable):", ('y', 'n'), 'y')
+        while True:
+            counterwallet_support_email = input("Email address where support cases should go (blank to disable): ")
+            counterwallet_support_email = counterwallet_support_email.strip()
+            if counterwallet_support_email:
+                counterwallet_support_email_confirm = ask_question(
+                    "You entererd '%s', is that right? (Y/n): " % counterwallet_support_email, ('y', 'n'), 'y') 
+            if counterwallet_support_email_confirm == 'y': break
+
     security_hardening = ask_question("Set up security hardening? (Y/n)", ('y', 'n'), 'y')
 
-    return (role, branch, run_mode, blockchain_service, run_armory_utxsvr, security_hardening, counterpartyd_public)
+    return (role, branch, run_mode, blockchain_service, security_hardening, counterpartyd_public, counterwallet_support_email)
 
 def main():
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s|%(levelname)s: %(message)s')
@@ -796,8 +812,8 @@ def main():
         sys.exit(0) #all done
 
     #If here, a) federated node has not been set up yet or b) the user wants a rebuild
-    (role, branch, run_mode, blockchain_service, run_armory_utxsvr, security_hardening,
-        counterpartyd_public) = gather_build_questions()
+    (role, branch, run_mode, blockchain_service, security_hardening, counterpartyd_public, counterwallet_support_email
+    ) = gather_build_questions()
     
     command_services("stop")
 
@@ -807,15 +823,15 @@ def main():
         = do_bitcoind_setup(run_as_user, branch, base_path, dist_path, run_mode)
     
     do_counterparty_setup(role, run_as_user, branch, base_path, dist_path, run_mode,
-        bitcoind_rpc_password, bitcoind_rpc_password_testnet, counterpartyd_public)
+        bitcoind_rpc_password, bitcoind_rpc_password_testnet, counterpartyd_public, counterwallet_support_email)
     
     do_blockchain_service_setup(run_as_user, base_path, dist_path, run_mode, blockchain_service)
     
     if role != "counterpartyd_only":
         do_nginx_setup(run_as_user, base_path, dist_path)
     
+    do_armory_utxsvr_setup(run_as_user, base_path, dist_path, run_mode, enable=role=='counterwallet')
     if role == 'counterwallet':
-        do_armory_utxsvr_setup(run_as_user, base_path, dist_path, run_mode, run_armory_utxsvr)
         do_counterwallet_setup(run_as_user, branch)
 
     do_newrelic_setup(run_as_user, base_path, dist_path, run_mode) #optional
