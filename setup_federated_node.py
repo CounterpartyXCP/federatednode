@@ -528,7 +528,7 @@ def do_armory_utxsvr_setup(run_as_user, base_path, dist_path, run_mode, enable=T
     
     runcmd("apt-get -y install xvfb python-qt4 python-twisted python-psutil xdg-utils")
     runcmd("rm -f /tmp/armory.deb")
-    runcmd("wget -O /tmp/armory.deb https://s3.amazonaws.com/bitcoinarmory-releases/armory_0.91.99.8-beta_ubuntu-64bit.deb")
+    runcmd("wget -O /tmp/armory.deb https://s3.amazonaws.com/bitcoinarmory-releases/armory_0.92.1_ubuntu-64bit.deb")
     runcmd("mkdir -p /usr/share/desktop-directories/") #bug fix (see http://askubuntu.com/a/406015)
     runcmd("dpkg -i /tmp/armory.deb")
     runcmd("rm -f /tmp/armory.deb")
