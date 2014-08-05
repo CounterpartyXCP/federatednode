@@ -327,7 +327,7 @@ Counterwallet can be configured via creating a small file called ``counterwallet
 This file will contain a valid JSON-formatted object, containing an a number of possible configuration properties. For example::
 
     { 
-      "servers": [ "https://counterblock1.mydomain.com", "https://counterblock2.mydomain.com", "https://counterblock3.mydomain.com" ],
+      "servers": [ "counterblock1.mydomain.com", "counterblock2.mydomain.com", "counterblock3.mydomain.com" ],
       "forceTestnet": true,
       "googleAnalyticsUA": "UA-48454783-2",
       "googleAnalyticsUA-testnet": "UA-48454783-4",
@@ -350,8 +350,9 @@ Here's a description of the possible fields:
 * **servers**: Counterwallet should work out-of-the-box in a scenario where you have a single Counterblock Federated Node that both hosts the
 static site content, as well as the backend Counterblock API services. However, Counterwallet can also be set up to work
 in MultiAPI mode, where it can query more than one server (to allow for both redundancy and load balancing). To do this,
-set this ``servers`` parameter as a list of multiple server URIs. Each URI must have a "http://" or "https://" prefix
-(we strongly recommend using HTTPS), and the strings must *not* end in a slash (just leave it off).
+set this ``servers`` parameter as a list of multiple server URIs. Each URI can have a ``http://`` or ``https://`` prefix
+(we strongly recommend using HTTPS), and the strings must *not* end in a slash (just leave it off). If the server hostname
+does not start with ``http://`` or ``https://``, then ``https://`` is assumed.
 
 *If you just want to use the current server (and don't have a multi-server setup), just specify this as ``[]`` (empty list).*
 
