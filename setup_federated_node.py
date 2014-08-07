@@ -18,6 +18,7 @@ import socket
 import urllib
 import zipfile
 import platform
+import collections
 import tempfile
 import subprocess
 import stat
@@ -37,9 +38,6 @@ REPO_COUNTERWALLET = "https://github.com/CounterpartyXCP/counterwallet.git"
 
 def pass_generator(size=14, chars=string.ascii_uppercase + string.ascii_lowercase + string.digits):
     return ''.join(random.choice(chars) for x in range(size))
-
-def usage():
-    print("SYNTAX: %s [-h]" % sys.argv[0])
 
 def runcmd(command, abort_on_failure=True):
     logging.debug("RUNNING COMMAND: %s" % command)
@@ -705,72 +703,104 @@ def command_services(command, prompt=False):
             runcmd("service armory_utxsvr-testnet %s" % command, abort_on_failure=False)
         return True
 
-def gather_build_questions():
-    role = ask_question("Enter the number for the role you want to build:\n"
-            + "\t1: Counterwallet server\n\t2: Vending machine\n\t3: Blockexplorer server\n"
-            + "\t4: counterpartyd-only\n\t5: BTCPay Escrow Server\n"
-            + "Your choice",
-        ('1', '2', '3', '4', '5'), '1')
-    if role == '1':
-        role = 'counterwallet'
-        role_desc = "Counterwallet server"
-    elif role == '2':
-        role = 'vendingmachine'
-        role_desc = "Vending machine/gateway"
-    elif role == '3':
-        role = 'blockexplorer'
-        role_desc = "Block explorer server"
-    elif role == '4':
-        role = 'counterpartyd_only'
-        role_desc = "Counterpartyd server"
-    elif role == '5':
-        role = 'btcpayescrow'
-        role_desc = "BTCPay escrow server"
-    print("\tBuilding a %s" % role_desc)
-    
-    if role in ('vendingmachine', 'blockexplorer'):
+QUESTION_FLAGS = collections.OrderedDict({
+    "op": ('u', 'r'),
+    "role": ('counterwallet', 'vendingmachine', 'blockexplorer', 'counterpartyd_only', 'btcpayescrow'),
+    "branch": ('master', 'develop'),
+    "run_mode": ('t', 'm', 'b'),
+    "blockchain_service": ('b', 'i'),
+    "security_hardening": ('y', 'n'),
+    "counterpartyd_public": ('y', 'n'),
+    "counterwallet_support_email": None
+})
+
+def gather_build_questions(answered_questions):
+    if 'role' not in answered_questions:
+        role = ask_question("Enter the number for the role you want to build:\n"
+                + "\t1: Counterwallet server\n\t2: Vending machine\n\t3: Blockexplorer server\n"
+                + "\t4: counterpartyd-only\n\t5: BTCPay Escrow Server\n"
+                + "Your choice",
+            ('1', '2', '3', '4', '5'), '1')
+        if role == '1':
+            role = 'counterwallet'
+            role_desc = "Counterwallet server"
+        elif role == '2':
+            role = 'vendingmachine'
+            role_desc = "Vending machine/gateway"
+        elif role == '3':
+            role = 'blockexplorer'
+            role_desc = "Block explorer server"
+        elif role == '4':
+            role = 'counterpartyd_only'
+            role_desc = "Counterpartyd server"
+        elif role == '5':
+            role = 'btcpayescrow'
+            role_desc = "BTCPay escrow server"
+        print("\tBuilding a %s" % role_desc)
+        answered_questions['role'] = role
+    assert answered_questions['role'] in QUESTION_FLAGS['role']
+    if answered_questions['role'] in ('vendingmachine', 'blockexplorer'):
         raise NotImplementedError("This role not implemented yet...")
 
-    branch = ask_question("Build from branch (M)aster or (d)evelop? (M/d)", ('m', 'd'), 'm')
-    if branch == 'm': branch = 'master'
-    elif branch == 'd': branch = 'develop'
-    print("\tWorking with branch: %s" % branch)
+    if 'branch' not in answered_questions:
+        branch = ask_question("Build from branch (M)aster or (d)evelop? (M/d)", ('m', 'd'), 'm')
+        if branch == 'm': branch = 'master'
+        elif branch == 'd': branch = 'develop'
+        print("\tWorking with branch: %s" % branch)
+        answered_questions['branch'] = branch
+    assert answered_questions['branch'] in QUESTION_FLAGS['branch']
 
-    run_mode = ask_question("Run as (t)estnet node, (m)ainnet node, or (B)oth? (t/m/B)", ('t', 'm', 'b'), 'b')
-    print("\tSetting up to run on %s" % ('testnet' if run_mode.lower() == 't' else ('mainnet' if run_mode.lower() == 'm' else 'testnet and mainnet')))
+    if 'run_mode' not in answered_questions:
+        answered_questions['run_mode'] = ask_question("Run as (t)estnet node, (m)ainnet node, or (B)oth? (t/m/B)", ('t', 'm', 'b'), 'b')
+        print("\tSetting up to run on %s" % ('testnet' if answered_questions['run_mode'].lower() == 't' 
+            else ('mainnet' if answered_questions['run_mode'].lower() == 'm' else 'testnet and mainnet')))
+    assert answered_questions['run_mode'] in QUESTION_FLAGS['run_mode']
 
-    blockchain_service = ask_question("Blockchain services, use (B)lockr.io (remote) or (i)nsight (local)? (B/i)", ('b', 'i'), 'b')
-    print("\tUsing %s" % ('blockr.io' if blockchain_service == 'b' else 'insight'))
+    if 'blockchain_service' not in answered_questions:
+        answered_questions['blockchain_service'] = ask_question("Blockchain services, use (B)lockr.io (remote) or (i)nsight (local)? (B/i)", ('b', 'i'), 'b')
+        print("\tUsing %s" % ('blockr.io' if answered_questions['blockchain_service'] == 'b' else 'insight'))
+    assert answered_questions['blockchain_service'] in QUESTION_FLAGS['blockchain_service']
     
-    counterpartyd_public = None
-    if role == 'counterpartyd_only':
-        counterpartyd_public = ask_question("Enable public Counterpartyd setup (listen on all hosts w/ rpc/1234 user) (Y/n)", ('y', 'n'), 'y')
+    if role == 'counterpartyd_only' and 'counterpartyd_public' not in answered_questions:
+        answered_questions['counterpartyd_public'] = ask_question(
+            "Enable public Counterpartyd setup (listen on all hosts w/ rpc/1234 user) (Y/n)", ('y', 'n'), 'y')
+    else:
+        answered_questions['counterpartyd_public'] = answered_questions.get('counterpartyd_public', 'n') #does not apply
+    assert answered_questions['counterpartyd_public'] in QUESTION_FLAGS['counterpartyd_public']
 
     counterwallet_support_email = None
-    if role == 'counterwallet':
-        counterwallet_support_email = ask_question("Email address where support cases should go (blank to disable):", ('y', 'n'), 'y')
+    if role == 'counterwallet' and 'counterwallet_support_email' not in answered_questions:
         while True:
             counterwallet_support_email = input("Email address where support cases should go (blank to disable): ")
             counterwallet_support_email = counterwallet_support_email.strip()
             if counterwallet_support_email:
                 counterwallet_support_email_confirm = ask_question(
                     "You entererd '%s', is that right? (Y/n): " % counterwallet_support_email, ('y', 'n'), 'y') 
-            if counterwallet_support_email_confirm == 'y': break
+                if counterwallet_support_email_confirm == 'y': break
+            else: break
+        answered_questions['counterwallet_support_email'] = counterwallet_support_email
+    else:
+        answered_questions['counterwallet_support_email'] = answered_questions.get('counterwallet_support_email', '') 
 
-    security_hardening = ask_question("Set up security hardening? (Y/n)", ('y', 'n'), 'y')
+    if 'security_hardening' not in answered_questions:
+        answered_questions['security_hardening'] = ask_question("Set up security hardening? (Y/n)", ('y', 'n'), 'y')
+    assert answered_questions['security_hardening'] in QUESTION_FLAGS['security_hardening']
+    return answered_questions
 
-    return (role, branch, run_mode, blockchain_service, security_hardening, counterpartyd_public, counterwallet_support_email)
+def usage():
+    print("SYNTAX: %s [-h] %s" % (sys.argv[0], ' '.join([('[-%s=%s]' % (q, '|'.join(v) if v else '')) for q, v in QUESTION_FLAGS.items()])))
 
 def main():
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s|%(levelname)s: %(message)s')
     do_prerun_checks()
     run_as_user = os.environ["SUDO_USER"]
     assert run_as_user
+    answered_questions = {}
 
     #parse any command line objects
     branch = "master"
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "h", ["help",])
+        opts, args = getopt.getopt(sys.argv[1:], "h", ["help",] + ['%s=' % q for q in QUESTION_FLAGS.keys()])
     except getopt.GetoptError as err:
         usage()
         sys.exit(2)
@@ -778,6 +808,8 @@ def main():
         if o in ("-h", "--help"):
             usage()
             sys.exit()
+        elif o in ['--%s' % q for q in QUESTION_FLAGS.keys()]: #process flags for non-interactivity
+            answered_questions[o.lstrip('-')] = a
         else:
             assert False, "Unhandled or unimplemented switch or option"
 
@@ -791,9 +823,13 @@ def main():
     except:
         pass
     else: #setup has already been run at least once
-        do_rebuild = ask_question("It appears this setup has been run already. (r)ebuild node, or just (U)pdate from git? (r/U)", ('r', 'u'), 'u')
+        if not (answered_questions.get('op', None) in QUESTION_FLAGS['op']):
+            answered_questions['op'] = ask_question(
+                "It appears this setup has been run already. (r)ebuild node, or just (U)pdate from git? (r/U)",
+                ('r', 'u'), 'u')
+            assert answered_questions['op'] in QUESTION_FLAGS['op']
 
-    if do_rebuild == 'u': #just refresh counterpartyd, counterblockd, and counterwallet, etc. from github
+    if answered_questions['op'] == 'u': #just refresh counterpartyd, counterblockd, and counterwallet, etc. from github
         if os.path.exists("/etc/init.d/iwatch"):
             runcmd("service iwatch stop", abort_on_failure=False)
         
@@ -812,32 +848,34 @@ def main():
         sys.exit(0) #all done
 
     #If here, a) federated node has not been set up yet or b) the user wants a rebuild
-    (role, branch, run_mode, blockchain_service, security_hardening, counterpartyd_public, counterwallet_support_email
-    ) = gather_build_questions()
+    answered_questions = gather_build_questions(answered_questions)
     
     command_services("stop")
 
-    do_base_setup(run_as_user, branch, base_path, dist_path)
+    do_base_setup(run_as_user, answered_questions['branch'], base_path, dist_path)
     
     bitcoind_rpc_password, bitcoind_rpc_password_testnet \
-        = do_bitcoind_setup(run_as_user, branch, base_path, dist_path, run_mode)
+        = do_bitcoind_setup(run_as_user, answered_questions['branch'], base_path, dist_path, answered_questions['run_mode'])
     
-    do_counterparty_setup(role, run_as_user, branch, base_path, dist_path, run_mode,
-        bitcoind_rpc_password, bitcoind_rpc_password_testnet, counterpartyd_public, counterwallet_support_email)
+    do_counterparty_setup(role, run_as_user, answered_questions['branch'], base_path, dist_path, answered_questions['run_mode'],
+        bitcoind_rpc_password, bitcoind_rpc_password_testnet,
+        answered_questions['counterpartyd_public'], answered_questions['counterwallet_support_email'])
     
-    do_blockchain_service_setup(run_as_user, base_path, dist_path, run_mode, blockchain_service)
+    do_blockchain_service_setup(run_as_user, base_path, dist_path,
+        answered_questions['run_mode'], answered_questions['blockchain_service'])
     
     if role != "counterpartyd_only":
         do_nginx_setup(run_as_user, base_path, dist_path)
     
-    do_armory_utxsvr_setup(run_as_user, base_path, dist_path, run_mode, enable=role=='counterwallet')
+    do_armory_utxsvr_setup(run_as_user, base_path, dist_path,
+        answered_questions['run_mode'], enable=role=='counterwallet')
     if role == 'counterwallet':
-        do_counterwallet_setup(run_as_user, branch)
+        do_counterwallet_setup(run_as_user, answered_questions['branch'])
 
-    do_newrelic_setup(run_as_user, base_path, dist_path, run_mode) #optional
+    do_newrelic_setup(run_as_user, base_path, dist_path, answered_questions['run_mode']) #optional
     
-    if security_hardening:
-        do_security_setup(run_as_user, branch, base_path, dist_path)
+    if answered_questions['security_hardening']:
+        do_security_setup(run_as_user, answered_questions['branch'], base_path, dist_path)
     
     logging.info("Counterblock Federated Node Build Complete (whew).")
     command_services("restart", prompt=True)
