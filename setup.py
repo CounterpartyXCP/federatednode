@@ -216,7 +216,7 @@ def install_dependencies(paths, with_counterblockd, assume_yes):
         runcmd("apt-get -y update")
 
         if ubuntu_release in ("14.04", "13.10"):
-            runcmd("apt-get -y install software-properties-common python-software-properties git-core wget cx-freeze \
+            runcmd("apt-get -y install runit software-properties-common python-software-properties git-core wget cx-freeze \
             python3 python3-setuptools python3-dev python3-pip build-essential python3-sphinx python-virtualenv libsqlite3-dev python3-apsw python3-zmq")
             
             if with_counterblockd:
@@ -235,7 +235,7 @@ def install_dependencies(paths, with_counterblockd, assume_yes):
                     runcmd("apt-get -y install mongodb mongodb-server redis-server")
         elif ubuntu_release == "12.04":
             #12.04 deps. 12.04 doesn't include python3-pip, so we need to use the workaround at http://stackoverflow.com/a/12262143
-            runcmd("apt-get -y install software-properties-common python-software-properties git-core wget cx-freeze \
+            runcmd("apt-get -y install runit software-properties-common python-software-properties git-core wget cx-freeze \
             python3 python3-setuptools python3-dev build-essential python3-sphinx python-virtualenv libsqlite3-dev")
 
             #install python 3.3 (required for flask)
@@ -373,25 +373,34 @@ def setup_startup(paths, run_as_user, with_counterblockd, with_testnet, assume_y
         logging.info("Setting up init scripts...")
         assert run_as_user
         user_homedir = os.path.expanduser("~" + run_as_user)
-        runcmd("rm -f /etc/init/counterpartyd.conf")
-        runcmd("cp -af %s/linux/init/counterpartyd.conf.template /etc/init/counterpartyd.conf" % paths['dist_path'])
-        runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterpartyd.conf" % run_as_user)
-        runcmd("sed -ri \"s/\!USER_HOMEDIR\!/%s/g\" /etc/init/counterpartyd.conf" % user_homedir.replace('/', '\/'))
+        #remove existing upstart scripts (if present)
+        runcmd("rm -f /etc/init/counterpartyd.conf /etc/init/counterpartyd-testnet.conf /etc/init/counterblockd.conf /etc/init/counterblockd-testnet.conf")
+        #make new startup links... (runit-based)
+        runcmd("cp -dRf --preserve=mode %s/linux/runit/counterpartyd /etc/sv/" % dist_path)
+        runcmd("cp -dRf --preserve=mode %s/linux/runit/counterpartyd-testnet /etc/sv/" % dist_path)
+        runcmd("cp -dRf --preserve=mode %s/linux/runit/counterblockd /etc/sv/" % dist_path)
+        runcmd("cp -dRf --preserve=mode %s/linux/runit/counterblockd-testnet /etc/sv/" % dist_path)
+        
+        runcmd("ln -sf /etc/sv/counterpartyd /etc/service/")
+        runcmd("sed -ri \"s/USER=xcpd/USER=%s/g\" /etc/service/counterpartyd/run" % run_as_user)
+        runcmd("sed -ri \"s/USER_HOME=\/home\/xcp/USER_HOME=%s/g\" /etc/service/counterpartyd/run" % user_homedir.replace('/', '\/'))
         if with_testnet:
-            runcmd("rm -f /etc/init/counterpartyd-testnet.conf")
-            runcmd("cp -af %s/linux/init/counterpartyd-testnet.conf.template /etc/init/counterpartyd-testnet.conf" % paths['dist_path'])
-            runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterpartyd-testnet.conf" % run_as_user)
-            runcmd("sed -ri \"s/\!USER_HOMEDIR\!/%s/g\" /etc/init/counterpartyd-testnet.conf" % user_homedir.replace('/', '\/'))
+            runcmd("ln -sf /etc/sv/counterpartyd-testnet /etc/service/")
+            runcmd("sed -ri \"s/USER=xcpd/USER=%s/g\" /etc/service/counterpartyd-testnet/run" % run_as_user)
+            runcmd("sed -ri \"s/USER_HOME=\/home\/xcp/USER_HOME=%s/g\" /etc/service/counterpartyd-testnet/run" % user_homedir.replace('/', '\/'))
         if with_counterblockd:
-            runcmd("rm -f /etc/init/counterblockd.conf")
-            runcmd("cp -af %s/linux/init/counterblockd.conf.template /etc/init/counterblockd.conf" % paths['dist_path'])
-            runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterblockd.conf" % run_as_user)
-            runcmd("sed -ri \"s/\!USER_HOMEDIR\!/%s/g\" /etc/init/counterblockd.conf" % user_homedir.replace('/', '\/'))
-            if with_testnet:
-                runcmd("rm -f /etc/init/counterblockd-testnet.conf")
-                runcmd("cp -af %s/linux/init/counterblockd-testnet.conf.template /etc/init/counterblockd-testnet.conf" % paths['dist_path'])
-                runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterblockd-testnet.conf" % run_as_user)
-                runcmd("sed -ri \"s/\!USER_HOMEDIR\!/%s/g\" /etc/init/counterblockd-testnet.conf" % user_homedir.replace('/', '\/'))
+            runcmd("ln -sf /etc/sv/counterblockd /etc/service/")
+            runcmd("sed -ri \"s/USER=xcpd/USER=%s/g\" /etc/service/counterblockd/run" % run_as_user)
+            runcmd("sed -ri \"s/USER_HOME=\/home\/xcp/USER_HOME=%s/g\" /etc/service/counterblockd/run" % user_homedir.replace('/', '\/'))
+        if with_counterblockd and with_testnet:
+            runcmd("ln -sf /etc/sv/counterblockd-testnet /etc/service/")
+            runcmd("sed -ri \"s/USER=xcpd/USER=%s/g\" /etc/service/counterblockd-testnet/run" % run_as_user)
+            runcmd("sed -ri \"s/USER_HOME=\/home\/xcp/USER_HOME=%s/g\" /etc/service/counterblockd-testnet/run" % user_homedir.replace('/', '\/'))
+            
+        if not with_testnet:
+            runcmd("rm -f /etc/service/counterpartyd-testnet /etc/service/counterblockd-testnet")
+        if not with_counterblockd:
+            runcmd("rm -f /etc/service/counterblockd /etc/service/counterblockd-testnet")
 
 def create_default_datadir_and_config(paths, run_as_user, with_counterblockd, with_testnet):
     def create_config(appname, default_config):

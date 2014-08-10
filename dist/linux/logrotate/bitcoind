@@ -1,4 +1,4 @@
-!RUN_AS_USER_HOMEDIR!/.bitcoin/debug.log !RUN_AS_USER_HOMEDIR!/.bitcoin-testnet/testnet3/debug.log {
+/home/xcp/.bitcoin/debug.log /home/xcp/.bitcoin-testnet/testnet3/debug.log {
     weekly
     sharedscripts
     postrotate
