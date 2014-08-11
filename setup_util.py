@@ -1,0 +1,164 @@
+import os
+import sys
+import re
+import logging
+import shutil
+import random
+import platform
+import string
+import subprocess
+
+__all__ = ['pass_generator', 'runcmd', 'modify_config', 'modify_cp_config', 'ask_question',
+    'git_repo_clone', 'config_runit_for_service', 'config_runit_disable_manual_control', 'which', 'rmtree']
+
+def pass_generator(size=14, chars=string.ascii_uppercase + string.ascii_lowercase + string.digits):
+    return ''.join(random.choice(chars) for x in range(size))
+
+def runcmd(command, abort_on_failure=True):
+    logging.debug("RUNNING COMMAND: %s" % command)
+    ret = os.system(command)
+    if abort_on_failure and ret != 0:
+        logging.error("Command failed: '%s'" % command)
+        sys.exit(1) 
+
+def modify_config(param_re, content_to_add, filenames, replace_if_exists=True, dotall=False, add_newline=True):
+    if not isinstance(filenames, (list, tuple)):
+        filenames = [filenames,]
+        
+    re_flags = re.MULTILINE | re.DOTALL if dotall else re.MULTILINE
+        
+    if add_newline and not content_to_add.endswith('\n'):
+        content_to_add += '\n'
+
+    for filename in filenames:
+        f = open(filename, 'r')
+        content = f.read()
+        f.close()
+        if content[-1] != '\n':
+            content += '\n'
+        if not re.search(param_re, content, re_flags): #missing; add to config 
+            content += content_to_add 
+        elif replace_if_exists: #replace in config
+            content = re.sub(param_re, content_to_add, content, flags=re_flags)
+        f = open(filename, 'w')
+        f.write(content)
+        f.close()
+
+def modify_cp_config(param_re, content_to_add, replace_if_exists=True, config='counterpartyd', net='both', for_user='xcp'):
+    assert config in ('counterpartyd', 'counterblockd', 'both')
+    assert net in ('mainnet', 'testnet', 'both')
+    cfg_filenames = []
+    if config in ('counterpartyd', 'both'):
+        if net in ('mainnet', 'both'):
+            cfg_filenames.append(os.path.join(os.path.expanduser('~'+for_user), ".config", "counterpartyd", "counterpartyd.conf"))
+        if net in ('testnet', 'both'):
+            cfg_filenames.append(os.path.join(os.path.expanduser('~'+for_user), ".config", "counterpartyd-testnet", "counterpartyd.conf"))
+    if config in ('counterblockd', 'both'):
+        if net in ('mainnet', 'both'):
+            cfg_filenames.append(os.path.join(os.path.expanduser('~'+for_user), ".config", "counterblockd", "counterblockd.conf"))
+        if net in ('testnet', 'both'):
+            cfg_filenames.append(os.path.join(os.path.expanduser('~'+for_user), ".config", "counterblockd-testnet", "counterblockd.conf"))
+        
+    modify_config(param_re, content_to_add, cfg_filenames, replace_if_exists=replace_if_exists)
+
+def ask_question(question, options, default_option):
+    assert isinstance(options, (list, tuple))
+    assert default_option in options
+    answer = None
+    while True:
+        answer = input(question + ": ")
+        answer = answer.lower()
+        if answer and answer not in options:
+            logging.error("Please enter one of: " + ', '.join(options))
+        else:
+            if answer == '': answer = default_option
+            break
+    return answer
+        
+def git_repo_clone(repo_name, repo_url, repo_dest_dir, branch="AUTO", for_user="xcp", hash=None):
+    if branch == 'AUTO':
+        try:
+            branch = subprocess.check_output("cd %s && git rev-parse --abbrev-ref HEAD"
+                % repo_dest_dir, shell=True).strip().decode('utf-8')
+        except:
+            raise Exception("Cannot get current get branch for %s." % repo_name)
+    logging.info("Checking out/updating %s:%s from git..." % (repo_name, branch))
+    
+    if os.path.exists(repo_dest_dir):
+        runcmd("cd %s && git pull origin %s" % (repo_dest_dir, branch))
+    else:
+        runcmd("git clone -b %s %s %s" % (branch, repo_url, repo_dest_dir))
+
+    if hash:
+        runcmd("cd %s && git reset --hard %s" % (repo_dest_dir, hash))
+            
+    if os.name != 'nt':
+        runcmd("cd %s && git config core.sharedRepository group && find %s -type d -print0 | xargs -0 chmod g+s" % (
+            repo_dest_dir, repo_dest_dir)) #to allow for group git actions 
+        runcmd("chown -R %s:%s %s" % (for_user, for_user, repo_dest_dir))
+        runcmd("chmod -R u+rw,g+rw,o+r,o-w %s" % (repo_dest_dir,)) #just in case
+
+def config_runit_for_service(dist_path, service_name, enabled=True, manual_control=True):
+    assert os.path.exists("%s/linux/runit/%s" % (dist_path, service_name))
+    
+    #stop old upstart service and remove old upstart init scripts (if present)
+    if os.path.exists("/etc/init/%s.conf" % service_name):
+        runcmd("service %s stop" % service_name, abort_on_failure=False)
+    runcmd("rm -f /etc/init/%s.conf /etc/init/%s.conf.override" % (service_name, service_name))
+    
+    runcmd("cp -dRf --preserve=mode %s/linux/runit/%s /etc/sv/" % (dist_path, service_name))
+
+    if manual_control:
+        runcmd("touch /etc/sv/%s/down" % service_name)
+    else:
+        runcmd("rm -f /etc/sv/%s/down" % service_name)
+    
+    if enabled:
+        runcmd("ln -sf /etc/sv/%s /etc/service/" % service_name)
+        #runcmd("sv stop %s" % service_name) #prevent service from starting automatically
+    else:
+        runcmd("rm -f /etc/service/%s" % service_name) #service will automatically be stopped within 5 seconds
+
+def config_runit_disable_manual_control(service_name):
+    runcmd("rm -f /etc/service/%s/down" % service_name)
+
+def which(filename):
+    """docstring for which"""
+    locations = os.environ.get("PATH").split(os.pathsep)
+    candidates = []
+    for location in locations:
+        candidate = os.path.join(location, filename)
+        if os.path.isfile(candidate):
+            candidates.append(candidate)
+    return candidates
+
+def rmtree(path):
+    """We use this function instead of the built-in shutil.rmtree because it unsets the windoze read-only/archive bit
+    before trying a delete (and if we don't do this, we can have problems)"""
+    
+    if os.name != 'nt':
+        return shutil.rmtree(path) #this works fine on non-windows
+
+    #this code only for windows - DO NOT USE THIS CODE ON NON-WINDOWS
+    def rmgeneric(path, __func__):
+        import win32api, win32con
+        win32api.SetFileAttributes(path, win32con.FILE_ATTRIBUTE_NORMAL)
+        
+        try:
+            __func__(path)
+            #print 'Removed ', path
+        except OSError as err:
+            logging.error("Error removing %(path)s, %(error)s" % {'path' : path, 'error': err })
+
+    if not os.path.isdir(path):
+        return
+    files=os.listdir(path)
+    for x in files:
+        fullpath=os.path.join(path, x)
+        if os.path.isfile(fullpath):
+            f=os.remove
+            rmgeneric(fullpath, f)
+        elif os.path.isdir(fullpath):
+            setup_util.rmtree(fullpath)
+            f=os.rmdir
+            rmgeneric(fullpath, f)    

@@ -1,0 +1,6 @@
+#!/bin/sh
+
+USER=xcpd
+USER_HOME=/home/xcp
+
+exec chpst -u ${USER} /usr/local/bin/counterpartyd --data-dir=${USER_HOME}/.config/counterpartyd server

@@ -1,0 +1,8 @@
+#!/bin/sh
+
+USER=xcpd
+USER_HOME=/home/xcp
+
+#sv start bitcoind || exit 1
+exec 2>&1
+exec chpst -u ${USER} /usr/local/bin/armory_utxsvr

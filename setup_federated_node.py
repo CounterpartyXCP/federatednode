@@ -21,9 +21,6 @@ import platform
 import collections
 import tempfile
 import subprocess
-import stat
-import string
-import random
 
 try: #ignore import errors on windows
     import pwd
@@ -31,10 +28,11 @@ try: #ignore import errors on windows
 except ImportError:
     pass
 
+from setup_util import *
+
 USERNAME = "xcp"
+USER_HOMEDIR = "/home/xcp"
 DAEMON_USERNAME = "xcpd"
-REPO_COUNTERPARTYD_BUILD = "https://github.com/CounterpartyXCP/counterpartyd_build.git"
-REPO_COUNTERWALLET = "https://github.com/CounterpartyXCP/counterwallet.git"
 QUESTION_FLAGS = collections.OrderedDict({
     "op": ('u', 'r'),
     "role": ('counterwallet', 'vendingmachine', 'blockexplorer', 'counterpartyd_only', 'btcpayescrow'),
@@ -46,92 +44,6 @@ QUESTION_FLAGS = collections.OrderedDict({
     "counterpartyd_public": ('y', 'n'),
     "counterwallet_support_email": None
 })
-
-def pass_generator(size=14, chars=string.ascii_uppercase + string.ascii_lowercase + string.digits):
-    return ''.join(random.choice(chars) for x in range(size))
-
-def runcmd(command, abort_on_failure=True):
-    logging.debug("RUNNING COMMAND: %s" % command)
-    ret = os.system(command)
-    if abort_on_failure and ret != 0:
-        logging.error("Command failed: '%s'" % command)
-        sys.exit(1) 
-
-def modify_config(param_re, content_to_add, filenames, replace_if_exists=True, dotall=False, add_newline=True):
-    if not isinstance(filenames, (list, tuple)):
-        filenames = [filenames,]
-        
-    re_flags = re.MULTILINE | re.DOTALL if dotall else re.MULTILINE
-        
-    if add_newline and not content_to_add.endswith('\n'):
-        content_to_add += '\n'
-
-    for filename in filenames:
-        f = open(filename, 'r')
-        content = f.read()
-        f.close()
-        if content[-1] != '\n':
-            content += '\n'
-        if not re.search(param_re, content, re_flags): #missing; add to config 
-            content += content_to_add 
-        elif replace_if_exists: #replace in config
-            content = re.sub(param_re, content_to_add, content, flags=re_flags)
-        f = open(filename, 'w')
-        f.write(content)
-        f.close()
-
-def modify_cp_config(param_re, content_to_add, replace_if_exists=True, config='counterpartyd', net='both'):
-    assert config in ('counterpartyd', 'counterblockd', 'both')
-    assert net in ('mainnet', 'testnet', 'both')
-    cfg_filenames = []
-    if config in ('counterpartyd', 'both'):
-        if net in ('mainnet', 'both'):
-            cfg_filenames.append(os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterpartyd", "counterpartyd.conf"))
-        if net in ('testnet', 'both'):
-            cfg_filenames.append(os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterpartyd-testnet", "counterpartyd.conf"))
-    if config in ('counterblockd', 'both'):
-        if net in ('mainnet', 'both'):
-            cfg_filenames.append(os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterblockd", "counterblockd.conf"))
-        if net in ('testnet', 'both'):
-            cfg_filenames.append(os.path.join(os.path.expanduser('~'+USERNAME), ".config", "counterblockd-testnet", "counterblockd.conf"))
-        
-    modify_config(param_re, content_to_add, cfg_filenames, replace_if_exists=replace_if_exists)
-
-def ask_question(question, options, default_option):
-    assert isinstance(options, (list, tuple))
-    assert default_option in options
-    answer = None
-    while True:
-        answer = input(question + ": ")
-        answer = answer.lower()
-        if answer and answer not in options:
-            logging.error("Please enter one of: " + ', '.join(options))
-        else:
-            if answer == '': answer = default_option
-            break
-    return answer
-        
-def git_repo_clone(branch, repo_dir, repo_url, run_as_user, hash=None):
-    if branch == 'AUTO':
-        try:
-            branch = subprocess.check_output("cd %s && git rev-parse --abbrev-ref HEAD" % (
-                os.path.expanduser("~%s/%s" % (USERNAME, repo_dir))), shell=True).strip().decode('utf-8')
-        except:
-            raise Exception("Cannot get current get branch for %s." % repo_dir)
-    logging.info("Checking out/updating %s:%s from git..." % (repo_dir, branch))
-    
-    if os.path.exists(os.path.expanduser("~%s/%s" % (USERNAME, repo_dir))):
-        runcmd("cd ~%s/%s && git pull origin %s" % (USERNAME, repo_dir, branch))
-    else:
-        runcmd("git clone -b %s %s ~%s/%s" % (branch, repo_url, USERNAME, repo_dir))
-
-    if hash:
-        runcmd("cd ~%s/%s && git reset --hard %s" % (USERNAME, repo_dir, hash))
-            
-    runcmd("cd ~%s/%s && git config core.sharedRepository group && find ~%s/%s -type d -print0 | xargs -0 chmod g+s" % (
-        USERNAME, repo_dir, USERNAME, repo_dir)) #to allow for group git actions 
-    runcmd("chown -R %s:%s ~%s/%s" % (USERNAME, USERNAME, USERNAME, repo_dir))
-    runcmd("chmod -R u+rw,g+rw,o+r,o-w ~%s/%s" % (USERNAME, repo_dir)) #just in case
 
 def do_prerun_checks():
     #make sure this is running on a supported OS
@@ -149,14 +61,6 @@ def do_prerun_checks():
     if os.name == "posix" and "SUDO_USER" not in os.environ:
         logging.error("Please use `sudo` to run this script.")
         sys.exit(1)
-
-def config_runit_for_service(dist_path, service_name, enabled=True):
-    assert os.path.exists("%s/linux/runit/%s" % (dist_path, service_name))
-    runcmd("cp -dRf --preserve=mode %s/linux/runit/%s /etc/sv/" % (dist_path, service_name))
-    if enabled:
-        runcmd("ln -sf /etc/sv/%s /etc/service/" % service_name)
-    else:
-        runcmd("rm -f /etc/service/%s" % service_name)
 
 def do_base_setup(run_as_user, branch, base_path, dist_path):
     """This creates the xcp and xcpd users and checks out the counterpartyd_build system from git"""
@@ -179,21 +83,20 @@ def do_base_setup(run_as_user, branch, base_path, dist_path):
         pwd.getpwnam(DAEMON_USERNAME)
     except:
         logging.info("Creating user '%s' ..." % DAEMON_USERNAME)
-        user_homedir = os.path.expanduser("~" + USERNAME)
-        runcmd("adduser --system --disabled-password --shell /bin/false --ingroup nogroup --home %s %s" % (user_homedir, DAEMON_USERNAME))
+        runcmd("adduser --system --disabled-password --shell /bin/false --ingroup nogroup --home %s %s" % (USER_HOMEDIR, DAEMON_USERNAME))
     
     #add the run_as_user to the xcp group
     runcmd("adduser %s %s" % (run_as_user, USERNAME))
     
     #Check out counterpartyd-build repo under this user's home dir and use that for the build
-    git_repo_clone(branch, "counterpartyd_build", REPO_COUNTERPARTYD_BUILD, run_as_user)
+    git_repo_clone("counterpartyd_build", "https://github.com/CounterpartyXCP/counterpartyd_build.git",
+        os.path.join(USER_HOMEDIR, "counterpartyd_build"), branch, for_user=run_as_user)
 
     #enhance fd limits for the xcpd user
     runcmd("cp -af %s/linux/other/xcpd_security_limits.conf /etc/security/limits.d/" % dist_path)
 
 def do_backend_rpc_setup(run_as_user, branch, base_path, dist_path, run_mode, backend_rpc_mode):
     """Installs and configures bitcoind"""
-    user_homedir = os.path.expanduser("~" + USERNAME)
     backend_rpc_password = pass_generator()
     backend_rpc_password_testnet = pass_generator()
 
@@ -209,13 +112,13 @@ def do_backend_rpc_setup(run_as_user, branch, base_path, dist_path, run_mode, ba
     
         #Do basic inital bitcoin config (for both testnet and mainnet)
         runcmd("mkdir -p ~%s/.bitcoin ~%s/.bitcoin-testnet" % (USERNAME, USERNAME))
-        if not os.path.exists(os.path.join(user_homedir, '.bitcoin', 'bitcoin.conf')):
+        if not os.path.exists(os.path.join(USER_HOMEDIR, '.bitcoin', 'bitcoin.conf')):
             runcmd(r"""bash -c 'echo -e "rpcuser=rpc\nrpcpassword=%s\nserver=1\ndaemon=1\ntxindex=1" > ~%s/.bitcoin/bitcoin.conf'""" % (
                 backend_rpc_password, USERNAME))
         else: #grab the existing RPC password
             backend_rpc_password = subprocess.check_output(
                 r"""bash -c "cat ~%s/.bitcoin/bitcoin.conf | sed -n 's/.*rpcpassword=\([^ \n]*\).*/\1/p'" """ % USERNAME, shell=True).strip().decode('utf-8')
-        if not os.path.exists(os.path.join(user_homedir, '.bitcoin-testnet', 'bitcoin.conf')):
+        if not os.path.exists(os.path.join(USER_HOMEDIR, '.bitcoin-testnet', 'bitcoin.conf')):
             runcmd(r"""bash -c 'echo -e "rpcuser=rpc\nrpcpassword=%s\nserver=1\ndaemon=1\ntxindex=1\ntestnet=1" > ~%s/.bitcoin-testnet/bitcoin.conf'""" % (
                 backend_rpc_password_testnet, USERNAME))
         else:
@@ -225,39 +128,35 @@ def do_backend_rpc_setup(run_as_user, branch, base_path, dist_path, run_mode, ba
 
         #remove pyrpcwallet startup scripts if present
         runcmd("rm -f /etc/service/pyrpcwallet /etc/service/pyrpcwallet-testnet")
-        #set up runit startup scripts
-        config_runit_for_service(dist_path, "bitcoind", enabled=run_mode in ['m', 'b'])
-        config_runit_for_service(dist_path, "bitcoind-testnet", enabled=run_mode in ['t', 'b'])
         #install logrotate file
         runcmd("cp -dRf --preserve=mode %s/linux/logrotate/bitcoind /etc/logrotate.d/bitcoind" % dist_path)
         #set permissions
         runcmd("chown -R %s:%s ~%s/.bitcoin ~%s/.bitcoin-testnet" % (DAEMON_USERNAME, USERNAME, USERNAME, USERNAME))
+        #set up runit startup scripts
+        config_runit_for_service(dist_path, "bitcoind", enabled=run_mode in ['m', 'b'])
+        config_runit_for_service(dist_path, "bitcoind-testnet", enabled=run_mode in ['t', 'b'])
     else:
         assert backend_rpc_mode == 'p'
         #checkout pyrpcwallet
-        git_repo_clone("master", "pyrpcwallet", "https://github.com/CounterpartyXCP/pyrpcwallet.git",
-            run_as_user, hash="bdeef54ca74ebd5990350d62b57280d970af3c04")
+        git_repo_clone("pyrpcwallet", "https://github.com/CounterpartyXCP/pyrpcwallet.git",
+            os.path.join(USER_HOMEDIR, "pyrpcwallet"), branch="master", for_user=run_as_user, hash="bdeef54ca74ebd5990350d62b57280d970af3c04")
         #remove bitcoind startup scripts if present
         runcmd("rm -f /etc/service/bitcoind /etc/service/bitcoind-testnet")
-        #set up runit startup scripts
-        config_runit_for_service(dist_path, "pyrpcwallet", enabled=run_mode in ['m', 'b'])
-        config_runit_for_service(dist_path, "pyrpcwallet-testnet", enabled=run_mode in ['t', 'b'])
         #change passwords
         modify_config(r'^RPC_PASSWORD=.*?$', 'RPC_PASSWORD=' + backend_rpc_password, '/etc/sv/pyrpcwallet/run')
         modify_config(r'^RPC_PASSWORD=.*?$', 'RPC_PASSWORD=' + backend_rpc_password_testnet, '/etc/sv/pyrpcwallet-testnet/run')
         #set permissions
         runcmd("mkdir -p ~%s/pyrpcwallet/log ~%s/pyrpcwallet/log-testnet" % (USERNAME, USERNAME))
         runcmd("chown -R %s:%s ~%s/pyrpcwallet ~%s/pyrpcwallet/log ~%s/pyrpcwallet/log-testnet" % (DAEMON_USERNAME, USERNAME, USERNAME, USERNAME, USERNAME))
-    
-    #remove old upstart init scripts (if present)
-    runcmd("rm -f /etc/init/bitcoin.conf /etc/init/bitcoin-testnet.conf /etc/init/bitcoin.conf.override /etc/init/bitcoin-testnet.conf.override")
+        #set up runit startup scripts
+        config_runit_for_service(dist_path, "pyrpcwallet", enabled=run_mode in ['m', 'b'])
+        config_runit_for_service(dist_path, "pyrpcwallet-testnet", enabled=run_mode in ['t', 'b'])
     
     return backend_rpc_password, backend_rpc_password_testnet
 
 def do_counterparty_setup(role, run_as_user, branch, base_path, dist_path, run_mode, backend_rpc_password,
 backend_rpc_password_testnet, counterpartyd_public, counterwallet_support_email):
     """Installs and configures counterpartyd and counterblockd"""
-    user_homedir = os.path.expanduser("~" + USERNAME)
     counterpartyd_rpc_password = '1234' if role == 'counterpartyd_only' and counterpartyd_public == 'y' else pass_generator()
     counterpartyd_rpc_password_testnet = '1234' if role == 'counterpartyd_only' and counterpartyd_public == 'y' else pass_generator()
     
@@ -282,18 +181,18 @@ backend_rpc_password_testnet, counterpartyd_public, counterwallet_support_email)
 
     #modify the default stored bitcoind passwords in counterpartyd.conf
     modify_cp_config(r'^(backend|bitcoind)\-rpc\-password=.*?$',
-        'backend-rpc-password=%s' % backend_rpc_password, config='counterpartyd', net='mainnet')
+        'backend-rpc-password=%s' % backend_rpc_password, config='counterpartyd', net='mainnet', for_user=USERNAME)
     modify_cp_config(r'^(backend|bitcoind)\-rpc\-password=.*?$',
-        'backend-rpc-password=%s' % backend_rpc_password_testnet, config='counterpartyd', net='testnet')
+        'backend-rpc-password=%s' % backend_rpc_password_testnet, config='counterpartyd', net='testnet', for_user=USERNAME)
 
     #modify the counterpartyd API rpc password in counterpartyd.conf
     modify_cp_config(r'^rpc\-password=.*?$', 'rpc-password=%s' % counterpartyd_rpc_password,
-        config='counterpartyd', net='mainnet')
+        config='counterpartyd', net='mainnet', for_user=USERNAME)
     modify_cp_config(r'^rpc\-password=.*?$', 'rpc-password=%s' % counterpartyd_rpc_password_testnet,
-        config='counterpartyd', net='testnet')
+        config='counterpartyd', net='testnet', for_user=USERNAME)
 
     if role == 'counterpartyd_only' and counterpartyd_public == 'y':
-        modify_cp_config(r'^rpc\-host=.*?$', 'rpc-host=0.0.0.0', config='counterpartyd')
+        modify_cp_config(r'^rpc\-host=.*?$', 'rpc-host=0.0.0.0', config='counterpartyd', for_user=USERNAME)
     
     #disable upstart scripts from autostarting on system boot if necessary
     if run_mode not in ['m', 'b']:
@@ -311,24 +210,24 @@ backend_rpc_password_testnet, counterpartyd_public, counterwallet_support_email)
         
         #modify the default stored bitcoind passwords in counterblockd.conf
         modify_cp_config(r'^(backend|bitcoind)\-rpc\-password=.*?$',
-            'backend-rpc-password=%s' % backend_rpc_password, config='counterblockd', net='mainnet')
+            'backend-rpc-password=%s' % backend_rpc_password, config='counterblockd', net='mainnet', for_user=USERNAME)
         modify_cp_config(r'^(backend|bitcoind)\-rpc\-password=.*?$',
-            'backend-rpc-password=%s' % backend_rpc_password_testnet, config='counterblockd', net='testnet')
+            'backend-rpc-password=%s' % backend_rpc_password_testnet, config='counterblockd', net='testnet', for_user=USERNAME)
     
         #modify the counterpartyd API rpc password in counterblockd.conf
         modify_cp_config(r'^counterpartyd\-rpc\-password=.*?$',
-            'counterpartyd-rpc-password=%s' % counterpartyd_rpc_password, config='counterblockd', net='mainnet')
+            'counterpartyd-rpc-password=%s' % counterpartyd_rpc_password, config='counterblockd', net='mainnet', for_user=USERNAME)
         modify_cp_config(r'^counterpartyd\-rpc\-password=.*?$',
-            'counterpartyd-rpc-password=%s' % counterpartyd_rpc_password_testnet, config='counterblockd', net='testnet')
+            'counterpartyd-rpc-password=%s' % counterpartyd_rpc_password_testnet, config='counterblockd', net='testnet', for_user=USERNAME)
         
         #role-specific counterblockd.conf values
         modify_cp_config(r'^auto\-btc\-escrow\-enable=.*?$', 'auto-btc-escrow-enable=%s' %
-            '1' if role == 'btcpayescrow' else '0', config='counterblockd')
+            '1' if role == 'btcpayescrow' else '0', config='counterblockd', for_user=USERNAME)
         modify_cp_config(r'^armory\-utxsvr\-enable=.*?$', 'armory-utxsvr-enable=%s' % 
-            '1' if role == 'counterwallet' else '0', config='counterblockd')
+            '1' if role == 'counterwallet' else '0', config='counterblockd', for_user=USERNAME)
         if role == 'counterwallet':
             modify_cp_config(r'^support\-email=.*?$', 'support-email=%s' % counterwallet_support_email,
-                config='counterblockd') #may be blank string
+                config='counterblockd', for_user=USERNAME) #may be blank string
 
         #disable upstart scripts from autostarting on system boot if necessary
         if run_mode not in ['m', 'b']:
@@ -347,7 +246,6 @@ def do_blockchain_service_setup(run_as_user, base_path, dist_path, run_mode, blo
         runcmd("apt-get update")
         runcmd("apt-get -y install nodejs") #includes npm
         
-        user_homedir = os.path.expanduser("~" + USERNAME)
         gypdir = None
         try:
             import gyp
@@ -357,15 +255,12 @@ def do_blockchain_service_setup(run_as_user, base_path, dist_path, run_mode, blo
         else:
             runcmd("mv %s %s_bkup" % (gypdir, gypdir))
             #^ fix for https://github.com/TooTallNate/node-gyp/issues/363
-        git_repo_clone("master", "insight-api", "https://github.com/bitpay/insight-api.git",
-            run_as_user, hash="c05761b98b70886d0700563628a510f89f87c03e") #insight 0.2.7
+
+        git_repo_clone("insight-api", "https://github.com/bitpay/insight-api.git",
+            os.path.join(USER_HOMEDIR, "insight-api"), branch="master", for_user=run_as_user,
+            hash="c05761b98b70886d0700563628a510f89f87c03e") #insight 0.2.7
         runcmd("rm -rf ~%s/insight-api/node-modules && cd ~%s/insight-api && npm install" % (USERNAME, USERNAME))
         
-        #remove existing init scripts (if present)
-        runcmd("rm -f /etc/init/insight.conf /etc/init/insight-testnet.conf /etc/init/insight.conf.override /etc/init/insight-testnet.conf.override")
-        #install runit scripts
-        config_runit_for_service(dist_path, "insight", enabled=run_mode in ['m', 'b'])
-        config_runit_for_service(dist_path, "insight-testnet", enabled=run_mode in ['t', 'b'])
         #install logrotate file
         runcmd("cp -af %s/linux/logrotate/insight /etc/logrotate.d/insight" % dist_path)
         #permissions, etc.
@@ -374,10 +269,13 @@ def do_blockchain_service_setup(run_as_user, base_path, dist_path, run_mode, blo
         runcmd("chown -R %s:%s ~%s/insight-api/db ~%s/insight-api/log ~%s/insight-api/log-testnet" % (
             DAEMON_USERNAME, USERNAME, USERNAME, USERNAME, USERNAME))
         #modify config
-        modify_cp_config(r'^blockchain\-service\-name=.*?$', 'blockchain-service-name=insight', config='both')
+        modify_cp_config(r'^blockchain\-service\-name=.*?$', 'blockchain-service-name=insight', config='both', for_user=USERNAME)
+        #install runit scripts
+        config_runit_for_service(dist_path, "insight", enabled=run_mode in ['m', 'b'])
+        config_runit_for_service(dist_path, "insight-testnet", enabled=run_mode in ['t', 'b'])
         
     def do_blockr_setup():
-        modify_cp_config(r'^blockchain\-service\-name=.*?$', 'blockchain-service-name=blockr', config='both')
+        modify_cp_config(r'^blockchain\-service\-name=.*?$', 'blockchain-service-name=blockr', config='both', for_user=USERNAME)
     
     if blockchain_service == 'i':
         do_insight_setup()
@@ -469,11 +367,10 @@ etc usr var''' % (OPENRESTY_VER, OPENRESTY_VER))
     runcmd("rm -f /etc/nginx/sites-enabled/*.dpkg-old /etc/nginx/sites-enabled/*.dpkg-dist")
     #clean up after ourselves
     runcmd("rm -rf /tmp/openresty /tmp/ngx_openresty-* /tmp/nginx-openresty.tar.gz /tmp/nginx-openresty*.deb")
+    #set up init
     runcmd("ln -sf /etc/sv/nginx /etc/service/")
 
 def do_armory_utxsvr_setup(run_as_user, base_path, dist_path, run_mode, enable=True):
-    user_homedir = os.path.expanduser("~" + USERNAME)
-    
     runcmd("apt-get -y install xvfb python-qt4 python-twisted python-psutil xdg-utils")
     runcmd("rm -f /tmp/armory.deb")
     runcmd("wget -O /tmp/armory.deb https://s3.amazonaws.com/bitcoinarmory-releases/armory_0.92.1_ubuntu-64bit.deb")
@@ -493,19 +390,14 @@ def do_armory_utxsvr_setup(run_as_user, base_path, dist_path, run_mode, enable=T
     f.close()
     runcmd("chmod +x /usr/local/bin/armory_utxsvr")
 
-    #remove existing init scripts (if present)
-    runcmd("rm -f /etc/init/armory_utxsvr.conf /etc/init/armory_utxsvr-testnet.conf /etc/init/armory_utxsvr.conf.override /etc/init/armory_utxsvr-testnet.conf.override")
-
     #Set up upstart scripts (will be disabled later from autostarting on system startup if necessary)
-    if enable:
-        config_runit_for_service(dist_path, "armory_utxsvr", enabled=run_mode in ['m', 'b'])
-        config_runit_for_service(dist_path, "armory_utxsvr-testnet", enabled=run_mode in ['t', 'b'])
-    else: #disable
-        runcmd("rm -f /etc/service/armory_utxsvr /etc/service/armory_utxsvr-testnet")
+    config_runit_for_service(dist_path, "armory_utxsvr", enabled=enable and run_mode in ['m', 'b'])
+    config_runit_for_service(dist_path, "armory_utxsvr-testnet", enabled=enable and run_mode in ['t', 'b'])
 
 def do_counterwallet_setup(run_as_user, branch, updateOnly=False):
     #check out counterwallet from git
-    git_repo_clone(branch, "counterwallet", REPO_COUNTERWALLET, run_as_user)
+    git_repo_clone("counterwallet", "https://github.com/CounterpartyXCP/counterwallet.git",
+        os.path.join(USER_HOMEDIR, "counterwallet"), branch, for_user=run_as_user)
     if not updateOnly:
         runcmd("npm install -g grunt-cli bower")
     runcmd("cd ~%s/counterwallet/src && bower --allow-root --config.interactive=false install" % USERNAME)
@@ -667,35 +559,54 @@ def do_security_setup(run_as_user, branch, base_path, dist_path):
     
 def command_services(command, prompt=False):
     assert command in ("stop", "restart")
+    services_to_enable = []
     
     if prompt:
         confirmation = ask_question("%s services? (y/N)" % command.capitalize(), ('y', 'n',), 'n')
         if confirmation == 'n':
             return False
     
-    #restart/shutdown services if they may be running on the box
+    logging.warn("STOPPING SERVICES" if command == 'stop' else "RESTARTING SERVICES")
+
     if os.path.exists("/etc/init.d/iwatch"):
         runcmd("sv %s iwatch" % command, abort_on_failure=False)
-    if os.path.exists("/etc/init/counterpartyd.conf"):
-        logging.warn("STOPPING SERVICES" if command == 'stop' else "RESTARTING SERVICES")
+
+    if os.path.exists("/etc/service/bitcoind"):
         runcmd("sv %s bitcoind" % command, abort_on_failure=False)
+        
+    if os.path.exists("/etc/service/bitcoind-testnet"):
         runcmd("sv %s bitcoind-testnet" % command, abort_on_failure=False)
-        
-        if os.path.exists("/etc/init/insight.conf"):
-            if command == "restart":
-                logging.info("Waiting 45 seconds before starting insight, to allow bitcoind to fully initialize...")
-                time.sleep(45)
+        services_to_enable.append("bitcoind-testnet")
+    
+    if os.path.exists("/etc/service/insight") or os.path.exists("/etc/service/insight-testnet"):
+        if command == "restart":
+            logging.info("Waiting 45 seconds before starting insight, to allow bitcoind to fully initialize...")
+            time.sleep(45)
+        if os.path.exists("/etc/service/insight"):
             runcmd("sv %s insight" % command, abort_on_failure=False)
+            services_to_enable.append("insight")
+        if os.path.exists("/etc/service/insight-testnet"):
             runcmd("sv %s insight-testnet" % command, abort_on_failure=False)
+            services_to_enable.append("insight-testnet")
+    
+    runcmd("sv %s counterpartyd" % command, abort_on_failure=False)
+    services_to_enable.append("counterpartyd")
+    runcmd("sv %s counterpartyd-testnet" % command, abort_on_failure=False)
+    services_to_enable.append("counterpartyd-testnet")
+    runcmd("sv %s counterblockd" % command, abort_on_failure=False)
+    services_to_enable.append("counterblockd")
+    runcmd("sv %s counterblockd-testnet" % command, abort_on_failure=False)
+    services_to_enable.append("counterblockd-testnet")
+    if os.path.exists("/etc/service/armory_utxsvr"):
+        runcmd("sv %s armory_utxsvr" % command, abort_on_failure=False)
+        services_to_enable.append("armory_utxsvr")
+    if os.path.exists("/etc/service/armory_utxsvr-testnet"):
+        runcmd("sv %s armory_utxsvr-testnet" % command, abort_on_failure=False)
+        services_to_enable.append("armory_utxsvr-testnet")
         
-        runcmd("sv %s counterpartyd" % command, abort_on_failure=False)
-        runcmd("sv %s counterpartyd-testnet" % command, abort_on_failure=False)
-        runcmd("sv %s counterblockd" % command, abort_on_failure=False)
-        runcmd("sv %s counterblockd-testnet" % command, abort_on_failure=False)
-        if os.path.exists("/etc/init/armory_utxsvr.conf"):
-            runcmd("sv %s armory_utxsvr" % command, abort_on_failure=False)
-            runcmd("sv %s armory_utxsvr-testnet" % command, abort_on_failure=False)
-        return True
+    if command != 'stop':
+        for s in services_to_enable: config_runit_disable_manual_control(s)
+    return True
 
 def gather_build_questions(answered_questions, docker):
     if 'role' not in answered_questions:
@@ -752,7 +663,7 @@ def gather_build_questions(answered_questions, docker):
         print("\tUsing %s" % ('blockr.io' if answered_questions['blockchain_service'] == 'b' else 'insight'))
     assert answered_questions['blockchain_service'] in QUESTION_FLAGS['blockchain_service']
     
-    if role == 'counterpartyd_only' and 'counterpartyd_public' not in answered_questions:
+    if answered_questions['role'] == 'counterpartyd_only' and 'counterpartyd_public' not in answered_questions:
         answered_questions['counterpartyd_public'] = ask_question(
             "Enable public Counterpartyd setup (listen on all hosts w/ rpc/1234 user) (Y/n)", ('y', 'n'), 'y')
     else:
@@ -760,7 +671,7 @@ def gather_build_questions(answered_questions, docker):
     assert answered_questions['counterpartyd_public'] in QUESTION_FLAGS['counterpartyd_public']
 
     counterwallet_support_email = None
-    if role == 'counterwallet' and 'counterwallet_support_email' not in answered_questions:
+    if answered_questions['role'] == 'counterwallet' and 'counterwallet_support_email' not in answered_questions:
         while True:
             counterwallet_support_email = input("Email address where support cases should go (blank to disable): ")
             counterwallet_support_email = counterwallet_support_email.strip()
@@ -854,19 +765,20 @@ def main():
         = do_backend_rpc_setup(run_as_user, answered_questions['branch'], base_path, dist_path,
             answered_questions['run_mode'], answered_questions['backend_rpc_mode'])
     
-    do_counterparty_setup(role, run_as_user, answered_questions['branch'], base_path, dist_path, answered_questions['run_mode'],
+    do_counterparty_setup(answered_questions['role'], run_as_user, answered_questions['branch'],
+        base_path, dist_path, answered_questions['run_mode'],
         backend_rpc_password, backend_rpc_password_testnet,
         answered_questions['counterpartyd_public'], answered_questions['counterwallet_support_email'])
     
     do_blockchain_service_setup(run_as_user, base_path, dist_path,
         answered_questions['run_mode'], answered_questions['blockchain_service'])
     
-    if role != "counterpartyd_only":
+    if answered_questions['role'] != "counterpartyd_only":
         do_nginx_setup(run_as_user, base_path, dist_path)
     
     do_armory_utxsvr_setup(run_as_user, base_path, dist_path,
-        answered_questions['run_mode'], enable=role=='counterwallet')
-    if role == 'counterwallet':
+        answered_questions['run_mode'], enable=answered_questions['role']=='counterwallet')
+    if answered_questions['role'] == 'counterwallet':
         do_counterwallet_setup(run_as_user, answered_questions['branch'])
 
     if not docker:
