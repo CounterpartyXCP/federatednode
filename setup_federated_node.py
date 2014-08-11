@@ -829,7 +829,7 @@ def main():
                 ('r', 'u'), 'u')
             assert answered_questions['op'] in QUESTION_FLAGS['op']
 
-    if answered_questions['op'] == 'u': #just refresh counterpartyd, counterblockd, and counterwallet, etc. from github
+    if answered_questions.get('op') == 'u': #just refresh counterpartyd, counterblockd, and counterwallet, etc. from github
         if os.path.exists("/etc/init.d/iwatch"):
             runcmd("service iwatch stop", abort_on_failure=False)
         
@@ -849,6 +849,7 @@ def main():
 
     #If here, a) federated node has not been set up yet or b) the user wants a rebuild
     answered_questions = gather_build_questions(answered_questions)
+    role = answered_questions['role']
     
     command_services("stop")
 
