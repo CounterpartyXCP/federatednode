@@ -42,7 +42,8 @@ QUESTION_FLAGS = collections.OrderedDict({
     "blockchain_service": ('b', 'i'),
     "security_hardening": ('y', 'n'),
     "counterpartyd_public": ('y', 'n'),
-    "counterwallet_support_email": None
+    "counterwallet_support_email": None,
+    "autostart_services": ('y', 'n'),
 })
 
 def do_prerun_checks():
@@ -325,7 +326,7 @@ def do_nginx_setup(run_as_user, base_path, dist_path):
     #set up the build environment
     runcmd('''cd /tmp/ngx_openresty-%s && make install DESTDIR=/tmp/openresty \
 && mkdir -p /tmp/openresty/var/lib/nginx \
-&& install -m 0755 -d -D %s/linux/runit/nginx/run /tmp/openresty/etc/sv/nginx/run \
+&& install -m 0755 -D %s/linux/runit/nginx/run /tmp/openresty/etc/sv/nginx/run \
 && install -m 0755 -D %s/linux/nginx/nginx.conf /tmp/openresty/etc/nginx/nginx.conf \
 && install -m 0755 -D %s/linux/nginx/counterblock.conf /tmp/openresty/etc/nginx/sites-enabled/counterblock.conf \
 && install -m 0755 -D %s/linux/nginx/counterblock_api.inc /tmp/openresty/etc/nginx/sites-enabled/counterblock_api.inc \
@@ -378,7 +379,7 @@ def do_armory_utxsvr_setup(run_as_user, base_path, dist_path, run_mode, enable=T
     runcmd("dpkg -i /tmp/armory.deb")
     runcmd("rm -f /tmp/armory.deb")
 
-    runcmd("mkdir -p ~%s/.armory ~%s/.armory/log ~%s/.armory/log-testnet" % USERNAME)
+    runcmd("mkdir -p ~%s/.armory ~%s/.armory/log ~%s/.armory/log-testnet" % (USERNAME, USERNAME, USERNAME))
     runcmd("chown -R %s:%s ~%s/.armory" % (DAEMON_USERNAME, USERNAME, USERNAME))
     
     runcmd("sudo ln -sf ~%s/.bitcoin-testnet/testnet3 ~%s/.bitcoin/" % (USERNAME, USERNAME))
@@ -556,10 +557,18 @@ def do_security_setup(run_as_user, branch, base_path, dist_path):
     runcmd("install -m 0644 -o root -g root -D %s/linux/other/iwatch.xml /etc/iwatch/iwatch.xml" % dist_path)
     modify_config(r'guard email="root@localhost"', 'guard email="noreply@%s"' % socket.gethostname(), '/etc/iwatch/iwatch.xml')
     runcmd("service iwatch restart")
-    
+
+def find_configured_services():
+    services = ["bitcoind", "bitcoind-testnet", "insight", "insight-testnet", "counterpartyd", "counterpartyd-testnet",
+        "counterblockd", "counterblockd-testnet", "armory_utxsvr", "armory_utxsvr-testnet"]
+    configured_services = []
+    for s in services:
+        if os.path.exists("/etc/service/%s" % s):
+            configured_services.append(s)
+    return configured_services
+
 def command_services(command, prompt=False):
     assert command in ("stop", "restart")
-    services_to_enable = []
     
     if prompt:
         confirmation = ask_question("%s services? (y/N)" % command.capitalize(), ('y', 'n',), 'n')
@@ -567,49 +576,19 @@ def command_services(command, prompt=False):
             return False
     
     logging.warn("STOPPING SERVICES" if command == 'stop' else "RESTARTING SERVICES")
-
+    
     if os.path.exists("/etc/init.d/iwatch"):
         runcmd("sv %s iwatch" % command, abort_on_failure=False)
-
-    if os.path.exists("/etc/service/bitcoind"):
-        runcmd("sv %s bitcoind" % command, abort_on_failure=False)
         
-    if os.path.exists("/etc/service/bitcoind-testnet"):
-        runcmd("sv %s bitcoind-testnet" % command, abort_on_failure=False)
-        services_to_enable.append("bitcoind-testnet")
-    
-    if os.path.exists("/etc/service/insight") or os.path.exists("/etc/service/insight-testnet"):
-        if command == "restart":
-            logging.info("Waiting 45 seconds before starting insight, to allow bitcoind to fully initialize...")
-            time.sleep(45)
-        if os.path.exists("/etc/service/insight"):
-            runcmd("sv %s insight" % command, abort_on_failure=False)
-            services_to_enable.append("insight")
-        if os.path.exists("/etc/service/insight-testnet"):
-            runcmd("sv %s insight-testnet" % command, abort_on_failure=False)
-            services_to_enable.append("insight-testnet")
-    
-    runcmd("sv %s counterpartyd" % command, abort_on_failure=False)
-    services_to_enable.append("counterpartyd")
-    runcmd("sv %s counterpartyd-testnet" % command, abort_on_failure=False)
-    services_to_enable.append("counterpartyd-testnet")
-    runcmd("sv %s counterblockd" % command, abort_on_failure=False)
-    services_to_enable.append("counterblockd")
-    runcmd("sv %s counterblockd-testnet" % command, abort_on_failure=False)
-    services_to_enable.append("counterblockd-testnet")
-    if os.path.exists("/etc/service/armory_utxsvr"):
-        runcmd("sv %s armory_utxsvr" % command, abort_on_failure=False)
-        services_to_enable.append("armory_utxsvr")
-    if os.path.exists("/etc/service/armory_utxsvr-testnet"):
-        runcmd("sv %s armory_utxsvr-testnet" % command, abort_on_failure=False)
-        services_to_enable.append("armory_utxsvr-testnet")
-        
-    if command != 'stop':
-        for s in services_to_enable: config_runit_disable_manual_control(s)
+    configured_services = find_configured_services()
+    for s in configured_services:
+        runcmd("sv %s %s" % (command, s), abort_on_failure=False)
     return True
 
-def gather_build_questions(answered_questions, docker):
-    if 'role' not in answered_questions:
+def gather_build_questions(answered_questions, noninteractive, docker):
+    if 'role' not in answered_questions and noninteractive:
+        answered_questions['role'] = '1' 
+    elif 'role' not in answered_questions:
         role = ask_question("Enter the number for the role you want to build:\n"
                 + "\t1: Counterwallet server\n\t2: Vending machine\n\t3: Blockexplorer server\n"
                 + "\t4: counterpartyd-only\n\t5: BTCPay Escrow Server\n"
@@ -636,7 +615,9 @@ def gather_build_questions(answered_questions, docker):
     if answered_questions['role'] in ('vendingmachine', 'blockexplorer'):
         raise NotImplementedError("This role not implemented yet...")
 
-    if 'branch' not in answered_questions:
+    if 'branch' not in answered_questions and noninteractive:
+        answered_questions['branch'] = 'master' 
+    elif 'branch' not in answered_questions:
         branch = ask_question("Build from branch (M)aster or (d)evelop? (M/d)", ('m', 'd'), 'm')
         if branch == 'm': branch = 'master'
         elif branch == 'd': branch = 'develop'
@@ -644,52 +625,78 @@ def gather_build_questions(answered_questions, docker):
         answered_questions['branch'] = branch
     assert answered_questions['branch'] in QUESTION_FLAGS['branch']
 
-    if 'run_mode' not in answered_questions:
+    if 'run_mode' not in answered_questions and noninteractive:
+        answered_questions['run_mode'] = 'b' 
+    elif 'run_mode' not in answered_questions:
         answered_questions['run_mode'] = ask_question(
             "Run as (t)estnet node, (m)ainnet node, or (B)oth? (t/m/B)", ('t', 'm', 'b'), 'b')
         print("\tSetting up to run on %s" % ('testnet' if answered_questions['run_mode'].lower() == 't' 
             else ('mainnet' if answered_questions['run_mode'].lower() == 'm' else 'testnet and mainnet')))
     assert answered_questions['run_mode'] in QUESTION_FLAGS['run_mode']
     
-    if 'backend_rpc_mode' not in answered_questions:
+    if 'backend_rpc_mode' not in answered_questions and noninteractive:
+        answered_questions['backend_rpc_mode'] = 'b' 
+    elif 'backend_rpc_mode' not in answered_questions:
         answered_questions['backend_rpc_mode'] = ask_question(
             "Backend RPC services, use (B)itcoind or (p)yrpcwallet? (B/p)", ('b', 'p'), 'b')
         print("\tUsing %s" % ('bitcoind' if answered_questions['backend_rpc_mode'] == 'b' else 'pyrpcwallet'))
     assert answered_questions['backend_rpc_mode'] in QUESTION_FLAGS['backend_rpc_mode']
 
-    if 'blockchain_service' not in answered_questions:
+    if 'blockchain_service' not in answered_questions and noninteractive:
+        answered_questions['blockchain_service'] = 'b' 
+    elif 'blockchain_service' not in answered_questions:
         answered_questions['blockchain_service'] = ask_question(
             "Auxiliary blockchain services, use (B)lockr.io (remote) or (i)nsight (local)? (B/i)", ('b', 'i'), 'b')
         print("\tUsing %s" % ('blockr.io' if answered_questions['blockchain_service'] == 'b' else 'insight'))
     assert answered_questions['blockchain_service'] in QUESTION_FLAGS['blockchain_service']
     
-    if answered_questions['role'] == 'counterpartyd_only' and 'counterpartyd_public' not in answered_questions:
-        answered_questions['counterpartyd_public'] = ask_question(
-            "Enable public Counterpartyd setup (listen on all hosts w/ rpc/1234 user) (Y/n)", ('y', 'n'), 'y')
-    else:
-        answered_questions['counterpartyd_public'] = answered_questions.get('counterpartyd_public', 'n') #does not apply
-    assert answered_questions['counterpartyd_public'] in QUESTION_FLAGS['counterpartyd_public']
+    if answered_questions['role'] == 'counterpartyd_only':
+        if 'counterpartyd_public' not in answered_questions and noninteractive:
+            answered_questions['counterpartyd_public'] = 'y' 
+        elif 'counterpartyd_public' not in answered_questions:
+            answered_questions['counterpartyd_public'] = ask_question(
+                "Enable public Counterpartyd setup (listen on all hosts w/ rpc/1234 user) (Y/n)", ('y', 'n'), 'y')
+        else:
+            answered_questions['counterpartyd_public'] = answered_questions.get('counterpartyd_public', 'n') #does not apply
+        assert answered_questions['counterpartyd_public'] in QUESTION_FLAGS['counterpartyd_public']
+    else: answered_questions['counterpartyd_public'] = None
 
-    counterwallet_support_email = None
-    if answered_questions['role'] == 'counterwallet' and 'counterwallet_support_email' not in answered_questions:
-        while True:
-            counterwallet_support_email = input("Email address where support cases should go (blank to disable): ")
-            counterwallet_support_email = counterwallet_support_email.strip()
-            if counterwallet_support_email:
-                counterwallet_support_email_confirm = ask_question(
-                    "You entererd '%s', is that right? (Y/n): " % counterwallet_support_email, ('y', 'n'), 'y') 
-                if counterwallet_support_email_confirm == 'y': break
-            else: break
-        answered_questions['counterwallet_support_email'] = counterwallet_support_email
-    else:
-        answered_questions['counterwallet_support_email'] = answered_questions.get('counterwallet_support_email', '') 
+    if answered_questions['role'] == 'counterwallet':
+        counterwallet_support_email = None
+        if 'counterwallet_support_email' not in answered_questions and noninteractive:
+            answered_questions['counterwallet_support_email'] = '' 
+        elif 'counterwallet_support_email' not in answered_questions:
+            while True:
+                counterwallet_support_email = input("Email address where support cases should go (blank to disable): ")
+                counterwallet_support_email = counterwallet_support_email.strip()
+                if counterwallet_support_email:
+                    counterwallet_support_email_confirm = ask_question(
+                        "You entererd '%s', is that right? (Y/n): " % counterwallet_support_email, ('y', 'n'), 'y') 
+                    if counterwallet_support_email_confirm == 'y': break
+                else: break
+            answered_questions['counterwallet_support_email'] = counterwallet_support_email
+        else:
+            answered_questions['counterwallet_support_email'] = answered_questions.get('counterwallet_support_email', '').strip()
+    else: answered_questions['counterwallet_support_email'] = None 
 
-    if 'security_hardening' not in answered_questions:
+    if 'security_hardening' not in answered_questions and noninteractive:
+        answered_questions['security_hardening'] = 'y' 
+    elif 'security_hardening' not in answered_questions:
         if not docker:
             answered_questions['security_hardening'] = ask_question("Set up security hardening? (Y/n)", ('y', 'n'), 'y')
         else:
             answered_questions['security_hardening'] = False 
     assert answered_questions['security_hardening'] in QUESTION_FLAGS['security_hardening']
+    
+    if 'autostart_services' not in answered_questions and noninteractive:
+        answered_questions['autostart_services'] = 'n' 
+    elif 'autostart_services' not in answered_questions:
+        if not docker:
+            answered_questions['autostart_services'] = ask_question("Autostart services (including on boot)? (y/N)", ('y', 'n'), 'n')
+        else:
+            answered_questions['autostart_services'] = False 
+    assert answered_questions['autostart_services'] in QUESTION_FLAGS['autostart_services']
+
     return answered_questions
 
 def usage():
@@ -704,8 +711,9 @@ def main():
 
     #parse any command line objects
     docker = False
+    noninteractive = False
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "h", ["help", "docker"] + ['%s=' % q for q in QUESTION_FLAGS.keys()])
+        opts, args = getopt.getopt(sys.argv[1:], "h", ["help", "docker", "noninteractive"] + ['%s=' % q for q in QUESTION_FLAGS.keys()])
     except getopt.GetoptError as err:
         usage()
         sys.exit(2)
@@ -715,6 +723,8 @@ def main():
             sys.exit()
         elif o == "--docker":
             docker = True
+        elif o == "--noninteractive":
+            noninteractive = True
         elif o in ['--%s' % q for q in QUESTION_FLAGS.keys()]: #process flags for non-interactivity
             answered_questions[o.lstrip('-')] = a
         else:
@@ -749,13 +759,13 @@ def main():
             do_counterwallet_setup(run_as_user, "AUTO", updateOnly=True)
 
         #offer to restart services
-        restarted = command_services("restart", prompt=True)
+        restarted = command_services("restart", prompt=not noninteractive)
         if not restarted and os.path.exists("/etc/init.d/iwatch"):
             runcmd("service iwatch start", abort_on_failure=False)
         sys.exit(0) #all done
 
     #If here, a) federated node has not been set up yet or b) the user wants a rebuild
-    answered_questions = gather_build_questions(answered_questions, docker)
+    answered_questions = gather_build_questions(answered_questions, noninteractive, docker)
     
     command_services("stop")
 
@@ -789,8 +799,11 @@ def main():
         do_security_setup(run_as_user, answered_questions['branch'], base_path, dist_path)
     
     logging.info("Counterblock Federated Node Build Complete (whew).")
-    command_services("restart", prompt=True)
-
+    
+    if answered_questions['autostart_services'] == 'y':
+        configured_services = find_configured_services()
+        for s in configured_services:
+            config_runit_disable_manual_control(s)
 
 if __name__ == "__main__":
     main()

@@ -15,4 +15,6 @@ export BITCOIND_PASS=`cat $USER_HOME/.bitcoin-testnet/bitcoin.conf | sed -n 's/.
 #sv start bitcoind-testnet || exit 1
 cd ${USER_HOME}/insight-api
 exec 2>&1
+echo "Waiting 60 seconds before starting insight, to allow bitcoind to fully initialize..."
+sleep 60
 exec chpst -u ${USER} /usr/bin/node ${USER_HOME}/insight-api/insight.js

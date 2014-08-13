@@ -301,10 +301,10 @@ def setup_startup(paths, run_as_user, with_counterblockd, with_testnet, assume_y
         assert run_as_user
         user_homedir = os.path.expanduser("~" + run_as_user)
         
-        config_runit_for_service(dist_path, "counterpartyd", manual_control=True)
-        config_runit_for_service(dist_path, "counterpartyd-testnet", enabled=with_testnet, manual_control=True)
-        config_runit_for_service(dist_path, "counterblockd", enabled=with_counterblockd, manual_control=True)
-        config_runit_for_service(dist_path, "counterblockd-testnet", enabled=with_counterblockd and with_testnet, manual_control=True)
+        config_runit_for_service(paths['dist_path'], "counterpartyd", manual_control=True)
+        config_runit_for_service(paths['dist_path'], "counterpartyd-testnet", enabled=with_testnet, manual_control=True)
+        config_runit_for_service(paths['dist_path'], "counterblockd", enabled=with_counterblockd, manual_control=True)
+        config_runit_for_service(paths['dist_path'], "counterblockd-testnet", enabled=with_counterblockd and with_testnet, manual_control=True)
         
         runcmd("sed -ri \"s/USER=xcpd/USER=%s/g\" /etc/service/counterpartyd/run" % run_as_user)
         runcmd("sed -ri \"s/USER_HOME=\/home\/xcp/USER_HOME=%s/g\" /etc/service/counterpartyd/run" % user_homedir.replace('/', '\/'))

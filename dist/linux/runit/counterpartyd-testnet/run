@@ -3,4 +3,4 @@
 USER=xcpd
 USER_HOME=/home/xcp
 
-exec chpst -u ${USER} /usr/local/bin/counterpartyd --data-dir=${USER_HOME}/.config/counterpartyd-testnet --testnet server
+exec su -s /bin/bash -c '/usr/local/bin/counterpartyd --data-dir=${USER_HOME}/.config/counterpartyd-testnet --testnet server' ${USER}

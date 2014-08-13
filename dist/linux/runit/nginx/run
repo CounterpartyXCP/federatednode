@@ -1,6 +1,3 @@
 #!/bin/sh
 
-USER=xcpd
-USER_HOME=/home/xcp
-
-exec chpst -u ${USER} /usr/sbin/nginx -c /etc/nginx/nginx.conf -g "daemon off;"
+exec /usr/sbin/nginx -c /etc/nginx/nginx.conf -g "daemon off;"

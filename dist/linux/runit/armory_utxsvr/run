@@ -5,4 +5,5 @@ USER_HOME=/home/xcp
 
 #sv start bitcoind || exit 1
 exec 2>&1
-exec chpst -u ${USER} /usr/local/bin/armory_utxsvr
+exec su -s /bin/bash -c 'cd ${USER_HOME} && /usr/local/bin/armory_utxsvr' ${USER}
+
