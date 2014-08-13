@@ -122,21 +122,21 @@ def get_paths(with_counterblockd):
     
     return paths
 
-def checkout(paths, run_as_user, with_counterblockd, is_update):
+def checkout(branch, paths, run_as_user, with_counterblockd, is_update):
     git_repo_clone("counterpartyd", "https://github.com/CounterpartyXCP/counterpartyd.git",
-        os.path.join(paths['dist_path'], "counterpartyd"), branch="AUTO", for_user=run_as_user)    
+        os.path.join(paths['dist_path'], "counterpartyd"), branch=branch, for_user=run_as_user)    
     
     if with_counterblockd:
         git_repo_clone("counterblockd", "https://github.com/CounterpartyXCP/counterblockd.git",
-            os.path.join(paths['dist_path'], "counterblockd"), branch="AUTO", for_user=run_as_user)    
+            os.path.join(paths['dist_path'], "counterblockd"), branch=branch, for_user=run_as_user)    
 
     if is_update: #update mode specified... update ourselves (counterpartyd_build) as well
         git_repo_clone("counterpartyd_build", "https://github.com/CounterpartyXCP/counterpartyd_build.git",
-            paths['base_path'], branch="AUTO", for_user=run_as_user)
+            paths['base_path'], branch=branch, for_user=run_as_user)
     
     sys.path.insert(0, os.path.join(paths['dist_path'], "counterpartyd")) #can now import counterparty modules
 
-def install_dependencies(paths, with_counterblockd, assume_yes):
+def install_dependencies(paths, with_counterblockd, noninteractive):
     if os.name == "posix" and platform.dist()[0] == "Ubuntu":
         ubuntu_release = platform.linux_distribution()[1]
         logging.info("UBUNTU LINUX %s: Installing Required Packages..." % ubuntu_release) 
@@ -149,7 +149,7 @@ def install_dependencies(paths, with_counterblockd, assume_yes):
             if with_counterblockd:
                 #counterblockd currently uses Python 2.7 due to gevent-socketio's lack of support for Python 3
                 runcmd("apt-get -y install python python-dev python-setuptools python-pip python-sphinx python-zmq libzmq3 libzmq3-dev libxml2-dev libxslt-dev zlib1g-dev libimage-exiftool-perl libevent-dev cython")
-                if assume_yes:
+                if noninteractive:
                     db_locally = 'y'
                 else:
                     while True:
@@ -244,7 +244,7 @@ def create_virtualenv(paths, with_counterblockd):
             paths['virtualenv_args.counterblockd'],
             os.path.join(paths['dist_path'], "counterblockd", "pip-requirements.txt"), delete_if_exists=False)    
 
-def setup_startup(paths, run_as_user, with_counterblockd, with_testnet, assume_yes):
+def setup_startup(paths, run_as_user, with_counterblockd, with_testnet, noninteractive):
     if os.name == "posix":
         runcmd("ln -sf %s/run.py /usr/local/bin/counterpartyd" % paths['base_path'])
         if with_counterblockd:
@@ -261,7 +261,7 @@ def setup_startup(paths, run_as_user, with_counterblockd, with_testnet, assume_y
         f.write(batch_contents)
         f.close()
 
-    if assume_yes:
+    if noninteractive:
         start_choice = 'y'
     else:
         while True:
@@ -415,7 +415,7 @@ def do_build(paths, with_counterblockd):
     logging.info("FINAL installer created as %s" % installer_dest)
 
 def usage():
-    print("SYNTAX: %s [-h] [--with-counterblockd] [--with-testnet] [--for-user=] [setup|build|update]" % sys.argv[0])
+    print("SYNTAX: %s [-h] [--noninteractive] [--branch=AUTO|master|develop|etc] [--with-counterblockd] [--with-testnet] [--for-user=] [setup|build|update]" % sys.argv[0])
     print("* The 'setup' command will setup and install counterpartyd as a source installation (including automated setup of its dependencies)")
     print("* The 'build' command builds an installer package (Windows only, currently)")
     print("* The 'update' command updates the git repo for both counterpartyd, counterpartyd_build, and counterblockd (if --with-counterblockd is specified)")
@@ -436,9 +436,10 @@ def main():
     command = None
     with_counterblockd = False
     with_testnet = False
-    assume_yes = False #headless operation
+    noninteractive = False #headless operation
+    branch = "AUTO" #default
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hby", ["build", "help", "with-counterblockd", "with-testnet", "for-user="])
+        opts, args = getopt.getopt(sys.argv[1:], "hb", ["build", "help", "with-counterblockd", "with-testnet", "noninteractive", "for-user=", "branch="])
     except getopt.GetoptError as err:
         usage()
         sys.exit(2)
@@ -448,6 +449,8 @@ def main():
             with_counterblockd = True
         elif o in ("--with-testnet",):
             with_testnet = True
+        elif o in ("--branch",):
+            branch = a
         elif o in ("--for-user",):
             assert os.name != "nt" #not supported
             #allow overriding run_as_user
@@ -462,8 +465,8 @@ def main():
         elif o in ("-h", "--help"):
             usage()
             sys.exit()
-        elif o in ("-y"):
-            assume_yes = True
+        elif o in ("--noninteractive"):
+            noninteractive = True
         else:
             assert False, "Unhandled or unimplemented switch or option"
             
@@ -483,21 +486,21 @@ def main():
 
     if command == "build": #build counterpartyd installer (currently windows only)
         logging.info("Building Counterparty...")
-        checkout(paths, run_as_user, with_counterblockd, command == "update")
-        install_dependencies(paths, with_counterblockd, assume_yes)
+        checkout(branch, paths, run_as_user, with_counterblockd, command == "update")
+        install_dependencies(paths, with_counterblockd, noninteractive)
         create_virtualenv(paths, with_counterblockd)
         do_build(paths, with_counterblockd)
     elif command == "update": #auto update from git
         logging.info("Updating relevant Counterparty repos")
-        checkout(paths, run_as_user, with_counterblockd, command == "update")
+        checkout(branch, paths, run_as_user, with_counterblockd, command == "update")
     else: #setup mode
         assert command == "setup"
         logging.info("Installing Counterparty from source%s..." % (
             (" for user '%s'" % run_as_user) if os.name != "nt" else '',))
-        checkout(paths, run_as_user, with_counterblockd, command == "update")
-        install_dependencies(paths, with_counterblockd, assume_yes)
+        checkout(branch, paths, run_as_user, with_counterblockd, command == "update")
+        install_dependencies(paths, with_counterblockd, noninteractive)
         create_virtualenv(paths, with_counterblockd)
-        setup_startup(paths, run_as_user, with_counterblockd, with_testnet, assume_yes)
+        setup_startup(paths, run_as_user, with_counterblockd, with_testnet, noninteractive)
     
     logging.info("%s DONE. (It's time to kick ass, and chew bubblegum... and I'm all outta gum.)" % ("BUILD" if command == "build" else "SETUP"))
     if command != "build":
