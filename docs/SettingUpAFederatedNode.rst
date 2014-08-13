@@ -139,10 +139,8 @@ Node Setup
 Once the server is provisioned and set up as above, you will need to install all of the necessary software and dependencies. We have an
 installation script for this, that is fully automated **and installs ALL dependencies, including ``bitcoind`` and ``insight``**::
 
-    cd ~
-    wget -qO setup_federated_node.py https://raw.github.com/CounterpartyXCP/counterpartyd_build/master/setup_federated_node.py
-    wget -qO setup_util.py https://raw.github.com/CounterpartyXCP/counterpartyd_build/master/setup_util.py
-    sudo python3 setup_federated_node.py
+    BRANCH=master
+    cd ~ && wget -q https://raw.github.com/CounterpartyXCP/counterpartyd_build/${BRANCH}/setup_federated_node.py https://raw.github.com/CounterpartyXCP/counterpartyd_build/${BRANCH}/setup_util.py && sudo python3 setup_federated_node.py
 
 Then just follow the on-screen prompts (choosing to build from *master* if you are building a production node,
 or from *develop* **only** if you are a developer or want access to bleeding edge code that is not fully tested).

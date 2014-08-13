@@ -165,8 +165,8 @@ backend_rpc_password_testnet, counterpartyd_public, counterwallet_support_email)
     # as -y is specified, this will auto install counterblockd full node (mongo and redis) as well as setting
     # counterpartyd/counterblockd to start up at startup for both mainnet and testnet (we will override this as necessary
     # based on run_mode later in this function)
-    runcmd("~%s/counterpartyd_build/setup.py -y %s --with-testnet --for-user=%s" % (
-        USERNAME, '--with-counterblockd' if role != 'counterpartyd_only' else '', USERNAME))
+    runcmd("~%s/counterpartyd_build/setup.py --noninteractive --branch=%s --with-testnet --for-user=%s %s" % (
+        USERNAME, branch, '--with-counterblockd' if role != 'counterpartyd_only' else '', USERNAME))
     runcmd("cd ~%s/counterpartyd_build && git config core.sharedRepository group && find ~%s/counterpartyd_build -type d -print0 | xargs -0 chmod g+s" % (
         USERNAME, USERNAME)) #to allow for group git actions 
     runcmd("chown -R %s:%s ~%s/counterpartyd_build" % (USERNAME, USERNAME, USERNAME)) #just in case
@@ -731,7 +731,7 @@ def main():
         else:
             assert False, "Unhandled or unimplemented switch or option"
 
-    base_path = os.path.expanduser("~%s/counterpartyd_build" % USERNAME)
+    base_path = os.path.join(USER_HOMEDIR, "counterpartyd_build")
     dist_path = os.path.join(base_path, "dist")
 
     #Detect if we should ask the user if they just want to update the source and not do a rebuild
@@ -752,7 +752,7 @@ def main():
             runcmd("service iwatch stop", abort_on_failure=False)
         
         #refresh counterpartyd_build, counterpartyd and counterblockd (if available)
-        runcmd("%s/setup.py %s --for-user=xcp update" % (base_path,
+        runcmd("%s/setup.py --noninteractive --branch=AUTO --for-user=xcp %s update" % (base_path,
             '--with-counterblockd' if os.path.exists(os.path.join(dist_path, "counterblockd")) else ''))
         
         #refresh counterwallet (if available)
