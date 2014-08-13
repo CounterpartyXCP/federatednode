@@ -165,7 +165,7 @@ backend_rpc_password_testnet, counterpartyd_public, counterwallet_support_email)
     # as -y is specified, this will auto install counterblockd full node (mongo and redis) as well as setting
     # counterpartyd/counterblockd to start up at startup for both mainnet and testnet (we will override this as necessary
     # based on run_mode later in this function)
-    runcmd("~%s/counterpartyd_build/setup.py -y --branch=%s --with-testnet --for-user=%s %s" % (
+    runcmd("~%s/counterpartyd_build/setup.py --noninteractive --branch=%s --with-testnet --for-user=%s %s" % (
         USERNAME, branch, '--with-counterblockd' if role != 'counterpartyd_only' else '', USERNAME))
     runcmd("cd ~%s/counterpartyd_build && git config core.sharedRepository group && find ~%s/counterpartyd_build -type d -print0 | xargs -0 chmod g+s" % (
         USERNAME, USERNAME)) #to allow for group git actions 
@@ -752,7 +752,7 @@ def main():
             runcmd("service iwatch stop", abort_on_failure=False)
         
         #refresh counterpartyd_build, counterpartyd and counterblockd (if available)
-        runcmd("%s/setup.py --branch=AUTO --for-user=xcp %s update" % (base_path,
+        runcmd("%s/setup.py --noninteractive --branch=AUTO --for-user=xcp %s update" % (base_path,
             '--with-counterblockd' if os.path.exists(os.path.join(dist_path, "counterblockd")) else ''))
         
         #refresh counterwallet (if available)
