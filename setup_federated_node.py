@@ -700,7 +700,8 @@ def gather_build_questions(answered_questions, noninteractive, docker):
     return answered_questions
 
 def usage():
-    print("SYNTAX: %s [-h] %s" % (sys.argv[0], ' '.join([('[-%s=%s]' % (q, '|'.join(v) if v else '')) for q, v in QUESTION_FLAGS.items()])))
+    print("SYNTAX: %s [-h] [--docker] [--noninteractive] %s" % (
+        sys.argv[0], ' '.join([('[--%s=%s]' % (q, '|'.join(v) if v else '')) for q, v in QUESTION_FLAGS.items()])))
 
 def main():
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s|%(levelname)s: %(message)s')
