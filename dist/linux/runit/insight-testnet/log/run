@@ -1,0 +1,6 @@
+#!/bin/sh
+ 
+USER=xcpd
+USER_HOME=/home/xcp
+ 
+exec chpst -u ${USER} svlogd -tt ${USER_HOME}/insight-api/log-testnet

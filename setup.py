@@ -25,6 +25,8 @@ try: #ignore import errors on windows
 except ImportError:
     pass
 
+from setup_util import *
+
 PYTHON3_VER = None
 DEFAULT_CONFIG = "[Default]\nbackend-rpc-connect=localhost\nbackend-rpc-port=8332\nbackend-rpc-user=rpc\nbackend-rpc-password=1234\nrpc-host=localhost\nrpc-port=4000\nrpc-user=rpc\nrpc-password=xcppw1234"
 DEFAULT_CONFIG_TESTNET = "[Default]\nbackend-rpc-connect=localhost\nbackend-rpc-port=18332\nbackend-rpc-user=rpc\nbackend-rpc-password=1234\nrpc-host=localhost\nrpc-port=14000\nrpc-user=rpc\nrpc-password=xcppw1234\ntestnet=1"
@@ -34,16 +36,6 @@ DEFAULT_CONFIG_COUNTERWALLETD = "[Default]\nbackend-rpc-connect=localhost\nbacke
 DEFAULT_CONFIG_COUNTERWALLETD_TESTNET = "[Default]\nbackend-rpc-connect=localhost\nbackend-rpc-port=18332\nbackend-rpc-user=rpc\nbackend-rpc-password=1234\ncounterpartyd-rpc-host=localhost\ncounterpartyd-rpc-port=14000\ncounterpartyd-rpc-user=rpc\ncounterpartyd-rpc-password=xcppw1234\nrpc-host=0.0.0.0\nsocketio-host=0.0.0.0\nsocketio-chat-host=0.0.0.0\nredis-enable-apicache=0\ntestnet=1"
 DEFAULT_CONFIG_INSTALLER_COUNTERWALLETD = "[Default]\nbackend-rpc-connect=localhost\nbackend-rpc-port=8332\nbackend-rpc-user=rpc\nbackend-rpc-password=1234\ncounterpartyd-rpc-host=RPC_HOST\ncounterpartyd-rpc-port=RPC_PORT\ncounterpartyd-rpc-user=RPC_USER\ncounterpartyd-rpc-password=RPC_PASSWORD"
 
-def which(filename):
-    """docstring for which"""
-    locations = os.environ.get("PATH").split(os.pathsep)
-    candidates = []
-    for location in locations:
-        candidate = os.path.join(location, filename)
-        if os.path.isfile(candidate):
-            candidates.append(candidate)
-    return candidates
-
 def _get_app_cfg_paths(appname, run_as_user):
     import appdirs #installed earlier
     cfg_path = os.path.join(
@@ -52,52 +44,6 @@ def _get_app_cfg_paths(appname, run_as_user):
         "%s.conf" % appname.replace('-testnet', ''))
     data_dir = os.path.dirname(cfg_path)
     return (data_dir, cfg_path)
-
-def _rmtree(path):
-    """We use this function instead of the built-in shutil.rmtree because it unsets the windoze read-only/archive bit
-    before trying a delete (and if we don't do this, we can have problems)"""
-    
-    if os.name != 'nt':
-        return shutil.rmtree(path) #this works fine on non-windows
-
-    #this code only for windows - DO NOT USE THIS CODE ON NON-WINDOWS
-    def rmgeneric(path, __func__):
-        import win32api, win32con
-        win32api.SetFileAttributes(path, win32con.FILE_ATTRIBUTE_NORMAL)
-        
-        try:
-            __func__(path)
-            #print 'Removed ', path
-        except OSError as err:
-            logging.error("Error removing %(path)s, %(error)s" % {'path' : path, 'error': err })
-
-    if not os.path.isdir(path):
-        return
-    files=os.listdir(path)
-    for x in files:
-        fullpath=os.path.join(path, x)
-        if os.path.isfile(fullpath):
-            f=os.remove
-            rmgeneric(fullpath, f)
-        elif os.path.isdir(fullpath):
-            _rmtree(fullpath)
-            f=os.rmdir
-            rmgeneric(fullpath, f)    
-
-def usage():
-    print("SYNTAX: %s [-h] [--with-counterblockd] [--with-testnet] [--for-user=] [setup|build|update]" % sys.argv[0])
-    print("* The 'setup' command will setup and install counterpartyd as a source installation (including automated setup of its dependencies)")
-    print("* The 'build' command builds an installer package (Windows only, currently)")
-    print("* The 'update' command updates the git repo for both counterpartyd, counterpartyd_build, and counterblockd (if --with-counterblockd is specified)")
-    print("* 'setup' is chosen by default if neither the 'build', 'update', or 'setup' arguments are specified.")
-    print("* If you want to install counterblockd along with counterpartyd, specify the --with-counterblockd option")
-
-def runcmd(command, abort_on_failure=True):
-    logging.debug("RUNNING COMMAND: %s" % command)
-    ret = os.system(command)
-    if abort_on_failure and ret != 0:
-        logging.error("Command failed: '%s'" % command)
-        sys.exit(1) 
 
 def do_prerun_checks():
     #make sure this is running on a supported OS
@@ -177,37 +123,18 @@ def get_paths(with_counterblockd):
     return paths
 
 def checkout(paths, run_as_user, with_counterblockd, is_update):
-    #check what our current branch is
-    try:
-        branch = subprocess.check_output(("cd %s && git rev-parse --abbrev-ref HEAD" % paths['base_path']), shell=True).strip().decode('utf-8')
-        assert branch in ("master", "develop") #the two that we support for now
-    except:
-        raise Exception("Cannot get current get branch. Please make sure you are running setup.py from your counterpartyd_build directory.")
+    git_repo_clone("counterpartyd", "https://github.com/CounterpartyXCP/counterpartyd.git",
+        os.path.join(paths['dist_path'], "counterpartyd"), branch="AUTO", for_user=run_as_user)    
     
-    logging.info("Checking out/updating counterpartyd:%s from git..." % branch)
-    counterpartyd_path = os.path.join(paths['dist_path'], "counterpartyd")
-    if os.path.exists(counterpartyd_path):
-        runcmd("cd \"%s\" && git pull origin %s" % (counterpartyd_path, branch))
-    else:
-        runcmd("git clone -b %s https://github.com/CounterpartyXCP/counterpartyd \"%s\"" % (branch, counterpartyd_path))
-    if os.name != 'nt':
-        runcmd("chown -R %s \"%s\"" % (run_as_user, counterpartyd_path))
-        
     if with_counterblockd:
-        counterblockd_path = os.path.join(paths['dist_path'], "counterblockd")
-        if os.path.exists(counterblockd_path):
-            runcmd("cd \"%s\" && git pull origin %s" % (counterblockd_path, branch))
-        else:
-            runcmd("git clone -b %s https://github.com/CounterpartyXCP/counterblockd \"%s\"" % (branch, counterblockd_path))
-            pass
-        if os.name != 'nt':
-            runcmd("chown -R %s \"%s\"" % (run_as_user, counterblockd_path))
-    
+        git_repo_clone("counterblockd", "https://github.com/CounterpartyXCP/counterblockd.git",
+            os.path.join(paths['dist_path'], "counterblockd"), branch="AUTO", for_user=run_as_user)    
+
     if is_update: #update mode specified... update ourselves (counterpartyd_build) as well
-        runcmd("cd \"%s\" && git pull origin %s" % (paths['base_path'], branch))
+        git_repo_clone("counterpartyd_build", "https://github.com/CounterpartyXCP/counterpartyd_build.git",
+            paths['base_path'], branch="AUTO", for_user=run_as_user)
     
     sys.path.insert(0, os.path.join(paths['dist_path'], "counterpartyd")) #can now import counterparty modules
-
 
 def install_dependencies(paths, with_counterblockd, assume_yes):
     if os.name == "posix" and platform.dist()[0] == "Ubuntu":
@@ -216,7 +143,7 @@ def install_dependencies(paths, with_counterblockd, assume_yes):
         runcmd("apt-get -y update")
 
         if ubuntu_release in ("14.04", "13.10"):
-            runcmd("apt-get -y install software-properties-common python-software-properties git-core wget cx-freeze \
+            runcmd("apt-get -y install runit software-properties-common python-software-properties git-core wget cx-freeze \
             python3 python3-setuptools python3-dev python3-pip build-essential python3-sphinx python-virtualenv libsqlite3-dev python3-apsw python3-zmq")
             
             if with_counterblockd:
@@ -235,7 +162,7 @@ def install_dependencies(paths, with_counterblockd, assume_yes):
                     runcmd("apt-get -y install mongodb mongodb-server redis-server")
         elif ubuntu_release == "12.04":
             #12.04 deps. 12.04 doesn't include python3-pip, so we need to use the workaround at http://stackoverflow.com/a/12262143
-            runcmd("apt-get -y install software-properties-common python-software-properties git-core wget cx-freeze \
+            runcmd("apt-get -y install runit software-properties-common python-software-properties git-core wget cx-freeze \
             python3 python3-setuptools python3-dev build-essential python3-sphinx python-virtualenv libsqlite3-dev")
 
             #install python 3.3 (required for flask)
@@ -296,7 +223,7 @@ def create_virtualenv(paths, with_counterblockd):
         
         if delete_if_exists and os.path.exists(env_path):
             logging.warning("Deleting existing virtualenv...")
-            _rmtree(env_path)
+            rmtree(env_path)
         assert not os.path.exists(os.path.join(env_path, 'bin'))
         logging.info("Creating virtualenv at '%s' ..." % env_path)
         runcmd("%s %s %s" % (paths['virtualenv_path'], virtualenv_args, env_path))
@@ -373,25 +300,23 @@ def setup_startup(paths, run_as_user, with_counterblockd, with_testnet, assume_y
         logging.info("Setting up init scripts...")
         assert run_as_user
         user_homedir = os.path.expanduser("~" + run_as_user)
-        runcmd("rm -f /etc/init/counterpartyd.conf")
-        runcmd("cp -af %s/linux/init/counterpartyd.conf.template /etc/init/counterpartyd.conf" % paths['dist_path'])
-        runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterpartyd.conf" % run_as_user)
-        runcmd("sed -ri \"s/\!USER_HOMEDIR\!/%s/g\" /etc/init/counterpartyd.conf" % user_homedir.replace('/', '\/'))
+        
+        config_runit_for_service(paths['dist_path'], "counterpartyd", manual_control=True)
+        config_runit_for_service(paths['dist_path'], "counterpartyd-testnet", enabled=with_testnet, manual_control=True)
+        config_runit_for_service(paths['dist_path'], "counterblockd", enabled=with_counterblockd, manual_control=True)
+        config_runit_for_service(paths['dist_path'], "counterblockd-testnet", enabled=with_counterblockd and with_testnet, manual_control=True)
+        
+        runcmd("sed -ri \"s/USER=xcpd/USER=%s/g\" /etc/service/counterpartyd/run" % run_as_user)
+        runcmd("sed -ri \"s/USER_HOME=\/home\/xcp/USER_HOME=%s/g\" /etc/service/counterpartyd/run" % user_homedir.replace('/', '\/'))
         if with_testnet:
-            runcmd("rm -f /etc/init/counterpartyd-testnet.conf")
-            runcmd("cp -af %s/linux/init/counterpartyd-testnet.conf.template /etc/init/counterpartyd-testnet.conf" % paths['dist_path'])
-            runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterpartyd-testnet.conf" % run_as_user)
-            runcmd("sed -ri \"s/\!USER_HOMEDIR\!/%s/g\" /etc/init/counterpartyd-testnet.conf" % user_homedir.replace('/', '\/'))
+            runcmd("sed -ri \"s/USER=xcpd/USER=%s/g\" /etc/service/counterpartyd-testnet/run" % run_as_user)
+            runcmd("sed -ri \"s/USER_HOME=\/home\/xcp/USER_HOME=%s/g\" /etc/service/counterpartyd-testnet/run" % user_homedir.replace('/', '\/'))
         if with_counterblockd:
-            runcmd("rm -f /etc/init/counterblockd.conf")
-            runcmd("cp -af %s/linux/init/counterblockd.conf.template /etc/init/counterblockd.conf" % paths['dist_path'])
-            runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterblockd.conf" % run_as_user)
-            runcmd("sed -ri \"s/\!USER_HOMEDIR\!/%s/g\" /etc/init/counterblockd.conf" % user_homedir.replace('/', '\/'))
-            if with_testnet:
-                runcmd("rm -f /etc/init/counterblockd-testnet.conf")
-                runcmd("cp -af %s/linux/init/counterblockd-testnet.conf.template /etc/init/counterblockd-testnet.conf" % paths['dist_path'])
-                runcmd("sed -ri \"s/\!RUN_AS_USER\!/%s/g\" /etc/init/counterblockd-testnet.conf" % run_as_user)
-                runcmd("sed -ri \"s/\!USER_HOMEDIR\!/%s/g\" /etc/init/counterblockd-testnet.conf" % user_homedir.replace('/', '\/'))
+            runcmd("sed -ri \"s/USER=xcpd/USER=%s/g\" /etc/service/counterblockd/run" % run_as_user)
+            runcmd("sed -ri \"s/USER_HOME=\/home\/xcp/USER_HOME=%s/g\" /etc/service/counterblockd/run" % user_homedir.replace('/', '\/'))
+        if with_counterblockd and with_testnet:
+            runcmd("sed -ri \"s/USER=xcpd/USER=%s/g\" /etc/service/counterblockd-testnet/run" % run_as_user)
+            runcmd("sed -ri \"s/USER_HOME=\/home\/xcp/USER_HOME=%s/g\" /etc/service/counterblockd-testnet/run" % user_homedir.replace('/', '\/'))
 
 def create_default_datadir_and_config(paths, run_as_user, with_counterblockd, with_testnet):
     def create_config(appname, default_config):
@@ -488,6 +413,14 @@ def do_build(paths, with_counterblockd):
         os.remove(installer_dest)
     shutil.move(os.path.join(paths['dist_path'], "windows", "counterpartyd_install.exe"), installer_dest)
     logging.info("FINAL installer created as %s" % installer_dest)
+
+def usage():
+    print("SYNTAX: %s [-h] [--with-counterblockd] [--with-testnet] [--for-user=] [setup|build|update]" % sys.argv[0])
+    print("* The 'setup' command will setup and install counterpartyd as a source installation (including automated setup of its dependencies)")
+    print("* The 'build' command builds an installer package (Windows only, currently)")
+    print("* The 'update' command updates the git repo for both counterpartyd, counterpartyd_build, and counterblockd (if --with-counterblockd is specified)")
+    print("* 'setup' is chosen by default if neither the 'build', 'update', or 'setup' arguments are specified.")
+    print("* If you want to install counterblockd along with counterpartyd, specify the --with-counterblockd option")
 
 def main():
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s|%(levelname)s: %(message)s')

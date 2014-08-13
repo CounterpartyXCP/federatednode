@@ -171,7 +171,7 @@ points to the ``run.py`` script) is placed. If not, run ``/usr/local/bin/counter
 
 Once you're sure it launches and runs fine, press CTRL-C to exit it, and then run ``counterpartyd`` as a background process via::
 
-    sudo service counterpartyd start
+    sudo sv start counterpartyd
 
 You can then open up another command window and run any of ``counterpartyd’s`` other functions, for example::
 

@@ -1,0 +1,9 @@
+#!/bin/sh
+
+USER=xcpd
+USER_HOME=/home/xcp
+
+#sv start bitcoind || exit 1
+exec 2>&1
+exec su -s /bin/bash -c 'cd ${USER_HOME} && /usr/local/bin/armory_utxsvr' ${USER}
+

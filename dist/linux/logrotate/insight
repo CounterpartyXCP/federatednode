@@ -1,10 +1,10 @@
-!USER_HOMEDIR!/insight-api/insight*.log {
+/home/xcp/insight-api/insight*.log {
         daily
         missingok
         rotate 52
         compress
         delaycompress
         notifempty
-        create 640 !RUN_AS_USER! !RUN_AS_USER!
+        create 640 xcpd xcpd
         sharedscripts
 }
