@@ -32,9 +32,9 @@ DEFAULT_CONFIG = "[Default]\nbackend-rpc-connect=localhost\nbackend-rpc-port=833
 DEFAULT_CONFIG_TESTNET = "[Default]\nbackend-rpc-connect=localhost\nbackend-rpc-port=18332\nbackend-rpc-user=rpc\nbackend-rpc-password=1234\nrpc-host=localhost\nrpc-port=14000\nrpc-user=rpc\nrpc-password=xcppw1234\ntestnet=1"
 DEFAULT_CONFIG_INSTALLER = "[Default]\nbackend-rpc-connect=BITCOIND_RPC_CONNECT\nbackend-rpc-port=BITCOIND_RPC_PORT\nbackend-rpc-user=BITCOIND_RPC_USER\nbackend-rpc-password=BITCOIND_RPC_PASSWORD\nrpc-host=RPC_HOST\nrpc-port=RPC_PORT\nrpc-user=RPC_USER\nrpc-password=RPC_PASSWORD"
 
-DEFAULT_CONFIG_COUNTERWALLETD = "[Default]\nbackend-rpc-connect=localhost\nbackend-rpc-port=8332\nbackend-rpc-user=rpc\nbackend-rpc-password=rpcpw1234\ncounterpartyd-rpc-host=localhost\ncounterpartyd-rpc-port=4000\ncounterpartyd-rpc-user=rpc\ncounterpartyd-rpc-password=xcppw1234\nrpc-host=0.0.0.0\nsocketio-host=0.0.0.0\nsocketio-chat-host=0.0.0.0\nredis-enable-apicache=0"
-DEFAULT_CONFIG_COUNTERWALLETD_TESTNET = "[Default]\nbackend-rpc-connect=localhost\nbackend-rpc-port=18332\nbackend-rpc-user=rpc\nbackend-rpc-password=1234\ncounterpartyd-rpc-host=localhost\ncounterpartyd-rpc-port=14000\ncounterpartyd-rpc-user=rpc\ncounterpartyd-rpc-password=xcppw1234\nrpc-host=0.0.0.0\nsocketio-host=0.0.0.0\nsocketio-chat-host=0.0.0.0\nredis-enable-apicache=0\ntestnet=1"
-DEFAULT_CONFIG_INSTALLER_COUNTERWALLETD = "[Default]\nbackend-rpc-connect=localhost\nbackend-rpc-port=8332\nbackend-rpc-user=rpc\nbackend-rpc-password=1234\ncounterpartyd-rpc-host=RPC_HOST\ncounterpartyd-rpc-port=RPC_PORT\ncounterpartyd-rpc-user=RPC_USER\ncounterpartyd-rpc-password=RPC_PASSWORD"
+DEFAULT_CONFIG_COUNTERBLOCKD = "[Default]\nbackend-rpc-connect=localhost\nbackend-rpc-port=8332\nbackend-rpc-user=rpc\nbackend-rpc-password=rpcpw1234\ncounterpartyd-rpc-host=localhost\ncounterpartyd-rpc-port=4000\ncounterpartyd-rpc-user=rpc\ncounterpartyd-rpc-password=xcppw1234\nrpc-host=0.0.0.0\nsocketio-host=0.0.0.0\nsocketio-chat-host=0.0.0.0\nredis-enable-apicache=0"
+DEFAULT_CONFIG_COUNTERBLOCKD_TESTNET = "[Default]\nbackend-rpc-connect=localhost\nbackend-rpc-port=18332\nbackend-rpc-user=rpc\nbackend-rpc-password=1234\ncounterpartyd-rpc-host=localhost\ncounterpartyd-rpc-port=14000\ncounterpartyd-rpc-user=rpc\ncounterpartyd-rpc-password=xcppw1234\nrpc-host=0.0.0.0\nsocketio-host=0.0.0.0\nsocketio-chat-host=0.0.0.0\nredis-enable-apicache=0\ntestnet=1"
+DEFAULT_CONFIG_INSTALLER_COUNTERBLOCKD = "[Default]\nbackend-rpc-connect=localhost\nbackend-rpc-port=8332\nbackend-rpc-user=rpc\nbackend-rpc-password=1234\ncounterpartyd-rpc-host=RPC_HOST\ncounterpartyd-rpc-port=RPC_PORT\ncounterpartyd-rpc-user=RPC_USER\ncounterpartyd-rpc-password=RPC_PASSWORD"
 
 def _get_app_cfg_paths(appname, run_as_user):
     import appdirs #installed earlier
@@ -159,7 +159,19 @@ def install_dependencies(paths, with_counterblockd, noninteractive):
                         else:
                             break
                 if db_locally.lower() == 'y':
-                    runcmd("apt-get -y install mongodb mongodb-server redis-server")
+                    #install mongo-10gen (newer than what ubuntu has), pegged to a specific version
+                    MONGO_VERSION = "2.6.4"
+                    runcmd("apt-get -y remove mongodb mongodb-server") #remove ubuntu stock packages, if installed
+                    runcmd("apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10")
+                    runcmd("/bin/bash -c \"echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | sudo tee /etc/apt/sources.list.d/mongodb.list\"")
+                    runcmd("apt-get update")
+                    runcmd("apt-get install mongodb-org=%s mongodb-org-server=%s mongodb-org-shell=%s mongodb-org-mongos=%s mongodb-org-tools=%s" % (
+                        MONGO_VERSION, MONGO_VERSION, MONGO_VERSION, MONGO_VERSION, MONGO_VERSION))
+                    for p in ('mongodb-org', 'mongodb-org-server', 'mongodb-org-shell', 'mongodb-org-mongos', 'mongodb-org-tools'):
+                        runcmd("echo \"%s hold\" | sudo dpkg --set-selections" % p)
+                    #also install redis
+                    runcmd("apt-get -y install redis-server")
+                    
         elif ubuntu_release == "12.04":
             #12.04 deps. 12.04 doesn't include python3-pip, so we need to use the workaround at http://stackoverflow.com/a/12262143
             runcmd("apt-get -y install runit software-properties-common python-software-properties git-core wget cx-freeze \
@@ -357,9 +369,9 @@ def create_default_datadir_and_config(paths, run_as_user, with_counterblockd, wi
     if with_testnet:
         create_config('counterpartyd-testnet', DEFAULT_CONFIG_TESTNET)
     if with_counterblockd:
-        create_config('counterblockd', DEFAULT_CONFIG_COUNTERWALLETD)
+        create_config('counterblockd', DEFAULT_CONFIG_COUNTERBLOCKD)
         if with_testnet:
-            create_config('counterblockd-testnet', DEFAULT_CONFIG_COUNTERWALLETD_TESTNET)
+            create_config('counterblockd-testnet', DEFAULT_CONFIG_COUNTERBLOCKD_TESTNET)
 
 def do_build(paths, with_counterblockd):
     #TODO: finish windows build support for counterblockd
@@ -390,7 +402,7 @@ def do_build(paths, with_counterblockd):
     cfg.close()
     if with_counterblockd:
         cfg = open(os.path.join(os.path.join(paths['bin_path'], "build"), "counterblockd.conf.default"), 'w')
-        cfg.write(COUNTERWALLETD_DEFAULT_CONFIG_INSTALLER)
+        cfg.write(COUNTERBLOCKD_DEFAULT_CONFIG_INSTALLER)
         cfg.close()
     
     #find the location of makensis.exe (freaking windows...)
