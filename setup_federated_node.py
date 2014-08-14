@@ -72,6 +72,22 @@ def do_base_setup(run_as_user, branch, base_path, dist_path):
     runcmd("apt-get update")
     runcmd("apt-get -y install git-core software-properties-common python-software-properties build-essential ssl-cert ntp runit")
     
+    #install node-js
+    #node-gyp building has ...issues out of the box on Ubuntu... use Chris Lea's nodejs build instead, which is newer
+    runcmd("apt-get -y remove nodejs npm gyp")
+    runcmd("add-apt-repository -y ppa:chris-lea/node.js")
+    runcmd("apt-get update")
+    runcmd("apt-get -y install nodejs") #includes npm
+    gypdir = None
+    try:
+        import gyp
+        gypdir = os.path.dirname(gyp.__file__)
+    except:
+        pass
+    else:
+        runcmd("mv %s %s_bkup" % (gypdir, gypdir))
+        #^ fix for https://github.com/TooTallNate/node-gyp/issues/363
+
     #Create xcp user, under which the files will be stored, and who will own the files, etc
     try:
         pwd.getpwnam(USERNAME)
@@ -241,22 +257,6 @@ def do_blockchain_service_setup(run_as_user, base_path, dist_path, run_mode, blo
         """This installs and configures insight"""
         assert blockchain_service
         
-        #node-gyp building for insight has ...issues out of the box on Ubuntu... use Chris Lea's nodejs build instead, which is newer
-        runcmd("apt-get -y remove nodejs npm gyp")
-        runcmd("add-apt-repository -y ppa:chris-lea/node.js")
-        runcmd("apt-get update")
-        runcmd("apt-get -y install nodejs") #includes npm
-        
-        gypdir = None
-        try:
-            import gyp
-            gypdir = os.path.dirname(gyp.__file__)
-        except:
-            pass
-        else:
-            runcmd("mv %s %s_bkup" % (gypdir, gypdir))
-            #^ fix for https://github.com/TooTallNate/node-gyp/issues/363
-
         git_repo_clone("insight-api", "https://github.com/bitpay/insight-api.git",
             os.path.join(USER_HOMEDIR, "insight-api"), branch="master", for_user=run_as_user,
             hash="c05761b98b70886d0700563628a510f89f87c03e") #insight 0.2.7
