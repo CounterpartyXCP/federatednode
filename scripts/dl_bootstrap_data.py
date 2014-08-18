@@ -59,11 +59,11 @@ def main():
             logging.info("No bitcoin testnet bootstrap.dat file support yet. Skipping...")
     
     if get_counterpartyd_data:
-        runcmd("wget -O /tmp/counterpartyd-db.latest.tar.gz %s/ https://bootstrap.counterpartyd.co/counterpartyd-db.latest.tar.gz")
+        runcmd("wget -qO /tmp/counterpartyd-db.latest.tar.gz https://bootstrap.counterpartyd.co/counterpartyd-db.latest.tar.gz")
         runcmd("rm -f %s/.config/counterpartyd/counterpartyd.*.db* && tar -C %s/.config/counterpartyd -zxvf /tmp/counterpartyd-db.latest.tar.gz" % (USER_HOME, USER_HOME))
         runcmd("chown -R %s:%s %s/.config/counterpartyd/" % (DAEMON_USERNAME, USERNAME, USER_HOMEDIR))
         if get_testnet_data:
-            runcmd("wget -O /tmp/counterpartyd-testnet-db.latest.tar.gz %s/ https://bootstrap.counterpartyd.co/counterpartyd-testnet-db.latest.tar.gz")
+            runcmd("wget -qO /tmp/counterpartyd-testnet-db.latest.tar.gz https://bootstrap.counterpartyd.co/counterpartyd-testnet-db.latest.tar.gz")
             runcmd("rm -f %s/.config/counterpartyd-testnet/counterpartyd.*.db* && tar -C %s/.config/counterpartyd-testnet -zxvf /tmp/counterpartyd-testnet-db.latest.tar.gz" % (USER_HOME, USER_HOME))
             runcmd("chown -R %s:%s %s/.config/counterpartyd-testnet/" % (DAEMON_USERNAME, USERNAME, USER_HOMEDIR))
 
