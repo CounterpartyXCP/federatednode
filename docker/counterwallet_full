@@ -1,0 +1,3 @@
+
+# Start up setup script
+RUN python3 setup_federated_node.py

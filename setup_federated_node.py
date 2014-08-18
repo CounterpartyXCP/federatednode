@@ -31,8 +31,8 @@ except ImportError:
 from setup_util import *
 
 USERNAME = "xcp"
-USER_HOMEDIR = "/home/xcp"
 DAEMON_USERNAME = "xcpd"
+USER_HOMEDIR = "/home/xcp"
 QUESTION_FLAGS = collections.OrderedDict({
     "op": ('u', 'r'),
     "role": ('counterwallet', 'vendingmachine', 'blockexplorer', 'counterpartyd_only', 'btcpayescrow'),
@@ -45,23 +45,6 @@ QUESTION_FLAGS = collections.OrderedDict({
     "counterwallet_support_email": None,
     "autostart_services": ('y', 'n'),
 })
-
-def do_prerun_checks():
-    #make sure this is running on a supported OS
-    if os.name != "posix" or platform.dist()[0] != "Ubuntu" or platform.architecture()[0] != '64bit':
-        logging.error("Only 64bit Ubuntu Linux is supported at this time")
-        sys.exit(1)
-    ubuntu_release = platform.linux_distribution()[1]
-    if ubuntu_release != "14.04":
-        logging.error("Only Ubuntu 14.04 supported for Counterblock Federated Node install.")
-        sys.exit(1)
-    #script must be run as root
-    if os.geteuid() != 0:
-        logging.error("This script must be run as root (use 'sudo' to run)")
-        sys.exit(1)
-    if os.name == "posix" and "SUDO_USER" not in os.environ:
-        logging.error("Please use `sudo` to run this script.")
-        sys.exit(1)
 
 def do_base_setup(run_as_user, branch, base_path, dist_path):
     """This creates the xcp and xcpd users and checks out the counterpartyd_build system from git"""
@@ -408,10 +391,6 @@ def do_counterwallet_setup(run_as_user, branch, updateOnly=False):
     runcmd("chmod -R u+rw,g+rw,o+r,o-w ~%s/counterwallet" % USERNAME) #just in case
 
 def do_newrelic_setup(run_as_user, base_path, dist_path, run_mode):
-    ##
-    ## NOTE: NEW RELIC DAEMON CAUSES ISSUES WITH COUNTERBLOCKD (SOCKETS STICKING IN CLOSE_WAIT STATE)
-    ##  -- DO NOT USE IT FOR COUNTERBLOCKD MONITORING
-    ##
     NR_PREFS_LICENSE_KEY_PATH = "/etc/newrelic/LICENSE_KEY"
     NR_PREFS_HOSTNAME_PATH = "/etc/newrelic/HOSTNAME"
     
@@ -451,23 +430,18 @@ def do_newrelic_setup(run_as_user, base_path, dist_path, run_mode):
     #install some deps...
     runcmd("sudo apt-get -y install libyaml-dev")
     
-    #install/setup python agent for both counterpartyd and counterblockd
+    #install/setup python agent for counterpartyd
     #counterpartyd
     runcmd("%s/env/bin/pip install newrelic" % base_path)
     runcmd("cp -af %s/linux/newrelic/nr_counterpartyd.ini.template /etc/newrelic/nr_counterpartyd.ini" % dist_path)
     runcmd("sed -ri \"s/\!LICENSE_KEY\!/%s/g\" /etc/newrelic/nr_counterpartyd.ini" % nr_license_key)
     runcmd("sed -ri \"s/\!HOSTNAME\!/%s/g\" /etc/newrelic/nr_counterpartyd.ini" % nr_hostname)
     #counterblockd
-    runcmd("%s/env.counterblockd/bin/pip install newrelic" % base_path)
-    runcmd("cp -af %s/linux/newrelic/nr_counterblockd.ini.template /etc/newrelic/nr_counterblockd.ini" % dist_path)
-    runcmd("sed -ri \"s/\!LICENSE_KEY\!/%s/g\" /etc/newrelic/nr_counterblockd.ini" % nr_license_key)
-    runcmd("sed -ri \"s/\!HOSTNAME\!/%s/g\" /etc/newrelic/nr_counterblockd.ini" % nr_hostname)
+    ## NOTE: NEW RELIC DAEMON CAUSES ISSUES WITH COUNTERBLOCKD (SOCKETS STICKING IN CLOSE_WAIT STATE)
+    ##  -- DO NOT USE IT FOR COUNTERBLOCKD MONITORING
     #install init scripts (overwrite the existing ones for now at least)
-    runcmd("cp -af %s/linux/newrelic/init/nr-counterpartyd.conf /etc/init/counterpartyd.conf" % dist_path) #overwrite
-    #runcmd("cp -af %s/linux/newrelic/init/nr-counterblockd.conf /etc/init/counterblockd.conf" % dist_path) #overwrite
-    runcmd("cp -af %s/linux/newrelic/init/nr-counterpartyd-testnet.conf /etc/init/counterpartyd-testnet.conf" % dist_path) #overwrite
-    #runcmd("cp -af %s/linux/newrelic/init/nr-counterblockd-testnet.conf /etc/init/counterblockd-testnet.conf" % dist_path) #overwrite
-    #upstart enablement (overrides) should be fine as established in do_counterparty_setup...
+    runcmd("cp -af %s/linux/newrelic/init/run.nr-counterpartyd /etc/sv/counterpartyd/run" % dist_path) #overwrite
+    runcmd("cp -af %s/linux/newrelic/init/run.nr-counterpartyd-testnet /etc/sv/counterpartyd-testnet/run" % dist_path) #overwrite
 
     #install/setup server agent
     runcmd("add-apt-repository \"deb http://apt.newrelic.com/debian/ newrelic non-free\"")
@@ -697,6 +671,7 @@ def gather_build_questions(answered_questions, noninteractive, docker):
             answered_questions['autostart_services'] = False 
     assert answered_questions['autostart_services'] in QUESTION_FLAGS['autostart_services']
 
+    logging.debug("answered_questions: %s" % answered_questions)
     return answered_questions
 
 def usage():
@@ -705,7 +680,7 @@ def usage():
 
 def main():
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s|%(levelname)s: %(message)s')
-    do_prerun_checks()
+    do_federated_node_prerun_checks()
     run_as_user = os.environ["SUDO_USER"]
     assert run_as_user
     answered_questions = {}

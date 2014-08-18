@@ -8,7 +8,7 @@ import platform
 import string
 import subprocess
 
-__all__ = ['pass_generator', 'runcmd', 'modify_config', 'modify_cp_config', 'ask_question',
+__all__ = ['pass_generator', 'runcmd', 'do_federated_node_prerun_checks', 'modify_config', 'modify_cp_config', 'ask_question',
     'git_repo_clone', 'config_runit_for_service', 'config_runit_disable_manual_control', 'which', 'rmtree']
 
 def pass_generator(size=14, chars=string.ascii_uppercase + string.ascii_lowercase + string.digits):
@@ -20,6 +20,23 @@ def runcmd(command, abort_on_failure=True):
     if abort_on_failure and ret != 0:
         logging.error("Command failed: '%s'" % command)
         sys.exit(1) 
+
+def do_federated_node_prerun_checks():
+    #make sure this is running on a supported OS
+    if os.name != "posix" or platform.dist()[0] != "Ubuntu" or platform.architecture()[0] != '64bit':
+        logging.error("Only 64bit Ubuntu Linux is supported at this time")
+        sys.exit(1)
+    ubuntu_release = platform.linux_distribution()[1]
+    if ubuntu_release != "14.04":
+        logging.error("Only Ubuntu 14.04 supported for Counterblock Federated Node install.")
+        sys.exit(1)
+    #script must be run as root
+    if os.geteuid() != 0:
+        logging.error("This script must be run as root (use 'sudo' to run)")
+        sys.exit(1)
+    if os.name == "posix" and "SUDO_USER" not in os.environ:
+        logging.error("Please use `sudo` to run this script.")
+        sys.exit(1)
 
 def modify_config(param_re, content_to_add, filenames, replace_if_exists=True, dotall=False, add_newline=True):
     if not isinstance(filenames, (list, tuple)):
@@ -34,9 +51,8 @@ def modify_config(param_re, content_to_add, filenames, replace_if_exists=True, d
         f = open(filename, 'r')
         content = f.read()
         f.close()
-        if content[-1] != '\n':
-            content += '\n'
         if not re.search(param_re, content, re_flags): #missing; add to config 
+            if content[-1] != '\n': content += '\n'
             content += content_to_add 
         elif replace_if_exists: #replace in config
             content = re.sub(param_re, content_to_add, content, flags=re_flags)
