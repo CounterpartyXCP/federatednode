@@ -172,7 +172,7 @@ def install_dependencies(paths, with_counterblockd, noninteractive):
                     #replace use of mongo init script with our runit version
                     runcmd("""bash -c "echo 'manual' > /etc/init/mongod.override" """)
                     runcmd("service mongod stop", abort_on_failure=False)
-                    config_runit_for_service(dist_path, "mongod", manual_control=False)
+                    config_runit_for_service(paths['dist_path'], "mongod", manual_control=False)
 
                     #also install redis
                     runcmd("apt-get -y install redis-server")
