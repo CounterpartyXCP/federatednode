@@ -821,7 +821,7 @@ def main():
     try:
         pwd.getpwnam(USERNAME) #hacky check ...as this user is created by the script
     except:
-        pass
+        answered_questions['op'] = 'r' #do a build
     else: #setup has already been run at least once
         if not (answered_questions.get('op', None) in QUESTION_FLAGS['op']):
             answered_questions['op'] = ask_question(
