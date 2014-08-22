@@ -104,7 +104,7 @@ def get_paths(with_counterblockd):
     paths['bin_path'] = os.path.join(paths['base_path'], "bin")
     logging.debug("bin path: '%s'" % paths['bin_path'])
     
-    #the pip executiable that we'll be using does not exist yet, but it will, once we've created the virtualenv
+    #the pip executable that we'll be using does not exist yet, but it will, once we've created the virtualenv
     paths['pip_path'] = os.path.join(paths['env_path'], "Scripts" if os.name == "nt" else "bin", "pip.exe" if os.name == "nt" else "pip")
     paths['python_path'] = os.path.join(paths['env_path'], "Scripts" if os.name == "nt" else "bin", "python.exe" if os.name == "nt" else "python3")
 
