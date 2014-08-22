@@ -857,19 +857,19 @@ def main():
     bitcoind_rpc_password, bitcoind_rpc_password_testnet \
         = do_bitcoind_setup(run_as_user, answered_questions['branch'], base_path, dist_path, answered_questions['run_mode'])
     
-    do_counterparty_setup(role, run_as_user, answered_questions['branch'], base_path, dist_path, answered_questions['run_mode'],
+    do_counterparty_setup(answered_questions['role'], run_as_user, answered_questions['branch'], base_path, dist_path, answered_questions['run_mode'],
         bitcoind_rpc_password, bitcoind_rpc_password_testnet,
         answered_questions['counterpartyd_public'], answered_questions['counterwallet_support_email'])
     
     do_blockchain_service_setup(run_as_user, base_path, dist_path,
         answered_questions['run_mode'], answered_questions['blockchain_service'])
     
-    if role != "counterpartyd_only":
+    if answered_questions['role'] != "counterpartyd_only":
         do_nginx_setup(run_as_user, base_path, dist_path)
     
     do_armory_utxsvr_setup(run_as_user, base_path, dist_path,
-        answered_questions['run_mode'], enable=role=='counterwallet')
-    if role == 'counterwallet':
+        answered_questions['run_mode'], enable=answered_questions['role']=='counterwallet')
+    if answered_questions['role'] == 'counterwallet':
         do_counterwallet_setup(run_as_user, answered_questions['branch'])
 
     do_newrelic_setup(run_as_user, base_path, dist_path, answered_questions['run_mode']) #optional
