@@ -3,11 +3,10 @@ Setting up insight
 
 .. info::
 
-    **If you are just running ``counterpartyd`` on mainnet, this section is optional.***
+    ***This section is optional: By default, both counterpartyd and counterblockd utilize blockr.io instead of insight. ***
     
-    On the other hand, if you want to run ``counterpartyd`` on testnet, or want to use ``counterblockd``,
-    going through this section is required.
-    
+    However, using insight allows for more reliability than blockr.io, and is thus recommended for production builds
+    especially.
      
 As part of operating, ``counterpartyd`` may and ``counterblockd`` does require data that ``bitcoind`` cannot currently provide. This includes things such
 as a BTC balance from an address not in the local ``bitcoind`` wallet, and a list of unspent transaction outputs (UXTO)
@@ -76,7 +75,14 @@ Open up a command window and run::
 
     node C:\insight-api\insight.js
   
-You can run it on startup by adding to your Startup program group in Windows, or using something like `NSSM <http://nssm.cc/usage>`__.  
+You can run it on startup by adding to your Startup program group in Windows, or using something like `NSSM <http://nssm.cc/usage>`__.
+
+Configuration
+^^^^^^^^^^^^^^
+
+To use insight (running on the same host, with the default ports), just modify your ``counterpartyd.conf`` and/or ``counterblockd.conf``
+files and add an option of ``blockchain-service-name=insight`` (replacing any ``blockchain-service-name`` option that
+already exists).
 
 Next Steps
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -124,6 +130,13 @@ to the file name) and modify ``!RUN_AS_USER!`` to be the username that you have 
 do something like::
 
     sudo service insight start
+
+Configuration
+^^^^^^^^^^^^^^
+
+To use insight (running on the same host, with the default ports), just modify your ``counterpartyd.conf`` and/or ``counterblockd.conf``
+files and add an option of ``blockchain-service-name=insight`` (replacing any ``blockchain-service-name`` option that
+already exists).
 
 Next steps
 ^^^^^^^^^^^

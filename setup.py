@@ -1,9 +1,6 @@
 #! /usr/bin/env python3
 """
 Counterparty setup script - works under Ubuntu Linux and Windows at the present moment
-
-TODO: On Linux, update to use fpm to package the files in a .deb, .rpm, etc archive, with the depenencies listed.
-This should make installation/uninstallation more straight-forward.
 """
 import os
 import sys
@@ -32,11 +29,8 @@ from setup_util import *
 PYTHON3_VER = None
 DEFAULT_CONFIG = "[Default]\nbackend-rpc-connect=localhost\nbackend-rpc-port=8332\nbackend-rpc-user=rpc\nbackend-rpc-password=1234\nrpc-host=localhost\nrpc-port=4000\nrpc-user=rpc\nrpc-password=xcppw1234"
 DEFAULT_CONFIG_TESTNET = "[Default]\nbackend-rpc-connect=localhost\nbackend-rpc-port=18332\nbackend-rpc-user=rpc\nbackend-rpc-password=1234\nrpc-host=localhost\nrpc-port=14000\nrpc-user=rpc\nrpc-password=xcppw1234\ntestnet=1"
-DEFAULT_CONFIG_INSTALLER = "[Default]\nbackend-rpc-connect=BITCOIND_RPC_CONNECT\nbackend-rpc-port=BITCOIND_RPC_PORT\nbackend-rpc-user=BITCOIND_RPC_USER\nbackend-rpc-password=BITCOIND_RPC_PASSWORD\nrpc-host=RPC_HOST\nrpc-port=RPC_PORT\nrpc-user=RPC_USER\nrpc-password=RPC_PASSWORD"
-
 DEFAULT_CONFIG_COUNTERBLOCKD = "[Default]\nbackend-rpc-connect=localhost\nbackend-rpc-port=8332\nbackend-rpc-user=rpc\nbackend-rpc-password=rpcpw1234\ncounterpartyd-rpc-host=localhost\ncounterpartyd-rpc-port=4000\ncounterpartyd-rpc-user=rpc\ncounterpartyd-rpc-password=xcppw1234\nrpc-host=0.0.0.0\nsocketio-host=0.0.0.0\nsocketio-chat-host=0.0.0.0\nredis-enable-apicache=0"
 DEFAULT_CONFIG_COUNTERBLOCKD_TESTNET = "[Default]\nbackend-rpc-connect=localhost\nbackend-rpc-port=18332\nbackend-rpc-user=rpc\nbackend-rpc-password=1234\ncounterpartyd-rpc-host=localhost\ncounterpartyd-rpc-port=14000\ncounterpartyd-rpc-user=rpc\ncounterpartyd-rpc-password=xcppw1234\nrpc-host=0.0.0.0\nsocketio-host=0.0.0.0\nsocketio-chat-host=0.0.0.0\nredis-enable-apicache=0\ntestnet=1"
-DEFAULT_CONFIG_INSTALLER_COUNTERBLOCKD = "[Default]\nbackend-rpc-connect=localhost\nbackend-rpc-port=8332\nbackend-rpc-user=rpc\nbackend-rpc-password=1234\ncounterpartyd-rpc-host=RPC_HOST\ncounterpartyd-rpc-port=RPC_PORT\ncounterpartyd-rpc-user=RPC_USER\ncounterpartyd-rpc-password=RPC_PASSWORD"
 
 def _get_app_cfg_paths(appname, run_as_user):
     import appdirs #installed earlier
@@ -397,65 +391,11 @@ def create_default_datadir_and_config(paths, run_as_user, with_bootstrap_db, wit
         if with_testnet:
             create_config('counterblockd-testnet', DEFAULT_CONFIG_COUNTERBLOCKD_TESTNET)
 
-def do_build(paths, with_counterblockd):
-    #TODO: finish windows build support for counterblockd
-    if os.name != "nt":
-        logging.error("Building an installer only supported on Windows at this time.")
-        sys.exit(1)
-        
-    logging.debug("Cleaning any old build dirs...")
-    if os.path.exists(os.path.join(paths['bin_path'], "exe.win-amd64-%s" % PYTHON3_VER)):
-        shutil.rmtree(os.path.join(paths['bin_path'], "exe.win-amd64-%s" % PYTHON3_VER))
-    if os.path.exists(os.path.join(paths['bin_path'], "exe.win-i386-%s" % PYTHON3_VER)):
-        shutil.rmtree(os.path.join(paths['bin_path'], "exe.win-i386-%s" % PYTHON3_VER))
-    if os.path.exists(os.path.join(paths['bin_path'], "build")):
-        shutil.rmtree(os.path.join(paths['bin_path'], "build"))
-
-    #Run cx_freeze to build the counterparty sources into a self-contained executiable
-    runcmd("%s \"%s\" build -b \"%s\"" % (
-        paths['python_path'], os.path.join(paths['dist_path'], "_cxfreeze_setup.py"), paths['bin_path']))
-    #move the build dir to something more predictable so we can build an installer with it
-    arch = "amd64" if os.path.exists(os.path.join(paths['bin_path'], "exe.win-amd64-%s" % PYTHON3_VER)) else "i386"
-    shutil.move(os.path.join(paths['bin_path'], "exe.win-%s-%s" % (arch, PYTHON3_VER)), os.path.join(paths['bin_path'], "build"))
-    
-    logging.info("Frozen executiable data created in %s" % os.path.join(paths['bin_path'], "build"))
-    
-    #Add a default config to the build
-    cfg = open(os.path.join(os.path.join(paths['bin_path'], "build"), "counterpartyd.conf.default"), 'w')
-    cfg.write(DEFAULT_CONFIG_INSTALLER)
-    cfg.close()
-    if with_counterblockd:
-        cfg = open(os.path.join(os.path.join(paths['bin_path'], "build"), "counterblockd.conf.default"), 'w')
-        cfg.write(COUNTERBLOCKD_DEFAULT_CONFIG_INSTALLER)
-        cfg.close()
-    
-    #find the location of makensis.exe (freaking windows...)
-    if 'PROGRAMFILES(X86)' in os.environ:
-        pf_path = os.environ['PROGRAMFILES(X86)'].replace("Program Files (x86)", "Progra~2")
-    else:
-        pf_path = os.environ['PROGRAMFILES'].replace("Program Files", "Progra~1")
-    
-    make_nsis_path = os.path.normpath(os.path.join(pf_path, "NSIS", "makensis.exe"))
-    if not os.path.exists(make_nsis_path):
-        logging.error("Error finding makensis.exe at path '%s'. Did you install NSIS?" % make_nsis_path)
-        sys.exit(1)
-    runcmd(r'%s %s%s' % (make_nsis_path, "/DIS_64BIT " if arch == "amd64" else '',
-        os.path.normpath(os.path.join(paths['dist_path'], "windows", "installer.nsi"))))
-    
-    #move created .msi file to the bin dir
-    from lib import config #counter party
-    installer_dest = os.path.join(paths['bin_path'], "counterpartyd-v%s-%s_install.exe" % (config.CLIENT_VERSION, arch))
-    if os.path.exists(installer_dest):
-        os.remove(installer_dest)
-    shutil.move(os.path.join(paths['dist_path'], "windows", "counterpartyd_install.exe"), installer_dest)
-    logging.info("FINAL installer created as %s" % installer_dest)
-
 def usage():
-    print("SYNTAX: %s [-h] [--noninteractive] [--branch=AUTO|master|develop|etc] [--with-bootstrap-db] [--with-counterblockd] [--with-testnet] [--for-user=] [setup|build|update]" % sys.argv[0])
+    print("SYNTAX: %s [-h] [--noninteractive] [--branch=AUTO|master|develop|etc] [--with-bootstrap-db] [--with-counterblockd] [--with-testnet] [--for-user=] [setup|update]" % sys.argv[0])
     print("* The 'setup' command will setup and install counterpartyd as a source installation (including automated setup of its dependencies)")
-    print("* The 'build' command builds an installer package (Windows only, currently)")
     print("* The 'update' command updates the git repo for both counterpartyd, counterpartyd_build, and counterblockd (if --with-counterblockd is specified)")
-    print("* 'setup' is chosen by default if neither the 'build', 'update', or 'setup' arguments are specified.")
+    print("* 'setup' is chosen by default if neither the 'update' or 'setup' arguments are specified.")
     print("* If you want to install counterblockd along with counterpartyd, specify the --with-counterblockd option")
 
 def main():
@@ -476,7 +416,8 @@ def main():
     noninteractive = False #headless operation
     branch = "AUTO" #default
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hb", ["build", "help", "with-bootstrap-db", "with-counterblockd", "with-testnet", "noninteractive", "for-user=", "branch="])
+        opts, args = getopt.getopt(sys.argv[1:], "h",
+            ["help", "with-bootstrap-db", "with-counterblockd", "with-testnet", "noninteractive", "for-user=", "branch="])
     except getopt.GetoptError as err:
         usage()
         sys.exit(2)
@@ -513,23 +454,15 @@ def main():
         usage()
         sys.exit(2)
         
-    if args and args[0] == "build":
-        command = "build"
-    elif args and args[0] == "update":
+    if args and args[0] == "update":
         command = "update"
     else: #either setup specified explicitly, or no command specified
         command = "setup"
-    assert command in ["build", "update", "setup"]
+    assert command in ["update", "setup"]
 
     paths = get_paths(with_counterblockd)
 
-    if command == "build": #build counterpartyd installer (currently windows only)
-        logging.info("Building Counterparty...")
-        checkout(branch, paths, run_as_user, with_counterblockd, command == "update")
-        install_dependencies(paths, with_counterblockd, noninteractive)
-        create_virtualenv(paths, with_counterblockd)
-        do_build(paths, with_counterblockd)
-    elif command == "update": #auto update from git
+    if command == "update": #auto update from git
         logging.info("Updating relevant Counterparty repos")
         checkout(branch, paths, run_as_user, with_counterblockd, command == "update")
     else: #setup mode
@@ -541,10 +474,8 @@ def main():
         create_virtualenv(paths, with_counterblockd)
         setup_startup(paths, run_as_user, with_counterblockd, with_testnet, noninteractive)
     
-    logging.info("%s DONE. (It's time to kick ass, and chew bubblegum... and I'm all outta gum.)" % ("BUILD" if command == "build" else "SETUP"))
-    if command != "build":
-        create_default_datadir_and_config(paths, run_as_user, with_bootstrap_db, with_counterblockd, with_testnet)
-
+    logging.info("SETUP DONE. (It's time to kick ass, and chew bubblegum... and I'm all outta gum.)")
+    create_default_datadir_and_config(paths, run_as_user, with_bootstrap_db, with_counterblockd, with_testnet)
 
 if __name__ == "__main__":
     main()
