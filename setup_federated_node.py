@@ -164,7 +164,7 @@ backend_rpc_password_testnet, counterpartyd_public, counterwallet_support_email)
     # as -y is specified, this will auto install counterblockd full node (mongo and redis) as well as setting
     # counterpartyd/counterblockd to start up at startup for both mainnet and testnet (we will override this as necessary
     # based on run_mode later in this function)
-    runcmd("~%s/counterpartyd_build/setup.py --noninteractive --branch=%s --with-testnet --for-user=%s %s" % (
+    runcmd("~%s/counterpartyd_build/setup.py --noninteractive --branch=%s --with-bootstrap-db --with-testnet --for-user=%s %s" % (
         USERNAME, branch, USERNAME, '--with-counterblockd' if role != 'counterpartyd_only' else ''))
     runcmd("cd ~%s/counterpartyd_build && git config core.sharedRepository group && find ~%s/counterpartyd_build -type d -print0 | xargs -0 chmod g+s" % (
         USERNAME, USERNAME)) #to allow for group git actions 

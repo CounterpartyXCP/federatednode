@@ -64,14 +64,17 @@ After launching a DOS command window using the instructions in the note above, t
     cd C:\
     git clone https://github.com/CounterpartyXCP/counterpartyd_build
     cd counterpartyd_build
-    C:\Python33\python.exe setup.py
-     
-The above steps will check out the build scripts to ``C:\counterpartyd_build``, and run the ``setup.py`` script, which
-will check out the newest version of ``counterpartyd`` itself from git, create a virtual environment with the
-required dependencies, and do other necessary tasks to integrate it into the system.
+    C:\Python33\python.exe setup.py --with-bootstrap-db
 
-If you chose to start ``counterpartyd`` at startup automatically, the setup script will also create a shortcut
-to ``counterpartyd`` in your Startup group. 
+Some notes::
+
+* The above steps will check out the build scripts to ``C:\counterpartyd_build``, and run the ``setup.py`` script, which
+  will check out the newest version of ``counterpartyd`` itself from git, create a virtual environment with the
+  required dependencies, and do other necessary tasks to integrate it into the system.
+* If you want to configure ``counterpartyd`` for testnet as well, add the ``--with-testnet`` switch to the ``setup.py`` command as well.
+* If you want to generate your own ``counterpartyd`` database from scratch, don't use the ``--with-bootstrap-db`` switch. 
+* If you chose to start ``counterpartyd`` at startup automatically, the setup script will also create a shortcut
+  to ``counterpartyd`` in your Startup group. 
 
 Upon the successful completion of this script, you can now run ``counterpartyd`` using the steps below.
 
@@ -145,11 +148,17 @@ Installing
     sudo apt-get -y install git-core python3
     git clone https://github.com/CounterpartyXCP/counterpartyd_build ~/counterpartyd_build
     cd ~/counterpartyd_build
-    sudo python3 setup.py
+    sudo python3 setup.py --with-bootstrap-db
 
-The ``setup.py`` script will install necessary dependencies, check out the newest version of ``counterpartyd``
-itself from git, create the python environment for ``counterpartyd``, and install an upstart script that
-will automatically start ``counterpartyd`` on startup.
+Some notes::
+
+* The ``setup.py`` script will install necessary dependencies, check out the newest version of ``counterpartyd``
+  itself from git, create the python environment for ``counterpartyd``, and install an upstart script that
+  will automatically start ``counterpartyd`` on startup.
+* If you want to configure ``counterpartyd`` for testnet as well, add the ``--with-testnet`` switch to the ``setup.py`` command as well.
+* If you want to generate your own ``counterpartyd`` database from scratch, don't use the ``--with-bootstrap-db`` switch. 
+* If you chose to start ``counterpartyd`` at startup automatically, the setup script will also create a shortcut
+  to ``counterpartyd`` in your Startup group. 
 
 
 Creating a default config

@@ -10,7 +10,6 @@ import sys
 import getopt
 import logging
 import shutil
-import urllib
 import zipfile
 import platform
 import tempfile
@@ -18,6 +17,9 @@ import subprocess
 import stat
 import string
 import random
+import tarfile
+import urllib
+import urllib.request
 
 try: #ignore import errors on windows
     import pwd
@@ -335,12 +337,13 @@ def setup_startup(paths, run_as_user, with_counterblockd, with_testnet, noninter
             runcmd("sed -ri \"s/USER=xcpd/USER=%s/g\" /etc/service/counterblockd-testnet/run" % run_as_user)
             runcmd("sed -ri \"s/USER_HOME=\/home\/xcp/USER_HOME=%s/g\" /etc/service/counterblockd-testnet/run" % user_homedir.replace('/', '\/'))
 
-def create_default_datadir_and_config(paths, run_as_user, with_counterblockd, with_testnet):
+def create_default_datadir_and_config(paths, run_as_user, with_bootstrap_db, with_counterblockd, with_testnet):
     def create_config(appname, default_config):
         data_dir, cfg_path = _get_app_cfg_paths(appname, run_as_user)
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
         
+        fetch_bootstrap_db = appname in ("counterpartyd", "counterpartyd-testnet") and not os.path.exists(cfg_path) and with_bootstrap_db
         if not os.path.exists(cfg_path):
             logging.info("Creating new configuration file at: %s" % cfg_path)
             #create a default config file
@@ -369,6 +372,22 @@ def create_default_datadir_and_config(paths, run_as_user, with_counterblockd, wi
             logging.info("NOTE: %s config file has been created at '%s'" % (appname, cfg_path))
         else:
             logging.info("%s config file already exists at: '%s'" % (appname, cfg_path))
+            
+        if fetch_bootstrap_db:
+            #download bootstrap data
+            if appname == "counterpartyd":
+                bootstrap_url = "http://counterparty-bootstrap.s3.amazonaws.com/counterpartyd-db.latest.tar.gz"
+            else:
+                assert appname == "counterpartyd-testnet"
+                bootstrap_url = "http://counterparty-bootstrap.s3.amazonaws.com/counterpartyd-testnet-db.latest.tar.gz"
+
+            logging.info("Downloading %s DB bootstrap data from %s ..." % (appname, bootstrap_url))
+            bootstrap_filename, headers = urllib.request.urlretrieve(bootstrap_url)
+            logging.info("%s DB bootstrap data downloaded to %s ..." % (appname, bootstrap_filename))
+            tfile = tarfile.open(bootstrap_filename, 'r:gz')
+            logging.info("Extracting %s DB bootstrap data to %s ..." % (appname, data_dir))
+            tfile.extractall(path=data_dir)
+            os.remove(bootstrap_filename)
     
     create_config('counterpartyd', DEFAULT_CONFIG)
     if with_testnet:
@@ -432,7 +451,7 @@ def do_build(paths, with_counterblockd):
     logging.info("FINAL installer created as %s" % installer_dest)
 
 def usage():
-    print("SYNTAX: %s [-h] [--noninteractive] [--branch=AUTO|master|develop|etc] [--with-counterblockd] [--with-testnet] [--for-user=] [setup|build|update]" % sys.argv[0])
+    print("SYNTAX: %s [-h] [--noninteractive] [--branch=AUTO|master|develop|etc] [--with-bootstrap-db] [--with-counterblockd] [--with-testnet] [--for-user=] [setup|build|update]" % sys.argv[0])
     print("* The 'setup' command will setup and install counterpartyd as a source installation (including automated setup of its dependencies)")
     print("* The 'build' command builds an installer package (Windows only, currently)")
     print("* The 'update' command updates the git repo for both counterpartyd, counterpartyd_build, and counterblockd (if --with-counterblockd is specified)")
@@ -451,18 +470,21 @@ def main():
 
     #parse any command line objects
     command = None
+    with_bootstrap_db = False #bootstrap DB by default
     with_counterblockd = False
     with_testnet = False
     noninteractive = False #headless operation
     branch = "AUTO" #default
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hb", ["build", "help", "with-counterblockd", "with-testnet", "noninteractive", "for-user=", "branch="])
+        opts, args = getopt.getopt(sys.argv[1:], "hb", ["build", "help", "with-bootstrap-db", "with-counterblockd", "with-testnet", "noninteractive", "for-user=", "branch="])
     except getopt.GetoptError as err:
         usage()
         sys.exit(2)
     mode = None
     for o, a in opts:
-        if o in ("--with-counterblockd",):
+        if o in ("--with-bootstrap-db",):
+            with_bootstrap_db = True
+        elif o in ("--with-counterblockd",):
             with_counterblockd = True
         elif o in ("--with-testnet",):
             with_testnet = True
@@ -521,7 +543,7 @@ def main():
     
     logging.info("%s DONE. (It's time to kick ass, and chew bubblegum... and I'm all outta gum.)" % ("BUILD" if command == "build" else "SETUP"))
     if command != "build":
-        create_default_datadir_and_config(paths, run_as_user, with_counterblockd, with_testnet)
+        create_default_datadir_and_config(paths, run_as_user, with_bootstrap_db, with_counterblockd, with_testnet)
 
 
 if __name__ == "__main__":
