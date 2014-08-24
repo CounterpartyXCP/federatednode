@@ -640,7 +640,7 @@ def gather_build_questions(answered_questions, noninteractive, docker):
             answered_questions['counterpartyd_public'] = 'y' 
         elif 'counterpartyd_public' not in answered_questions:
             answered_questions['counterpartyd_public'] = ask_question(
-                "Enable public Counterpartyd setup (listen on all hosts w/ rpc/1234 user) (Y/n)", ('y', 'n'), 'y')
+                "Enable public Counterpartyd setup (listen on all network interfaces w/ rpc/1234 user) (Y/n)", ('y', 'n'), 'y')
         else:
             answered_questions['counterpartyd_public'] = answered_questions.get('counterpartyd_public', 'n') #does not apply
         assert answered_questions['counterpartyd_public'] in QUESTION_FLAGS['counterpartyd_public']
