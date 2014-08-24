@@ -533,6 +533,7 @@ def do_security_setup(run_as_user, branch, base_path, dist_path, enable=True):
     #note that auditd will need a reboot to fully apply the rules, due to it operating in "immutable mode" by default
     runcmd("apt-get -y install auditd audispd-plugins")
     runcmd("install -m 0640 -o root -g root -D %s/linux/other/audit.rules /etc/audit/rules.d/counterblock.rules" % dist_path)
+    modify_config(r'^USE_AUGENRULES=.*?$', 'USE_AUGENRULES="yes"', '/etc/default/auditd')
     runcmd("service auditd restart")
 
     #iwatch

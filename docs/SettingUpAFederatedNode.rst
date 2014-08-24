@@ -150,7 +150,8 @@ Once done, start up ``bitcoind`` daemon(s)::
     sudo sv start bitcoind
     sudo sv start bitcoind-testnet
     
-    sudo tail -f ~xcp/.bitcoin/debug.log 
+    sudo tail -f ~xcp/.bitcoin/debug.log
+    sudo tail -f ~xcp/.bitcoin-testnet/testnet3/debug.log
 
 That last command will give you information on the Bitcoin blockchain download status. After the blockchain starts
 downloading, **if you've elected to install and use** ``insight``, you can launch the ``insight`` daemon(s)::
@@ -159,6 +160,7 @@ downloading, **if you've elected to install and use** ``insight``, you can launc
     sudo sv start insight-testnet
     
     sudo tail -f ~xcp/insight-api/log/current 
+    sudo tail -f ~xcp/insight-api/log-testnet/current
 
 As well as ``armory_utxsvr``, if you're using that (Counterwallet role only)::
 
@@ -166,6 +168,7 @@ As well as ``armory_utxsvr``, if you're using that (Counterwallet role only)::
     sudo sv start armory_utxsvr-testnet
     
     sudo tail -f ~xcp/.config/armory/log/current
+    sudo tail -f ~xcp/.config/armory/log-testnet/current
 
 And ``counterpartyd`` itself::
 
@@ -173,6 +176,7 @@ And ``counterpartyd`` itself::
     sudo sv start counterpartyd-testnet
     
     sudo tail -f ~xcp/.config/counterpartyd/counterpartyd.log
+    sudo tail -f ~xcp/.config/counterpartyd-testnet/counterpartyd.testnet.log
 
 Then, watching these log, wait for the insight sync (as well as the bitcoind sync and counterpartyd syncs) to finish,
 which should take between 7 and 12 hours. After this is all done, reboot the box for the new services to
@@ -183,6 +187,7 @@ process will take between 20 minutes to 1 hour most likely. You can check on the
 sync using::
 
     sudo tail -f ~xcp/.config/counterblockd/counterblockd.log
+    sudo tail -f ~xcp/.config/counterblockd-testnet/counterblockd.log
 
 Once it is fully synced up, you should be good to proceed. The next step is to simply open up a web browser, and
 go to the IP address/hostname of the server. You will then be presented to accept your self-signed SSL certificate, and

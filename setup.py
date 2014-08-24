@@ -474,8 +474,8 @@ def main():
         create_virtualenv(paths, with_counterblockd)
         setup_startup(paths, run_as_user, with_counterblockd, with_testnet, noninteractive)
     
-    logging.info("SETUP DONE. (It's time to kick ass, and chew bubblegum... and I'm all outta gum.)")
     create_default_datadir_and_config(paths, run_as_user, with_bootstrap_db, with_counterblockd, with_testnet)
+    logging.info("SETUP DONE. (It's time to kick ass, and chew bubblegum... and I'm all outta gum.)")
 
 if __name__ == "__main__":
     main()
