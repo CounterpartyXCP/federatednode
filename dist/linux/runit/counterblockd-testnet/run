@@ -1,6 +1,6 @@
 #!/bin/sh
 
 USER=xcpd
-USER_HOME=/home/xcp
+export USER_HOME=/home/xcp
 
 exec su -s /bin/bash -c '/usr/local/bin/counterblockd --data-dir=${USER_HOME}/.config/counterblockd-testnet --testnet' ${USER}

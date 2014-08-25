@@ -164,7 +164,7 @@ backend_rpc_password_testnet, counterpartyd_public, counterwallet_support_email)
     # as -y is specified, this will auto install counterblockd full node (mongo and redis) as well as setting
     # counterpartyd/counterblockd to start up at startup for both mainnet and testnet (we will override this as necessary
     # based on run_mode later in this function)
-    runcmd("~%s/counterpartyd_build/setup.py --noninteractive --branch=%s --with-testnet --for-user=%s %s" % (
+    runcmd("~%s/counterpartyd_build/setup.py --noninteractive --branch=%s --with-bootstrap-db --with-testnet --for-user=%s %s" % (
         USERNAME, branch, USERNAME, '--with-counterblockd' if role != 'counterpartyd_only' else ''))
     runcmd("cd ~%s/counterpartyd_build && git config core.sharedRepository group && find ~%s/counterpartyd_build -type d -print0 | xargs -0 chmod g+s" % (
         USERNAME, USERNAME)) #to allow for group git actions 
@@ -222,9 +222,9 @@ backend_rpc_password_testnet, counterpartyd_public, counterwallet_support_email)
         
         #role-specific counterblockd.conf values
         modify_cp_config(r'^auto\-btc\-escrow\-enable=.*?$', 'auto-btc-escrow-enable=%s' %
-            '1' if role == 'btcpayescrow' else '0', config='counterblockd', for_user=USERNAME)
+            ('1' if role == 'btcpayescrow' else '0'), config='counterblockd', for_user=USERNAME)
         modify_cp_config(r'^armory\-utxsvr\-enable=.*?$', 'armory-utxsvr-enable=%s' % 
-            '1' if role == 'counterwallet' else '0', config='counterblockd', for_user=USERNAME)
+            ('1' if role == 'counterwallet' else '0'), config='counterblockd', for_user=USERNAME)
         if role == 'counterwallet':
             modify_cp_config(r'^support\-email=.*?$', 'support-email=%s' % counterwallet_support_email,
                 config='counterblockd', for_user=USERNAME) #may be blank string
@@ -267,7 +267,11 @@ def do_blockchain_service_setup(run_as_user, base_path, dist_path, run_mode, blo
         runcmd("rm -rf /etc/sv/insight /etc/sv/insight-testnet") # so insight doesn't start if it was in use before
         do_blockr_setup()
 
-def do_nginx_setup(run_as_user, base_path, dist_path):
+def do_nginx_setup(run_as_user, base_path, dist_path, enable=True):
+    if not enable:
+        runcmd("apt-get -y remove nginx-openresty")
+        return
+    
     #Build and install nginx (openresty) on Ubuntu
     #Most of these build commands from http://brian.akins.org/blog/2013/03/19/building-openresty-on-ubuntu/
     OPENRESTY_VER = "1.7.2.1"
@@ -476,8 +480,14 @@ def do_newrelic_setup(run_as_user, base_path, dist_path, run_mode):
     runcmd("update-rc.d newrelic_nginx_agent defaults")
     runcmd("/etc/init.d/newrelic_nginx_agent restart")
     
-def do_security_setup(run_as_user, branch, base_path, dist_path):
+def do_security_setup(run_as_user, branch, base_path, dist_path, enable=True):
     """Some helpful security-related tasks, to tighten up the box"""
+    
+    if not enable:
+        #disable security setup if enabled
+        runcmd("apt-get -y remove unattended-upgrades fail2ban psad rkhunter chkrootkit logwatch apparmor auditd iwatch")
+        return
+    
     #modify host.conf
     modify_config(r'^nospoof on$', 'nospoof on', '/etc/host.conf')
     
@@ -501,7 +511,7 @@ def do_security_setup(run_as_user, branch, base_path, dist_path):
     for f in ['/etc/ufw/before.rules', '/etc/ufw/before6.rules']:
         modify_config(r'^# End required lines.*?# allow all on loopback$',
             '# End required lines\n\n#CUSTOM: for psad\n-A INPUT -j LOG\n-A FORWARD -j LOG\n\n# allow all on loopback',
-            f, dotall=True, add_newline=False)
+            f, dotall=True)
     runcmd("psad -R && psad --sig-update")
     runcmd("service ufw restart")
     runcmd("service psad restart")
@@ -523,6 +533,7 @@ def do_security_setup(run_as_user, branch, base_path, dist_path):
     #note that auditd will need a reboot to fully apply the rules, due to it operating in "immutable mode" by default
     runcmd("apt-get -y install auditd audispd-plugins")
     runcmd("install -m 0640 -o root -g root -D %s/linux/other/audit.rules /etc/audit/rules.d/counterblock.rules" % dist_path)
+    modify_config(r'^USE_AUGENRULES=.*?$', 'USE_AUGENRULES="yes"', '/etc/default/auditd')
     runcmd("service auditd restart")
 
     #iwatch
@@ -629,7 +640,7 @@ def gather_build_questions(answered_questions, noninteractive, docker):
             answered_questions['counterpartyd_public'] = 'y' 
         elif 'counterpartyd_public' not in answered_questions:
             answered_questions['counterpartyd_public'] = ask_question(
-                "Enable public Counterpartyd setup (listen on all hosts w/ rpc/1234 user) (Y/n)", ('y', 'n'), 'y')
+                "Enable public Counterpartyd setup (listen on all network interfaces w/ rpc/1234 user) (Y/n)", ('y', 'n'), 'y')
         else:
             answered_questions['counterpartyd_public'] = answered_questions.get('counterpartyd_public', 'n') #does not apply
         assert answered_questions['counterpartyd_public'] in QUESTION_FLAGS['counterpartyd_public']
@@ -659,7 +670,7 @@ def gather_build_questions(answered_questions, noninteractive, docker):
         if not docker:
             answered_questions['security_hardening'] = ask_question("Set up security hardening? (Y/n)", ('y', 'n'), 'y')
         else:
-            answered_questions['security_hardening'] = False 
+            answered_questions['security_hardening'] = 'n' 
     assert answered_questions['security_hardening'] in QUESTION_FLAGS['security_hardening']
     
     if 'autostart_services' not in answered_questions and noninteractive:
@@ -668,7 +679,7 @@ def gather_build_questions(answered_questions, noninteractive, docker):
         if not docker:
             answered_questions['autostart_services'] = ask_question("Autostart services (including on boot)? (y/N)", ('y', 'n'), 'n')
         else:
-            answered_questions['autostart_services'] = False 
+            answered_questions['autostart_services'] = 'n' 
     assert answered_questions['autostart_services'] in QUESTION_FLAGS['autostart_services']
 
     logging.debug("answered_questions: %s" % answered_questions)
@@ -759,11 +770,10 @@ def main():
     do_blockchain_service_setup(run_as_user, base_path, dist_path,
         answered_questions['run_mode'], answered_questions['blockchain_service'])
     
-    if answered_questions['role'] != "counterpartyd_only":
-        do_nginx_setup(run_as_user, base_path, dist_path)
+    do_nginx_setup(run_as_user, base_path, dist_path, enable=answered_questions['role'] != "counterpartyd_only")
     
     do_armory_utxsvr_setup(run_as_user, base_path, dist_path,
-        answered_questions['run_mode'], enable=answered_questions['role']=='counterwallet')
+        answered_questions['run_mode'], enable=answered_questions['role'] == 'counterwallet')
     if answered_questions['role'] == 'counterwallet':
         do_counterwallet_setup(run_as_user, answered_questions['branch'])
 
@@ -771,8 +781,8 @@ def main():
         do_newrelic_setup(run_as_user, base_path, dist_path, answered_questions['run_mode']) #optional
     
     assert not (docker and answered_questions['security_hardening']) 
-    if answered_questions['security_hardening']:
-        do_security_setup(run_as_user, answered_questions['branch'], base_path, dist_path)
+    do_security_setup(run_as_user, answered_questions['branch'], base_path, dist_path,
+        enable=answered_questions['security_hardening'] == 'y')
     
     logging.info("Counterblock Federated Node Build Complete (whew).")
     

@@ -38,15 +38,12 @@ def do_federated_node_prerun_checks():
         logging.error("Please use `sudo` to run this script.")
         sys.exit(1)
 
-def modify_config(param_re, content_to_add, filenames, replace_if_exists=True, dotall=False, add_newline=True):
+def modify_config(param_re, content_to_add, filenames, replace_if_exists=True, dotall=False):
     if not isinstance(filenames, (list, tuple)):
         filenames = [filenames,]
         
     re_flags = re.MULTILINE | re.DOTALL if dotall else re.MULTILINE
         
-    if add_newline and not content_to_add.endswith('\n'):
-        content_to_add += '\n'
-
     for filename in filenames:
         f = open(filename, 'r')
         content = f.read()

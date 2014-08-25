@@ -6,9 +6,7 @@ Building & Running from Source
     Please make sure you've followed the instructions in :doc:`SettingUpBitcoind` before moving through this section.
 
 This section provides information about how to install and run ``counterpartyd`` from source, using this
-``counterpartyd`` build system (as an alternative to setting it up manually). This method is suitable for
-Linux users, as well as Windows users that want to develop/enhance ``counterpartyd`` (or just don't want to
-use the binary installer).
+``counterpartyd`` build system (as an alternative to setting it up manually).
 
 
 On Windows
@@ -19,35 +17,20 @@ Prerequisites
 
 .. note::
 
-    As of counterpartyd v9.34.0 due to issues with some Python modules, a 64-bit version of Python cannot be used
-    to build Counterparty out-of-the-box. For time being it is recommended to use a 32-bit version of Python 3.3.5
-    on both the 32-bit and 64-bit version of Microsoft Windows (confirmed to work with Windows 7 SP1 x64).
+    These instructions cover building counterpartyd as 32-bit. This will work with both 32-bit and 64-bit versions of
+    Windows, and is the simplier and recommended approach. (We also have documentation on how to build for 64-bit Windows 7
+    `here <https://wiki.counterparty.co/w/Counterparty_with_64-bit_Python_3.4>`__.
 
 Minimally required to build ``counterpartyd`` from source is the following:
 
-- Python 3.3.5 -- grab the `32-bit version <http://www.python.org/ftp/python/3.3.5/python-3.3.5.msi>`__
-  or `64-bit version <http://www.python.org/ftp/python/3.3.5/python-3.3.5.amd64.msi>`__.
-  Install to the default ``C:\Python33`` location
-- Python Win32 extensions -- grab the `32-bit version <http://sourceforge.net/projects/pywin32/files/pywin32/Build%20219/pywin32-219.win32-py3.3.exe/download>`__
-  or `64-bit version <http://sourceforge.net/projects/pywin32/files/pywin32/Build%20219/pywin32-219.win-amd64-py3.3.exe/download>`__
-- APSW for Windows -- grab the `32-bit version <https://github.com/rogerbinns/apsw/releases/download/3.8.5-r1/apsw-3.8.5-r1.win32-py3.3.exe>`__
-  or `64-bit version <https://github.com/rogerbinns/apsw/releases/download/3.8.5-r1/apsw-3.8.5-r1.win-amd64-py3.3.exe>`__
-- Pycrypto for Windows -- grab the `32-bit version <http://www.voidspace.org.uk/downloads/pycrypto26/pycrypto-2.6.win32-py3.3.exe>`__
-  or `64-bit version <http://www.voidspace.org.uk/downloads/pycrypto26/pycrypto-2.6.win-amd64-py3.3.exe>`__
-- Git for Windows (should have already been downloaded for the ``insight`` setup).
+- Python 3.4.1 -- grab the `32-bit version <http://www.python.org/ftp/python/3.4.1/python-3.4.1.msi>`__
+  Install to the default ``C:\Python34`` location
+- Python Win32 extensions -- grab the `32-bit version <http://sourceforge.net/projects/pywin32/files/pywin32/Build%20219/pywin32-219.win32-py3.4.exe/download>`__
+- APSW for Windows -- grab the `32-bit version <https://github.com/rogerbinns/apsw/releases/download/3.8.5-r1/apsw-3.8.5-r1.win32-py3.4.exe>`__
+- Pycrypto for Windows -- grab the `32-bit version <https://s3.amazonaws.com/counterparty-bootstrap/pycrypto-2.6.1.win32-py3.4.exe>`__
+- Git for Windows (if not already installed)
   Download `here <http://git-scm.com/download/win>`__ and install. Use the default installer
   options (except, select *"Run Git from the Windows Command Prompt"* on the appropriate screen)
-- You may need to install `Visual C++ 2010 Express <http://go.microsoft.com/?linkid=9709949>`__
-
-If you want to be able to build the Counterpartyd installer, also download the following:
-
-- Grab NSIS from `here <http://prdownloads.sourceforge.net/nsis/nsis-2.46-setup.exe?download>`__ -- Please choose the default
-  options during installation, and install to the default path
-- Download the NSIS SimpleService plugin from `here <http://nsis.sourceforge.net/mediawiki/images/c/c9/NSIS_Simple_Service_Plugin_1.30.zip>`__
-  and save the .dll file contained in that zip to your NSIS ``plugins`` directory (e.g. ``C:\Program Files (X86)\NSIS\plugins``)
-- cx_freeze -- grab the `32-bit version <http://sourceforge.net/projects/cx-freeze/files/4.3.3/cx_Freeze-4.3.3.win32-py3.3.msi/download>`__
-  or `64-bit version <http://downloads.sourceforge.net/project/cx-freeze/4.3.3/cx_Freeze-4.3.3.win-amd64-py3.3.msi>`__ as appropriate
-- Install a binary build of cherrypy-wsgiserver `such as this (for 32-bit Python) <https://bitbucket.org/cherrypy/cherrypy/issue-attachment/1110/cherrypy/cherrypy/1322273715.09/1110/CherryPy-3.2.2.win32.exe>`__ 
 
 Installing
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -64,14 +47,17 @@ After launching a DOS command window using the instructions in the note above, t
     cd C:\
     git clone https://github.com/CounterpartyXCP/counterpartyd_build
     cd counterpartyd_build
-    C:\Python33\python.exe setup.py
-     
-The above steps will check out the build scripts to ``C:\counterpartyd_build``, and run the ``setup.py`` script, which
-will check out the newest version of ``counterpartyd`` itself from git, create a virtual environment with the
-required dependencies, and do other necessary tasks to integrate it into the system.
+    C:\Python33\python.exe setup.py --with-bootstrap-db
 
-If you chose to start ``counterpartyd`` at startup automatically, the setup script will also create a shortcut
-to ``counterpartyd`` in your Startup group. 
+Some notes::
+
+* The above steps will check out the build scripts to ``C:\counterpartyd_build``, and run the ``setup.py`` script, which
+  will check out the newest version of ``counterpartyd`` itself from git, create a virtual environment with the
+  required dependencies, and do other necessary tasks to integrate it into the system.
+* If you want to configure ``counterpartyd`` for testnet as well, add the ``--with-testnet`` switch to the ``setup.py`` command as well.
+* If you want to generate your own ``counterpartyd`` database from scratch, don't use the ``--with-bootstrap-db`` switch. 
+* If you chose to start ``counterpartyd`` at startup automatically, the setup script will also create a shortcut
+  to ``counterpartyd`` in your Startup group. 
 
 Upon the successful completion of this script, you can now run ``counterpartyd`` using the steps below.
 
@@ -113,17 +99,6 @@ If, upon running counterpartyd, you get a missing dependency or some other error
 In case of a problem, refer to the list of requirements in ``pip-requirements.txt`` above and update system as
 necessary. Then rerun the build script again.
 
-Building your own Installer
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Complete the instructions under **Prerequisites** above.
-Then, execute the following commands to build the installer package::
-
-    cd C:\counterpartyd_build
-    C:\Python33\python.exe setup.py build
-    
-If successful, you will be provided the location of the resulting installer package.
-
 
 On Linux
 -----------
@@ -145,11 +120,17 @@ Installing
     sudo apt-get -y install git-core python3
     git clone https://github.com/CounterpartyXCP/counterpartyd_build ~/counterpartyd_build
     cd ~/counterpartyd_build
-    sudo python3 setup.py
+    sudo python3 setup.py --with-bootstrap-db
 
-The ``setup.py`` script will install necessary dependencies, check out the newest version of ``counterpartyd``
-itself from git, create the python environment for ``counterpartyd``, and install an upstart script that
-will automatically start ``counterpartyd`` on startup.
+Some notes::
+
+* The ``setup.py`` script will install necessary dependencies, check out the newest version of ``counterpartyd``
+  itself from git, create the python environment for ``counterpartyd``, and install an upstart script that
+  will automatically start ``counterpartyd`` on startup.
+* If you want to configure ``counterpartyd`` for testnet as well, add the ``--with-testnet`` switch to the ``setup.py`` command as well.
+* If you want to generate your own ``counterpartyd`` database from scratch, don't use the ``--with-bootstrap-db`` switch. 
+* If you chose to start ``counterpartyd`` at startup automatically, the setup script will also create a shortcut
+  to ``counterpartyd`` in your Startup group. 
 
 
 Creating a default config
@@ -202,8 +183,3 @@ If, upon running counterpartyd, you get a missing dependency or some other error
     sudo python3 setup.py
 
 The same approach applies to Windows - this operation requires elevation.
-
-Mac OS X
---------
-
-Mac OS support is forthcoming. (Pull requests to add such support are more than welcome!)
