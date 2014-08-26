@@ -359,7 +359,7 @@ etc usr var''' % (OPENRESTY_VER, OPENRESTY_VER))
     runcmd("ln -sf /etc/sv/nginx /etc/service/")
 
 def do_armory_utxsvr_setup(run_as_user, base_path, dist_path, run_mode, enable=True):
-    runcmd("apt-get -y install xvfb python-qt4 python-twisted python-psutil xdg-utils install hicolor-icon-theme")
+    runcmd("apt-get -y install xvfb python-qt4 python-twisted python-psutil xdg-utils hicolor-icon-theme")
     runcmd("rm -f /tmp/armory.deb")
     runcmd("wget -O /tmp/armory.deb https://s3.amazonaws.com/bitcoinarmory-releases/armory_0.92.1_ubuntu-64bit.deb")
     runcmd("mkdir -p /usr/share/desktop-directories/") #bug fix (see http://askubuntu.com/a/406015)
