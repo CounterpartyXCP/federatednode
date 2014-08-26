@@ -167,8 +167,8 @@ As well as ``armory_utxsvr``, if you're using that (Counterwallet role only)::
     sudo sv start armory_utxsvr
     sudo sv start armory_utxsvr-testnet
     
-    sudo tail -f ~xcp/.config/armory/log/current
-    sudo tail -f ~xcp/.config/armory/log-testnet/current
+    sudo tail -f ~xcp/.armory/armorylog.txt
+    sudo tail -f ~xcp/.armory/testnet3/armorylog.txt
 
 And ``counterpartyd`` itself::
 
