@@ -436,10 +436,12 @@ def do_newrelic_setup(run_as_user, base_path, dist_path, run_mode):
     
     #install/setup python agent for counterpartyd
     #counterpartyd
-    runcmd("%s/env/bin/pip install newrelic" % base_path)
-    runcmd("cp -af %s/linux/newrelic/nr_counterpartyd.ini.template /etc/newrelic/nr_counterpartyd.ini" % dist_path)
-    runcmd("sed -ri \"s/\!LICENSE_KEY\!/%s/g\" /etc/newrelic/nr_counterpartyd.ini" % nr_license_key)
-    runcmd("sed -ri \"s/\!HOSTNAME\!/%s/g\" /etc/newrelic/nr_counterpartyd.ini" % nr_hostname)
+    # NOTE: NEW RELIC AGENT CURRENTLY BROKEN WITH TORNADO 4.x
+    # See https://discuss.newrelic.com/t/python-agent-does-not-working-with-tornado-4/3309/4 for more info 
+    #runcmd("%s/env/bin/pip install newrelic" % base_path)
+    #runcmd("cp -af %s/linux/newrelic/nr_counterpartyd.ini.template /etc/newrelic/nr_counterpartyd.ini" % dist_path)
+    #runcmd("sed -ri \"s/\!LICENSE_KEY\!/%s/g\" /etc/newrelic/nr_counterpartyd.ini" % nr_license_key)
+    #runcmd("sed -ri \"s/\!HOSTNAME\!/%s/g\" /etc/newrelic/nr_counterpartyd.ini" % nr_hostname)
     #counterblockd
     ## NOTE: NEW RELIC DAEMON CAUSES ISSUES WITH COUNTERBLOCKD (SOCKETS STICKING IN CLOSE_WAIT STATE)
     ##  -- DO NOT USE IT FOR COUNTERBLOCKD MONITORING
