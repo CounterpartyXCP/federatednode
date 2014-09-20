@@ -4,6 +4,7 @@ Runs counterpartyd or the counterpartyd test suite via the python interpreter in
 """
 import os
 import sys
+import subprocess
 
 assert os.name in ("nt", "posix")
 
@@ -48,4 +49,6 @@ elif run_armory_utxsvr:
 else: #run counterpartyd
     counterpartyd_path = os.path.join(dist_path, "counterpartyd", "counterpartyd.py")
     command = "%s %s %s" % (python_path, counterpartyd_path, ' '.join(args))
-os.system(command)
+
+status = subprocess.call(command, shell=True)
+sys.exit(status)

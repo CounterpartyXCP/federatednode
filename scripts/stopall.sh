@@ -1,10 +1,10 @@
 #!/bin/sh
 
-sudo service bitcoind stop
-sudo service bitcoind-testnet stop
-sudo service insight stop
-sudo service insight-testnet stop
-sudo service counterpartyd stop
-sudo service counterpartyd-testnet stop
-sudo service counterblockd stop
-sudo service counterblockd-testnet stop
+sudo sv stop bitcoind
+sudo sv stop bitcoind-testnet
+sudo sv stop insight
+sudo sv stop insight-testnet
+sudo sv stop counterpartyd
+sudo sv stop counterpartyd-testnet
+sudo sv stop counterblockd
+sudo sv stop counterblockd-testnet
