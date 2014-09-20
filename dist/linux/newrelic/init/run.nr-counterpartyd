@@ -2,10 +2,9 @@
 
 USER=xcpd
 export USER_HOME=/home/xcp
-NR_ADMIN_PATH=$USER_HOME/counterpartyd_build/env/bin/newrelic-admin
-PYTHON_INTERP_PATH=$USER_HOME/counterpartyd_build/env/bin/python3
-PYTHON_SCRIPT_PATH=$USER_HOME/counterpartyd_build/dist/counterpartyd/counterpartyd.py
-NEW_RELIC_CONFIG_FILE=/etc/newrelic/nr_counterpartyd.ini
-export NEW_RELIC_CONFIG_FILE
+export NR_ADMIN_PATH=$USER_HOME/counterpartyd_build/env/bin/newrelic-admin
+export PYTHON_INTERP_PATH=$USER_HOME/counterpartyd_build/env/bin/python3
+export PYTHON_SCRIPT_PATH=$USER_HOME/counterpartyd_build/dist/counterpartyd/counterpartyd.py
+export NEW_RELIC_CONFIG_FILE=/etc/newrelic/nr_counterpartyd.ini
 
-exec su -s /bin/bash -c '$NR_ADMIN_PATH $PYTHON_INTERP_PATH $PYTHON_SCRIPT_PATH --data-dir=$USER_HOME/.config/counterpartyd server' ${USER}
+exec su -s /bin/bash -c '$NR_ADMIN_PATH run-program $PYTHON_INTERP_PATH $PYTHON_SCRIPT_PATH --data-dir=$USER_HOME/.config/counterpartyd server' ${USER}
