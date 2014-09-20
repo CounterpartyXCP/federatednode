@@ -21,7 +21,7 @@ def runcmd(command, abort_on_failure=True):
         logging.error("Command failed: '%s'" % command)
         sys.exit(1) 
 
-def do_federated_node_prerun_checks():
+def do_federated_node_prerun_checks(require_sudo=True):
     #make sure this is running on a supported OS
     if os.name != "posix" or platform.dist()[0] != "Ubuntu" or platform.architecture()[0] != '64bit':
         logging.error("Only 64bit Ubuntu Linux is supported at this time")
@@ -34,7 +34,8 @@ def do_federated_node_prerun_checks():
     if os.geteuid() != 0:
         logging.error("This script must be run as root (use 'sudo' to run)")
         sys.exit(1)
-    if os.name == "posix" and "SUDO_USER" not in os.environ:
+    assert os.name == "posix"
+    if require_sudo and "SUDO_USER" not in os.environ:
         logging.error("Please use `sudo` to run this script.")
         sys.exit(1)
 
@@ -175,3 +176,17 @@ def rmtree(path):
             setup_util.rmtree(fullpath)
             f=os.rmdir
             rmgeneric(fullpath, f)    
+
+def fetch_counterpartyd_bootstrap_db(data_dir, testnet=False, chown_user=None):
+    """download bootstrap data for counterpartyd"""
+    bootstrap_url = "http://counterparty-bootstrap.s3.amazonaws.com/counterpartyd%s-db.latest.tar.gz" % ('-testnet' if testnet else '')
+    appname = "counterpartyd%s" % ('-testnet' if testnet else '',)
+    logging.info("Downloading %s DB bootstrap data from %s ..." % (appname, bootstrap_url))
+    bootstrap_filename, headers = urllib.request.urlretrieve(bootstrap_url)
+    logging.info("%s DB bootstrap data downloaded to %s ..." % (appname, bootstrap_filename))
+    tfile = tarfile.open(bootstrap_filename, 'r:gz')
+    logging.info("Extracting %s DB bootstrap data to %s ..." % (appname, data_dir))
+    tfile.extractall(path=data_dir)
+    os.remove(bootstrap_filename)
+    if chown_user:
+        runcmd("chown -R %s %s" % (chown_user, data_dir))

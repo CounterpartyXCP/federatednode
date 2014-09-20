@@ -154,7 +154,7 @@ def do_backend_rpc_setup(run_as_user, branch, base_path, dist_path, run_mode, ba
     
     return backend_rpc_password, backend_rpc_password_testnet
 
-def do_counterparty_setup(role, run_as_user, branch, base_path, dist_path, run_mode, backend_rpc_password,
+def do_counterparty_setup(role, run_as_user, docker, branch, base_path, dist_path, run_mode, backend_rpc_password,
 backend_rpc_password_testnet, counterpartyd_public, counterwallet_support_email):
     """Installs and configures counterpartyd and counterblockd"""
     counterpartyd_rpc_password = '1234' if role == 'counterpartyd_only' and counterpartyd_public == 'y' else pass_generator()
@@ -164,8 +164,8 @@ backend_rpc_password_testnet, counterpartyd_public, counterwallet_support_email)
     # as -y is specified, this will auto install counterblockd full node (mongo and redis) as well as setting
     # counterpartyd/counterblockd to start up at startup for both mainnet and testnet (we will override this as necessary
     # based on run_mode later in this function)
-    runcmd("~%s/counterpartyd_build/setup.py --noninteractive --branch=%s --with-bootstrap-db --with-testnet --for-user=%s %s" % (
-        USERNAME, branch, USERNAME, '--with-counterblockd' if role != 'counterpartyd_only' else ''))
+    runcmd("~%s/counterpartyd_build/setup.py --noninteractive --branch=%s %s --with-testnet --for-user=%s %s" % (
+        USERNAME, branch, "--with-bootstrap-db" if not docker else '', USERNAME, '--with-counterblockd' if role != 'counterpartyd_only' else ''))
     runcmd("cd ~%s/counterpartyd_build && git config core.sharedRepository group && find ~%s/counterpartyd_build -type d -print0 | xargs -0 chmod g+s" % (
         USERNAME, USERNAME)) #to allow for group git actions 
     runcmd("chown -R %s:%s ~%s/counterpartyd_build" % (USERNAME, USERNAME, USERNAME)) #just in case
@@ -762,7 +762,7 @@ def main():
         = do_backend_rpc_setup(run_as_user, answered_questions['branch'], base_path, dist_path,
             answered_questions['run_mode'], answered_questions['backend_rpc_mode'])
     
-    do_counterparty_setup(answered_questions['role'], run_as_user, answered_questions['branch'],
+    do_counterparty_setup(answered_questions['role'], run_as_user, docker, answered_questions['branch'],
         base_path, dist_path, answered_questions['run_mode'],
         backend_rpc_password, backend_rpc_password_testnet,
         answered_questions['counterpartyd_public'], answered_questions['counterwallet_support_email'])

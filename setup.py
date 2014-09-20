@@ -337,7 +337,7 @@ def create_default_datadir_and_config(paths, run_as_user, with_bootstrap_db, wit
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
         
-        fetch_bootstrap_db = appname in ("counterpartyd", "counterpartyd-testnet") and not os.path.exists(cfg_path) and with_bootstrap_db
+        config_missing = not os.path.exists(cfg_path)
         if not os.path.exists(cfg_path):
             logging.info("Creating new configuration file at: %s" % cfg_path)
             #create a default config file
@@ -367,21 +367,8 @@ def create_default_datadir_and_config(paths, run_as_user, with_bootstrap_db, wit
         else:
             logging.info("%s config file already exists at: '%s'" % (appname, cfg_path))
             
-        if fetch_bootstrap_db:
-            #download bootstrap data
-            if appname == "counterpartyd":
-                bootstrap_url = "http://counterparty-bootstrap.s3.amazonaws.com/counterpartyd-db.latest.tar.gz"
-            else:
-                assert appname == "counterpartyd-testnet"
-                bootstrap_url = "http://counterparty-bootstrap.s3.amazonaws.com/counterpartyd-testnet-db.latest.tar.gz"
-
-            logging.info("Downloading %s DB bootstrap data from %s ..." % (appname, bootstrap_url))
-            bootstrap_filename, headers = urllib.request.urlretrieve(bootstrap_url)
-            logging.info("%s DB bootstrap data downloaded to %s ..." % (appname, bootstrap_filename))
-            tfile = tarfile.open(bootstrap_filename, 'r:gz')
-            logging.info("Extracting %s DB bootstrap data to %s ..." % (appname, data_dir))
-            tfile.extractall(path=data_dir)
-            os.remove(bootstrap_filename)
+        if appname in ("counterpartyd", "counterpartyd-testnet") and config_missing and with_bootstrap_db:
+            setup_util.fetch_counterpartyd_bootstrap_db(data_dir, testnet=appname=="counterpartyd-testnet")
     
     create_config('counterpartyd', DEFAULT_CONFIG)
     if with_testnet:
