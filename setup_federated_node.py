@@ -446,8 +446,8 @@ def do_newrelic_setup(run_as_user, base_path, dist_path, run_mode):
     ## NOTE: NEW RELIC DAEMON CAUSES ISSUES WITH COUNTERBLOCKD (SOCKETS STICKING IN CLOSE_WAIT STATE)
     ##  -- DO NOT USE IT FOR COUNTERBLOCKD MONITORING
     #install init scripts (overwrite the existing ones for now at least)
-    runcmd("cp -af %s/linux/newrelic/init/run.nr-counterpartyd /etc/sv/counterpartyd/run" % dist_path) #overwrite
-    runcmd("cp -af %s/linux/newrelic/init/run.nr-counterpartyd-testnet /etc/sv/counterpartyd-testnet/run" % dist_path) #overwrite
+    #runcmd("cp -af %s/linux/newrelic/init/run.nr-counterpartyd /etc/sv/counterpartyd/run" % dist_path) #overwrite
+    #runcmd("cp -af %s/linux/newrelic/init/run.nr-counterpartyd-testnet /etc/sv/counterpartyd-testnet/run" % dist_path) #overwrite
 
     #install/setup server agent
     runcmd("add-apt-repository \"deb http://apt.newrelic.com/debian/ newrelic non-free\"")
