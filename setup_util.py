@@ -2,6 +2,8 @@ import os
 import sys
 import re
 import logging
+import urllib
+import tarfile
 import shutil
 import random
 import platform
