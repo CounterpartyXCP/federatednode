@@ -368,7 +368,7 @@ def create_default_datadir_and_config(paths, run_as_user, with_bootstrap_db, wit
             logging.info("%s config file already exists at: '%s'" % (appname, cfg_path))
             
         if appname in ("counterpartyd", "counterpartyd-testnet") and config_missing and with_bootstrap_db:
-            setup_util.fetch_counterpartyd_bootstrap_db(data_dir, testnet=appname=="counterpartyd-testnet")
+            fetch_counterpartyd_bootstrap_db(data_dir, testnet=appname=="counterpartyd-testnet")
     
     create_config('counterpartyd', DEFAULT_CONFIG)
     if with_testnet:
