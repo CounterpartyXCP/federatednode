@@ -390,7 +390,7 @@ def do_counterwallet_setup(run_as_user, branch, updateOnly=False):
         runcmd("npm install -g grunt-cli bower")
     runcmd("cd ~%s/counterwallet/src && bower --allow-root --config.interactive=false install" % USERNAME)
     runcmd("cd ~%s/counterwallet && npm install" % USERNAME)
-    runcmd("cd ~%s/counterwallet && grunt build" % USERNAME) #will generate the minified site
+    runcmd("cd ~%s/counterwallet && grunt build --force" % USERNAME) #will generate the minified site
     runcmd("chown -R %s:%s ~%s/counterwallet" % (USERNAME, USERNAME, USERNAME)) #just in case
     runcmd("chmod -R u+rw,g+rw,o+r,o-w ~%s/counterwallet" % USERNAME) #just in case
 
