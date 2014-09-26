@@ -183,12 +183,11 @@ def install_dependencies(paths, with_counterblockd, noninteractive):
             runcmd("apt-get update; apt-get -y install python3.3 python3.3-dev")
             runcmd("ln -sf /usr/bin/python3.3 /usr/bin/python3")
             
-            #now actually run the distribute_setup.py script as pip3 is broken
-            runcmd("rm -f /tmp/distribute_setup.py; curl -o /tmp/distribute_setup.py http://python-distribute.org/distribute_setup.py")
-            runcmd("python3 /tmp/distribute_setup.py")
-            runcmd("rm -f ./distribute-*.tar.gz") #the script above likes to create this file in the local dir
+            #now actually run the ez_setup.py script as pip3 is broken
+            runcmd("rm -f /tmp/ez_setup.py; curl -o /tmp/ez_setup.py https://bootstrap.pypa.io/ez_setup.py")
+            runcmd("python3 /tmp/ez_setup.py")
             
-            runcmd("easy_install3 pip==1.4.1") #pip1.5 breaks things due to its use of wheel by default
+            runcmd("easy_install-3.3 pip==1.4.1") #pip1.5 breaks things due to its use of wheel by default
             #for some reason, it installs "pip" to /usr/local/bin, instead of "pip3"
             runcmd("cp -a /usr/local/bin/pip /usr/local/bin/pip3")
 
