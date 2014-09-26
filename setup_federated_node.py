@@ -242,7 +242,7 @@ def do_blockchain_service_setup(run_as_user, base_path, dist_path, run_mode, blo
         
         git_repo_clone("insight-api", "https://github.com/bitpay/insight-api.git",
             os.path.join(USER_HOMEDIR, "insight-api"), branch="master", for_user=run_as_user,
-            hash="c05761b98b70886d0700563628a510f89f87c03e") #insight 0.2.7
+            hash="0ca0fdf6991c023fa1cd63c6cc44c480c6c8b53f") #insight-api 0.2.11
         runcmd("rm -rf ~%s/insight-api/node-modules && cd ~%s/insight-api && npm install" % (USERNAME, USERNAME))
         
         #install logrotate file
