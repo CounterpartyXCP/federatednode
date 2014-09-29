@@ -1,7 +1,7 @@
 #!/bin/sh
 
-sudo service counterpartyd restart
-sudo service counterpartyd-testnet restart
+sudo sv restart counterpartyd
+sudo sv restart counterpartyd-testnet
 sleep 10
-sudo service counterblockd restart
-sudo service counterblockd-testnet restart
+sudo sv restart counterblockd
+sudo sv restart counterblockd-testnet
