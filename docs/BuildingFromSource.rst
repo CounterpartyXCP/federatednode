@@ -122,7 +122,7 @@ Installing
     cd ~/counterpartyd_build
     sudo python3 setup.py --with-bootstrap-db
 
-Some notes::
+Some notes:
 
 * The ``setup.py`` script will install necessary dependencies, check out the newest version of ``counterpartyd``
   itself from git, create the python environment for ``counterpartyd``, and install an upstart script that
