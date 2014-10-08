@@ -49,7 +49,7 @@ After launching a DOS command window using the instructions in the note above, t
     cd counterpartyd_build
     C:\Python33\python.exe setup.py --with-bootstrap-db
 
-Some notes::
+Some notes:
 
 * The above steps will check out the build scripts to ``C:\counterpartyd_build``, and run the ``setup.py`` script, which
   will check out the newest version of ``counterpartyd`` itself from git, create a virtual environment with the
