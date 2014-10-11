@@ -1,15 +1,13 @@
 Setting up bitcoind
 ====================
 
-.. warning::
-
-    This section sets up ``counterpartyd`` to run on mainnet, which means that when using it, **you will be working with real XCP**.
-	  If you would like to run on testnet instead, please see the section entitled **Running counterpartyd on testnet** in
-	  `Additional Topics <http://counterparty.io/docs/build-system/additional/>`__.
-
 ``counterpartyd`` communicates with the Bitcoin reference client (``bitcoind``). Normally, you'll run ``bitcoind``
 on the same computer as your instance of ``counterpartyd`` runs on. However, you can also use a ``bitcoind`` instance
 sitting on a different server entirely.
+
+**NOTE:** This section sets up ``counterpartyd`` to run on mainnet, which means that when using it, **you will be working with real XCP**.
+If you would like to run on testnet instead, please see the section entitled **Running counterpartyd on testnet** in 
+`Additional Topics <http://counterparty.io/docs/build-system/additional/>`__.
 
 
 On Windows
