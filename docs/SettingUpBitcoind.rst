@@ -5,14 +5,11 @@ Setting up bitcoind
 
     This section sets up ``counterpartyd`` to run on mainnet, which means that when using it, **you will be working with real XCP**.
 	  If you would like to run on testnet instead, please see the section entitled **Running counterpartyd on testnet** in
-	  :doc:`Additional Topics <AdditionalTopics>`.
+	  `Additional Topics <http://counterparty.io/docs/build-system/additional/>`__.
 
 ``counterpartyd`` communicates with the Bitcoin reference client (``bitcoind``). Normally, you'll run ``bitcoind``
 on the same computer as your instance of ``counterpartyd`` runs on. However, you can also use a ``bitcoind`` instance
 sitting on a different server entirely.
-
-This step is necessary whether you're :doc:`building counterpartyd from source <BuildingFromSource>` or
-using the :doc:`installer package <UsingTheInstaller>`.
 
 
 On Windows
@@ -36,7 +33,8 @@ Say Yes to when Notepad asks if you want to create a new file, then paste in the
 
 **NOTE**:
 
-- If you want ``bitcoind`` to be on testnet, not mainnet, see the section entitled **Running counterpartyd on testnet** in :doc:`Additional Topics <AdditionalTopics>`.
+- If you want ``bitcoind`` to be on testnet, not mainnet, see the section entitled
+  **Running counterpartyd on testnet** in `Additional Topics <http://counterparty.io/docs/build-system/additional/>`__.
 - You should change the RPC password above to something more secure.
     
 Once done, press CTRL-S to save, and close Notepad.  The config file will be saved here::
