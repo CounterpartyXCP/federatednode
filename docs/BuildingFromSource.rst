@@ -3,7 +3,9 @@ Building & Running from Source
 
 .. note::
 
-    Please make sure you've followed the instructions in :doc:`SettingUpBitcoind` before moving through this section.
+    Please make sure you've followed the instructions in the
+    `Setting up bitcoind <http://counterparty.io/docs/build-system/set-up-bitcoind/>`__ section before
+    moving through this section.
 
 This section provides information about how to install and run ``counterpartyd`` from source, using this
 ``counterpartyd`` build system (as an alternative to setting it up manually).
@@ -122,7 +124,7 @@ Installing
     cd ~/counterpartyd_build
     sudo python3 setup.py --with-bootstrap-db
 
-Some notes::
+Some notes:
 
 * The ``setup.py`` script will install necessary dependencies, check out the newest version of ``counterpartyd``
   itself from git, create the python environment for ``counterpartyd``, and install an upstart script that
@@ -136,7 +138,7 @@ Some notes::
 Creating a default config
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Follow the instructions listed under the **Config and Logging** section in :doc:`AdditionalTopics`.
+Follow the instructions listed under the **Config and Logging** section in the `Additional Topics <http://counterparty.io/docs/build-system/additional/>`__ section.
 
 
 Running counterpartyd built from Source
