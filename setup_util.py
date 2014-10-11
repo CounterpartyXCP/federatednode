@@ -26,13 +26,13 @@ def runcmd(command, abort_on_failure=True):
 
 def do_federated_node_prerun_checks(require_sudo=True):
     #make sure this is running on a supported OS
-    if os.name != "posix" or platform.dist()[0] != "Ubuntu" or platform.architecture()[0] != '64bit':
-        logging.error("Only 64bit Ubuntu Linux is supported at this time")
-        sys.exit(1)
-    ubuntu_release = platform.linux_distribution()[1]
-    if ubuntu_release != "14.04":
-        logging.error("Only Ubuntu 14.04 supported for Counterblock Federated Node install.")
-        sys.exit(1)
+    #if os.name != "posix" or platform.dist()[0] != "Ubuntu" or platform.architecture()[0] != '64bit':
+    #    logging.error("Only 64bit Ubuntu Linux is supported at this time")
+    #    sys.exit(1)
+    #ubuntu_release = platform.linux_distribution()[1]
+    #if ubuntu_release != "14.04":
+    #    logging.error("Only Ubuntu 14.04 supported for Counterblock Federated Node install.")
+    #    sys.exit(1)
     #script must be run as root
     if os.geteuid() != 0:
         logging.error("This script must be run as root (use 'sudo' to run)")
