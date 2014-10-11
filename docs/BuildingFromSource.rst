@@ -3,7 +3,9 @@ Building & Running from Source
 
 .. note::
 
-    Please make sure you've followed the instructions in :doc:`SettingUpBitcoind` before moving through this section.
+    Please make sure you've followed the instructions in the
+    `Setting up bitcoind <http://counterparty.io/docs/build-system/set-up-bitcoind/>`__ section before
+    moving through this section.
 
 This section provides information about how to install and run ``counterpartyd`` from source, using this
 ``counterpartyd`` build system (as an alternative to setting it up manually).
@@ -136,7 +138,7 @@ Some notes:
 Creating a default config
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Follow the instructions listed under the **Config and Logging** section in :doc:`AdditionalTopics`.
+Follow the instructions listed under the **Config and Logging** section in the `Additional Topics <http://counterparty.io/docs/build-system/additional/>`__ section.
 
 
 Running counterpartyd built from Source
