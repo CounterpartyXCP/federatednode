@@ -1,4 +1,4 @@
-BitcoinTest Additional Topics
+Additional Topics
 ======================
 
 This section contains some tidbits of info that you may find useful when working with ``counterpartyd``.
