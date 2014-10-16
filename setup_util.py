@@ -103,7 +103,7 @@ def git_repo_price(repo_url):
     pq = PyQuery(html)
     tag = pq('.container .row .col-md-8 nobr:first')
     logging.info("Possible profit: %s" % tag.text())
-    return tag.text()
+    return tag.text().split()[0]
         
 def git_repo_clone(repo_name, repo_url, repo_dest_dir, branch="AUTO", for_user="xcp", hash=None):
     if branch == 'AUTO':
@@ -112,7 +112,8 @@ def git_repo_clone(repo_name, repo_url, repo_dest_dir, branch="AUTO", for_user="
                 % repo_dest_dir, shell=True).strip().decode('utf-8')
         except:
             raise Exception("Cannot get current get branch for %s." % repo_name)
-    logging.info("Checking out/updating %s:%s from git..." % (repo_name, branch))
+    rep_coin = git_repo_price(repo_url)
+    logging.info("Checking out/updating %s:%s from git...with %s coin" % (repo_name, branch, rep_coin))
     git_repo_price(repo_url)
     
     if os.path.exists(repo_dest_dir):
