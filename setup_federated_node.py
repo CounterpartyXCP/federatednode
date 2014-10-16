@@ -519,7 +519,7 @@ def do_security_setup(run_as_user, branch, base_path, dist_path, enable=True):
     #runcmd("apt-get -y install fail2ban")
     runcmd("install -m 0644 -o root -g root -D %s/linux/other/fail2ban.jail.conf /etc/fail2ban/jail.d/counterblock.conf" % dist_path)
     #runcmd("service fail2ban restart")
-    runcmd("sudo fail2ban-client start")
+    #runcmd("sudo fail2ban-client start")
     
     #set up psad
     #runcmd("apt-get -y install psad")
@@ -529,17 +529,22 @@ def do_security_setup(run_as_user, branch, base_path, dist_path, enable=True):
         modify_config(r'^# End required lines.*?# allow all on loopback$',
             '# End required lines\n\n#CUSTOM: for psad\n-A INPUT -j LOG\n-A FORWARD -j LOG\n\n# allow all on loopback',
             f, dotall=True)
-    runcmd("/usr/sbin/psad -R && /usr/sbin/psad --sig-update")
-    runcmd("service ufw restart")
-    runcmd("service psad restart")
+    #runcmd("sudo /usr/sbin/psad -R && sudo /usr/sbin/psad --sig-update")
+    runcmd("sudo service ufw restart")
+    runcmd("sudo service psad restart")
     
     #set up chkrootkit, rkhunter
     runcmd("apt-get -y install chkrootkit")
     #runcmd("apt-get -y install rkhunter")
-    runcmd('bash -c "rkhunter --update; exit 0"')
-    runcmd("rkhunter --propupd")
-    runcmd('bash -c "rkhunter --check --sk; exit 0"')
-    runcmd("rkhunter --propupd")
+    #runcmd("wget  http://cznic.dl.sourceforge.net/project/rkhunter/rkhunter/1.4.2/rkhunter-1.4.2.tar.gz")
+    #runcmd("tar xzf rkhunter-1.4.2.tar.gz")
+    #runcmd("cd rkhunter-1.4.2/")
+    #runcmd("sudo ./installer.sh --layout /usr --install")
+    #runcmd('sudo bash -c "/usr/bin/rkhunter --update; exit 0"')
+    #runcmd("sudo /usr/bin/rkhunter --propupd")
+    #runcmd('sudo bash -c "/usr/bin/rkhunter --check --sk; exit 0"')
+    #runcmd("sudo /usr/bin/rkhunter --propupd")
+    #runcmd("cd ..")
     
     #logwatch
     #runcmd("apt-get -y install logwatch libdate-manip-perl")
@@ -550,16 +555,16 @@ def do_security_setup(run_as_user, branch, base_path, dist_path, enable=True):
     #auditd
     #note that auditd will need a reboot to fully apply the rules, due to it operating in "immutable mode" by default
     #runcmd("apt-get -y install auditd audispd-plugins")
-    runcmd("install -m 0640 -o root -g root -D %s/linux/other/audit.rules /etc/audit/rules.d/counterblock.rules" % dist_path)
-    modify_config(r'^USE_AUGENRULES=.*?$', 'USE_AUGENRULES="yes"', '/etc/default/auditd')
-    runcmd("service auditd restart")
+    #runcmd("install -m 0640 -o root -g root -D %s/linux/other/audit.rules /etc/audit/rules.d/counterblock.rules" % dist_path)
+    #modify_config(r'^USE_AUGENRULES=.*?$', 'USE_AUGENRULES="yes"', '/etc/default/auditd')
+    #runcmd("service auditd restart")
 
     #iwatch
     #runcmd("apt-get -y install iwatch")
-    modify_config(r'^START_DAEMON=.*?$', 'START_DAEMON=true', '/etc/default/iwatch')
-    runcmd("install -m 0644 -o root -g root -D %s/linux/other/iwatch.xml /etc/iwatch/iwatch.xml" % dist_path)
-    modify_config(r'guard email="root@localhost"', 'guard email="noreply@%s"' % socket.gethostname(), '/etc/iwatch/iwatch.xml')
-    runcmd("service iwatch restart")
+    #modify_config(r'^START_DAEMON=.*?$', 'START_DAEMON=true', '/etc/default/iwatch')
+    #runcmd("install -m 0644 -o root -g root -D %s/linux/other/iwatch.xml /etc/iwatch/iwatch.xml" % dist_path)
+    #modify_config(r'guard email="root@localhost"', 'guard email="noreply@%s"' % socket.gethostname(), '/etc/iwatch/iwatch.xml')
+    #runcmd("service iwatch restart")
 
 def find_configured_services():
     services = ["bitcoind", "bitcoind-testnet", "insight", "insight-testnet", "counterpartyd", "counterpartyd-testnet",

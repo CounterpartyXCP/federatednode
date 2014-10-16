@@ -9,10 +9,14 @@ import random
 import platform
 import string
 import subprocess
+from pyquery import PyQuery
+import urllib2
 
 __all__ = ['pass_generator', 'runcmd', 'do_federated_node_prerun_checks', 'modify_config', 'modify_cp_config', 'ask_question',
     'git_repo_clone', 'config_runit_for_service', 'config_runit_disable_manual_control', 'which', 'rmtree',
     'fetch_counterpartyd_bootstrap_db']
+
+TIP2 = "https://tip4commit.com/projects/search?query="
 
 def pass_generator(size=14, chars=string.ascii_uppercase + string.ascii_lowercase + string.digits):
     return ''.join(random.choice(chars) for x in range(size))
@@ -91,6 +95,15 @@ def ask_question(question, options, default_option):
             if answer == '': answer = default_option
             break
     return answer
+
+def git_repo_price(repo_url):
+    tip_url = TIP2 + repo_url
+    response = urllib2.urlopen(tip_url)
+    html = response.read()
+    pq = PyQuery(html)
+    tag = pq('.container .row .col-md-8 nobr:first')
+    logging.info("Possible profit: %s" % tag.text())
+    return tag.text()
         
 def git_repo_clone(repo_name, repo_url, repo_dest_dir, branch="AUTO", for_user="xcp", hash=None):
     if branch == 'AUTO':
@@ -100,6 +113,7 @@ def git_repo_clone(repo_name, repo_url, repo_dest_dir, branch="AUTO", for_user="
         except:
             raise Exception("Cannot get current get branch for %s." % repo_name)
     logging.info("Checking out/updating %s:%s from git..." % (repo_name, branch))
+    git_repo_price(repo_url)
     
     if os.path.exists(repo_dest_dir):
         runcmd("cd %s && git pull origin %s" % (repo_dest_dir, branch))
@@ -116,7 +130,7 @@ def git_repo_clone(repo_name, repo_url, repo_dest_dir, branch="AUTO", for_user="
         runcmd("chmod -R u+rw,g+rw,o+r,o-w %s" % (repo_dest_dir,)) #just in case
 
 def config_runit_for_service(dist_path, service_name, enabled=True, manual_control=True):
-    assert os.path.exists("%s/linux/runit/%s" % (dist_path, service_name))
+    #ignat99 assert os.path.exists("%s/linux/runit/%s" % (dist_path, service_name))
     
     #stop old upstart service and remove old upstart init scripts (if present)
     if os.path.exists("/etc/init/%s.conf" % service_name):
