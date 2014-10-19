@@ -15,17 +15,16 @@ On Windows
 Prerequisites
 ^^^^^^^^^^^^^^^
 
-.. note::
-
-    These instructions cover building counterpartyd as 32-bit. This will work with both 32-bit and 64-bit versions of
-    Windows, and is the simplier and recommended approach. (We also have documentation on how to build for 64-bit Windows 7
-    `here <https://wiki.counterparty.co/w/Counterparty_with_64-bit_Python_3.4>`__.
+**NOTE:** These instructions cover building counterpartyd as 32-bit. This will work with both 32-bit and 64-bit versions of
+Windows, and is the simplier and recommended approach. (We also have documentation on how to build for 64-bit Windows 7
+`here <https://wiki.counterparty.co/w/Counterparty_with_64-bit_Python_3.4>`__.)
 
 Minimally required to build ``counterpartyd`` from source is the following:
 
 - Python 3.4.1 -- grab the `32-bit version <http://www.python.org/ftp/python/3.4.1/python-3.4.1.msi>`__
   Install to the default ``C:\Python34`` location
 - Python Win32 extensions -- grab the `32-bit version <http://sourceforge.net/projects/pywin32/files/pywin32/Build%20219/pywin32-219.win32-py3.4.exe/download>`__
+  Ensure you run this setup program **as administrator**, or you will get an error about missing DLL files while installing counterpartyd
 - APSW for Windows -- grab the `32-bit version <https://github.com/rogerbinns/apsw/releases/download/3.8.5-r1/apsw-3.8.5-r1.win32-py3.4.exe>`__
 - Pycrypto for Windows -- grab the `32-bit version <https://s3.amazonaws.com/counterparty-bootstrap/pycrypto-2.6.1.win32-py3.4.exe>`__
 - Git for Windows (if not already installed)
@@ -35,12 +34,10 @@ Minimally required to build ``counterpartyd`` from source is the following:
 Installing
 ^^^^^^^^^^^^^^^^^^^^^^
 
-.. note::
-
-    Our install script (setup.py) requires administrator access to run (so that it can create a counterpartyd.bat file
-    in your Windows directory). To allow for this, you must launch a command prompt **as administrator**. To do this
-    under Windows 7, go to Start -> All Programs -> Accessories, then right click on Command Prompt and select "Run as administrator".
-    More information on this is available from `this link <http://www.bleepingcomputer.com/tutorials/windows-elevated-command-prompt/>`__ (method 1 or 2 works fine).
+**NOTE:** Our install script (setup.py) requires administrator access to run (so that it can create a counterpartyd.bat file
+in your Windows directory). To allow for this, you must launch a command prompt **as administrator**. To do this
+under Windows 7, go to Start -> All Programs -> Accessories, then right click on Command Prompt and select "Run as administrator".
+More information on this is available from `this link <http://www.bleepingcomputer.com/tutorials/windows-elevated-command-prompt/>`__ (method 1 or 2 works fine).
     
 After launching a DOS command window using the instructions in the note above, type the following commands::
 
