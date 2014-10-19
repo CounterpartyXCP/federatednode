@@ -22,14 +22,13 @@ Windows, and is the simplier and recommended approach. (We also have documentati
 Minimally required to build ``counterpartyd`` from source is the following:
 
 - Python 3.4.1 -- grab the `32-bit version <http://www.python.org/ftp/python/3.4.1/python-3.4.1.msi>`__
-  Install to the default ``C:\Python34`` location
+  - Install to the default ``C:\Python34`` location
 - Python Win32 extensions -- grab the `32-bit version <http://sourceforge.net/projects/pywin32/files/pywin32/Build%20219/pywin32-219.win32-py3.4.exe/download>`__
-  Ensure you run this setup program **as administrator**, or you will get an error about missing DLL files while installing counterpartyd
+  - Ensure you run this setup program **as administrator**, or you will get an error about missing DLL files while installing counterpartyd
 - APSW for Windows -- grab the `32-bit version <https://github.com/rogerbinns/apsw/releases/download/3.8.5-r1/apsw-3.8.5-r1.win32-py3.4.exe>`__
 - Pycrypto for Windows -- grab the `32-bit version <https://s3.amazonaws.com/counterparty-bootstrap/pycrypto-2.6.1.win32-py3.4.exe>`__
-- Git for Windows (if not already installed)
-  Download `here <http://git-scm.com/download/win>`__ and install. Use the default installer
-  options (except, select *"Use Git from the Windows Command Prompt"* on the appropriate screen)
+- `Git for Windows <http://git-scm.com/download/win>`__
+  - Use the default installer options (except, select *"Use Git from the Windows Command Prompt"* on the appropriate screen)
 
 Installing
 ^^^^^^^^^^^^^^^^^^^^^^
