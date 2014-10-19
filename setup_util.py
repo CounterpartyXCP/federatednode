@@ -98,7 +98,7 @@ def git_repo_clone(repo_name, repo_url, repo_dest_dir, branch="AUTO", for_user="
             branch = subprocess.check_output("cd %s && git rev-parse --abbrev-ref HEAD"
                 % repo_dest_dir, shell=True).strip().decode('utf-8')
         except:
-            raise Exception("Cannot get current get branch for %s." % repo_name)
+            branch = "master" #branch doesn't exist, default to master
     logging.info("Checking out/updating %s:%s from git..." % (repo_name, branch))
     
     if os.path.exists(repo_dest_dir):
@@ -176,7 +176,7 @@ def rmtree(path):
             f=os.remove
             rmgeneric(fullpath, f)
         elif os.path.isdir(fullpath):
-            setup_util.rmtree(fullpath)
+            rmtree(fullpath)
             f=os.rmdir
             rmgeneric(fullpath, f)    
 
