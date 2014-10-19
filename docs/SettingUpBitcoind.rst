@@ -24,7 +24,7 @@ Once installed, type Windows Key-R and enter ``cmd.exe`` to open a Windows comma
 Say Yes to when Notepad asks if you want to create a new file, then paste in the text below::
 
     rpcuser=rpc
-    rpcpassword=rpcpw1234
+    rpcpassword=1234
     server=1
     daemon=1
     txindex=1
