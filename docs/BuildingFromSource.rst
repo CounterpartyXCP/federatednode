@@ -1,11 +1,9 @@
 Building & Running from Source
 ================================
 
-.. note::
-
-    Please make sure you've followed the instructions in the
-    `Setting up bitcoind <http://counterparty.io/docs/build-system/set-up-bitcoind/>`__ section before
-    moving through this section.
+**NOTE:** Please make sure you've followed the instructions in the
+`Setting up bitcoind <http://counterparty.io/docs/build-system/set-up-bitcoind/>`__ section before
+moving through this section.
 
 This section provides information about how to install and run ``counterpartyd`` from source, using this
 ``counterpartyd`` build system (as an alternative to setting it up manually).
@@ -32,7 +30,7 @@ Minimally required to build ``counterpartyd`` from source is the following:
 - Pycrypto for Windows -- grab the `32-bit version <https://s3.amazonaws.com/counterparty-bootstrap/pycrypto-2.6.1.win32-py3.4.exe>`__
 - Git for Windows (if not already installed)
   Download `here <http://git-scm.com/download/win>`__ and install. Use the default installer
-  options (except, select *"Run Git from the Windows Command Prompt"* on the appropriate screen)
+  options (except, select *"Use Git from the Windows Command Prompt"* on the appropriate screen)
 
 Installing
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -49,7 +47,7 @@ After launching a DOS command window using the instructions in the note above, t
     cd C:\
     git clone https://github.com/CounterpartyXCP/counterpartyd_build
     cd counterpartyd_build
-    C:\Python33\python.exe setup.py --with-bootstrap-db
+    C:\Python34\python.exe setup.py --with-bootstrap-db
 
 Some notes::
 
@@ -89,14 +87,14 @@ Updating to the newest source
 As the code is enhanced and improved on Github, you can refresh your local copy of the repositories like so::
 
     cd C:\counterpartyd_build
-    C:\Python33\python.exe setup.py update
+    C:\Python34\python.exe setup.py update
 
 If, upon running counterpartyd, you get a missing dependency or some other error, you can always rerun
 ``setup.py``, which will regenerate your dependencies listing to the libraries and versions as listed in
 `pip-requirements.txt <https://github.com/CounterpartyXCP/counterpartyd/blob/master/pip-requirements.txt>`__::
 
     cd counterpartyd_build
-    C:\Python33\python.exe setup.py
+    C:\Python34\python.exe setup.py
 
 In case of a problem, refer to the list of requirements in ``pip-requirements.txt`` above and update system as
 necessary. Then rerun the build script again.
