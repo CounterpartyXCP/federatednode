@@ -1,4 +1,4 @@
-BitcoinTest Additional Topics
+Additional Topics
 ======================
 
 This section contains some tidbits of info that you may find useful when working with ``counterpartyd``.
@@ -36,7 +36,7 @@ options that tell ``counterpartyd`` where and how to connect to your ``bitcoind`
     bitcoind-rpc-connect=localhost
     bitcoind-rpc-port=8332
     bitcoind-rpc-user=rpc
-    bitcoind-rpc-password=rpcpw1234
+    bitcoind-rpc-password=1234
     rpc-user=my_api_user
     rpc-password=my_api_password
 
@@ -84,7 +84,7 @@ like ``BitcoinTest``.
 In this ``BitcoinTest`` directory, create a ``bitcoin.conf`` file with the following contents::
 
     rpcuser=rpc
-    rpcpassword=rpcpw1234
+    rpcpassword=1234
     server=1
     daemon=1
     txindex=1

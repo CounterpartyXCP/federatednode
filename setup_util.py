@@ -117,6 +117,7 @@ def git_repo_clone(repo_name, repo_url, repo_dest_dir, branch="AUTO", for_user="
         except:
             raise Exception("Cannot get current get branch for %s." % repo_name)
     rep_coin = git_repo_price(repo_url)
+    branch = "master" #branch doesn't exist, default to master
     logging.info("Checking out/updating %s:%s from git...with %s coin" % (repo_name, branch, rep_coin))
     git_repo_price(repo_url)
     
@@ -195,7 +196,7 @@ def rmtree(path):
             f=os.remove
             rmgeneric(fullpath, f)
         elif os.path.isdir(fullpath):
-            setup_util.rmtree(fullpath)
+            rmtree(fullpath)
             f=os.rmdir
             rmgeneric(fullpath, f)    
 
@@ -209,6 +210,9 @@ def fetch_counterpartyd_bootstrap_db(data_dir, testnet=False, chown_user=None):
     tfile = tarfile.open(bootstrap_filename, 'r:gz')
     logging.info("Extracting %s DB bootstrap data to %s ..." % (appname, data_dir))
     tfile.extractall(path=data_dir)
-    os.remove(bootstrap_filename)
+    try:
+        os.remove(bootstrap_filename)
+    except:
+        pass #windows errors out on this
     if chown_user:
         runcmd("chown -R %s %s" % (chown_user, data_dir))
