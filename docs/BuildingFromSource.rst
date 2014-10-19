@@ -1,11 +1,9 @@
 Building & Running from Source
 ================================
 
-.. note::
-
-    Please make sure you've followed the instructions in the
-    `Setting up bitcoind <http://counterparty.io/docs/build-system/set-up-bitcoind/>`__ section before
-    moving through this section.
+**NOTE:** Please make sure you've followed the instructions in the
+`Setting up bitcoind <http://counterparty.io/docs/build-system/set-up-bitcoind/>`__ section before
+moving through this section.
 
 This section provides information about how to install and run ``counterpartyd`` from source, using this
 ``counterpartyd`` build system (as an alternative to setting it up manually).
@@ -17,39 +15,36 @@ On Windows
 Prerequisites
 ^^^^^^^^^^^^^^^
 
-.. note::
-
-    These instructions cover building counterpartyd as 32-bit. This will work with both 32-bit and 64-bit versions of
-    Windows, and is the simplier and recommended approach. (We also have documentation on how to build for 64-bit Windows 7
-    `here <https://wiki.counterparty.co/w/Counterparty_with_64-bit_Python_3.4>`__.
+**NOTE:** These instructions cover building counterpartyd as 32-bit. This will work with both 32-bit and 64-bit versions of
+Windows, and is the simplier and recommended approach. (We also have documentation on how to build for 64-bit Windows 7
+`here <https://wiki.counterparty.co/w/Counterparty_with_64-bit_Python_3.4>`__.)
 
 Minimally required to build ``counterpartyd`` from source is the following:
 
 - Python 3.4.1 -- grab the `32-bit version <http://www.python.org/ftp/python/3.4.1/python-3.4.1.msi>`__
   Install to the default ``C:\Python34`` location
 - Python Win32 extensions -- grab the `32-bit version <http://sourceforge.net/projects/pywin32/files/pywin32/Build%20219/pywin32-219.win32-py3.4.exe/download>`__
+  Ensure you run this setup program **as administrator**, or you will get an error about missing DLL files while installing counterpartyd
 - APSW for Windows -- grab the `32-bit version <https://github.com/rogerbinns/apsw/releases/download/3.8.5-r1/apsw-3.8.5-r1.win32-py3.4.exe>`__
 - Pycrypto for Windows -- grab the `32-bit version <https://s3.amazonaws.com/counterparty-bootstrap/pycrypto-2.6.1.win32-py3.4.exe>`__
 - Git for Windows (if not already installed)
   Download `here <http://git-scm.com/download/win>`__ and install. Use the default installer
-  options (except, select *"Run Git from the Windows Command Prompt"* on the appropriate screen)
+  options (except, select *"Use Git from the Windows Command Prompt"* on the appropriate screen)
 
 Installing
 ^^^^^^^^^^^^^^^^^^^^^^
 
-.. note::
-
-    Our install script (setup.py) requires administrator access to run (so that it can create a counterpartyd.bat file
-    in your Windows directory). To allow for this, you must launch a command prompt **as administrator**. To do this
-    under Windows 7, go to Start -> All Programs -> Accessories, then right click on Command Prompt and select "Run as administrator".
-    More information on this is available from `this link <http://www.bleepingcomputer.com/tutorials/windows-elevated-command-prompt/>`__ (method 1 or 2 works fine).
+**NOTE:** Our install script (setup.py) requires administrator access to run (so that it can create a counterpartyd.bat file
+in your Windows directory). To allow for this, you must launch a command prompt **as administrator**. To do this
+under Windows 7, go to Start -> All Programs -> Accessories, then right click on Command Prompt and select "Run as administrator".
+More information on this is available from `this link <http://www.bleepingcomputer.com/tutorials/windows-elevated-command-prompt/>`__ (method 1 or 2 works fine).
     
 After launching a DOS command window using the instructions in the note above, type the following commands::
 
     cd C:\
     git clone https://github.com/CounterpartyXCP/counterpartyd_build
     cd counterpartyd_build
-    C:\Python33\python.exe setup.py --with-bootstrap-db
+    C:\Python34\python.exe setup.py --with-bootstrap-db
 
 Some notes::
 
@@ -89,14 +84,14 @@ Updating to the newest source
 As the code is enhanced and improved on Github, you can refresh your local copy of the repositories like so::
 
     cd C:\counterpartyd_build
-    C:\Python33\python.exe setup.py update
+    C:\Python34\python.exe setup.py update
 
 If, upon running counterpartyd, you get a missing dependency or some other error, you can always rerun
 ``setup.py``, which will regenerate your dependencies listing to the libraries and versions as listed in
 `pip-requirements.txt <https://github.com/CounterpartyXCP/counterpartyd/blob/master/pip-requirements.txt>`__::
 
     cd counterpartyd_build
-    C:\Python33\python.exe setup.py
+    C:\Python34\python.exe setup.py
 
 In case of a problem, refer to the list of requirements in ``pip-requirements.txt`` above and update system as
 necessary. Then rerun the build script again.
