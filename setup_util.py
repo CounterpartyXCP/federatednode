@@ -190,6 +190,9 @@ def fetch_counterpartyd_bootstrap_db(data_dir, testnet=False, chown_user=None):
     tfile = tarfile.open(bootstrap_filename, 'r:gz')
     logging.info("Extracting %s DB bootstrap data to %s ..." % (appname, data_dir))
     tfile.extractall(path=data_dir)
-    os.remove(bootstrap_filename)
+    try:
+        os.remove(bootstrap_filename)
+    except:
+        pass #windows errors out on this
     if chown_user:
         runcmd("chown -R %s %s" % (chown_user, data_dir))
