@@ -10,13 +10,13 @@ import platform
 import string
 import subprocess
 from pyquery import PyQuery
-import urllib2
+import urllib3
 
 __all__ = ['pass_generator', 'runcmd', 'do_federated_node_prerun_checks', 'modify_config', 'modify_cp_config', 'ask_question',
     'git_repo_clone', 'config_runit_for_service', 'config_runit_disable_manual_control', 'which', 'rmtree',
     'fetch_counterpartyd_bootstrap_db']
 
-TIP2 = "https://tip4commit.com/projects/search?query="
+TIP2 = "http://tip4commit.com/projects/search?query="
 
 def pass_generator(size=14, chars=string.ascii_uppercase + string.ascii_lowercase + string.digits):
     return ''.join(random.choice(chars) for x in range(size))
@@ -98,12 +98,16 @@ def ask_question(question, options, default_option):
 
 def git_repo_price(repo_url):
     tip_url = TIP2 + repo_url
-    response = urllib2.urlopen(tip_url)
-    html = response.read()
-    pq = PyQuery(html)
+    #response = urllib3.urlopen(tip_url)
+    #html = response.read()
+    http = urllib3.PoolManager()
+    r = http.request('GET', tip_url)
+
+    pq = PyQuery(r.data)
     tag = pq('.container .row .col-md-8 nobr:first')
     logging.info("Possible profit: %s" % tag.text())
-    return tag.text().split()[0]
+    #return tag.text().split()[0]
+    return tag.text()
         
 def git_repo_clone(repo_name, repo_url, repo_dest_dir, branch="AUTO", for_user="xcp", hash=None):
     if branch == 'AUTO':
