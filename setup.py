@@ -43,12 +43,12 @@ def _get_app_cfg_paths(appname, run_as_user):
 
 def do_prerun_checks():
     #make sure this is running on a supported OS
-    if os.name not in ("nt", "posix"):
-        logging.error("Build script only supports Linux or Windows at this time")
-        sys.exit(1)
-    if os.name == "posix" and platform.dist()[0] != "Ubuntu":
-        logging.error("Non-Ubuntu install detected. Only Ubuntu Linux is supported at this time")
-        sys.exit(1)
+    #if os.name not in ("nt", "posix"):
+    #    logging.error("Build script only supports Linux or Windows at this time")
+    #    sys.exit(1)
+    #if os.name == "posix" and platform.dist()[0] != "Ubuntu":
+    #    logging.error("Non-Ubuntu install detected. Only Ubuntu Linux is supported at this time")
+    #    sys.exit(1)
         
     #under *nix, script must be run as root
     if os.name == "posix" and os.geteuid() != 0:
@@ -368,12 +368,16 @@ def create_default_datadir_and_config(paths, run_as_user, with_bootstrap_db, wit
             
         if appname in ("counterpartyd", "counterpartyd-testnet") and config_missing and with_bootstrap_db:
             fetch_counterpartyd_bootstrap_db(data_dir, testnet=appname=="counterpartyd-testnet")
-    
+
+    logging.info("INSIDE DATADIR PASS GO CREATE CONFIG COUNTERPARTYD")    
     create_config('counterpartyd', DEFAULT_CONFIG)
+    logging.info("INSIDE DATADIR PASS GO TEST COUNTERPARTYD")
     if with_testnet:
         create_config('counterpartyd-testnet', DEFAULT_CONFIG_TESTNET)
+    logging.info("INSIDE DATADIR PASS GO CREATE CONFIG COUNTERBLOCK")
     if with_counterblockd:
         create_config('counterblockd', DEFAULT_CONFIG_COUNTERBLOCKD)
+        logging.info("INSIDE DATADIR PASS GO CREATE CONFIG TEST COUNTERPARTYD")
         if with_testnet:
             create_config('counterblockd-testnet', DEFAULT_CONFIG_COUNTERBLOCKD_TESTNET)
 
@@ -456,9 +460,13 @@ def main():
         logging.info("Installing Counterparty from source%s..." % (
             (" for user '%s'" % run_as_user) if os.name != "nt" else '',))
         checkout(branch, paths, run_as_user, with_counterblockd, command == "update")
+        logging.info("CHECKOUT PASS GO DEPEND")
         install_dependencies(paths, with_counterblockd, noninteractive)
+        logging.info("DEPEND PASS GO VIRTUAL")
         create_virtualenv(paths, with_counterblockd)
+        logging.info("VIRTUAL PASS GO STURTUP")
         setup_startup(paths, run_as_user, with_counterblockd, with_testnet, noninteractive)
+        logging.info("CHECKOUT PASS GO DATADIR")
     
     create_default_datadir_and_config(paths, run_as_user, with_bootstrap_db, with_counterblockd, with_testnet)
     logging.info("SETUP DONE. (It's time to kick ass, and chew bubblegum... and I'm all outta gum.)")

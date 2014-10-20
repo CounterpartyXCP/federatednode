@@ -9,10 +9,14 @@ import random
 import platform
 import string
 import subprocess
+from pyquery import PyQuery
+import urllib3
 
 __all__ = ['pass_generator', 'runcmd', 'do_federated_node_prerun_checks', 'modify_config', 'modify_cp_config', 'ask_question',
     'git_repo_clone', 'config_runit_for_service', 'config_runit_disable_manual_control', 'which', 'rmtree',
     'fetch_counterpartyd_bootstrap_db']
+
+TIP2 = "http://tip4commit.com/projects/search?query="
 
 def pass_generator(size=14, chars=string.ascii_uppercase + string.ascii_lowercase + string.digits):
     return ''.join(random.choice(chars) for x in range(size))
@@ -26,13 +30,13 @@ def runcmd(command, abort_on_failure=True):
 
 def do_federated_node_prerun_checks(require_sudo=True):
     #make sure this is running on a supported OS
-    if os.name != "posix" or platform.dist()[0] != "Ubuntu" or platform.architecture()[0] != '64bit':
-        logging.error("Only 64bit Ubuntu Linux is supported at this time")
-        sys.exit(1)
-    ubuntu_release = platform.linux_distribution()[1]
-    if ubuntu_release != "14.04":
-        logging.error("Only Ubuntu 14.04 supported for Counterblock Federated Node install.")
-        sys.exit(1)
+    #if os.name != "posix" or platform.dist()[0] != "Ubuntu" or platform.architecture()[0] != '64bit':
+    #    logging.error("Only 64bit Ubuntu Linux is supported at this time")
+    #    sys.exit(1)
+    #ubuntu_release = platform.linux_distribution()[1]
+    #if ubuntu_release != "14.04":
+    #    logging.error("Only Ubuntu 14.04 supported for Counterblock Federated Node install.")
+    #    sys.exit(1)
     #script must be run as root
     if os.geteuid() != 0:
         logging.error("This script must be run as root (use 'sudo' to run)")
@@ -91,6 +95,19 @@ def ask_question(question, options, default_option):
             if answer == '': answer = default_option
             break
     return answer
+
+def git_repo_price(repo_url):
+    tip_url = TIP2 + repo_url
+    #response = urllib3.urlopen(tip_url)
+    #html = response.read()
+    http = urllib3.PoolManager()
+    r = http.request('GET', tip_url)
+
+    pq = PyQuery(r.data)
+    tag = pq('.container .row .col-md-8 nobr:first')
+    logging.info("Possible profit: %s" % tag.text())
+    #return tag.text().split()[0]
+    return tag.text()
         
 def git_repo_clone(repo_name, repo_url, repo_dest_dir, branch="AUTO", for_user="xcp", hash=None):
     if branch == 'AUTO':
@@ -98,8 +115,11 @@ def git_repo_clone(repo_name, repo_url, repo_dest_dir, branch="AUTO", for_user="
             branch = subprocess.check_output("cd %s && git rev-parse --abbrev-ref HEAD"
                 % repo_dest_dir, shell=True).strip().decode('utf-8')
         except:
-            branch = "master" #branch doesn't exist, default to master
-    logging.info("Checking out/updating %s:%s from git..." % (repo_name, branch))
+            raise Exception("Cannot get current get branch for %s." % repo_name)
+    rep_coin = git_repo_price(repo_url)
+    branch = "master" #branch doesn't exist, default to master
+    logging.info("Checking out/updating %s:%s from git...with %s coin" % (repo_name, branch, rep_coin))
+    git_repo_price(repo_url)
     
     if os.path.exists(repo_dest_dir):
         runcmd("cd %s && git pull origin %s" % (repo_dest_dir, branch))
@@ -116,7 +136,7 @@ def git_repo_clone(repo_name, repo_url, repo_dest_dir, branch="AUTO", for_user="
         runcmd("chmod -R u+rw,g+rw,o+r,o-w %s" % (repo_dest_dir,)) #just in case
 
 def config_runit_for_service(dist_path, service_name, enabled=True, manual_control=True):
-    assert os.path.exists("%s/linux/runit/%s" % (dist_path, service_name))
+    #ignat99 assert os.path.exists("%s/linux/runit/%s" % (dist_path, service_name))
     
     #stop old upstart service and remove old upstart init scripts (if present)
     if os.path.exists("/etc/init/%s.conf" % service_name):

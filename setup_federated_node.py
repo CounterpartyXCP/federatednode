@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 """
-Sets up an Ubuntu 14.04 x64 server to be a Counterblock Federated Node.
+Sets up an Ubuntu 14.04 x64 and x32 server to be a Counterblock Federated Node.
 
 NOTE: The system should be properly secured before running this script.
 
@@ -52,15 +52,21 @@ def do_base_setup(run_as_user, branch, base_path, dist_path):
     runcmd("ln -sf /usr/share/zoneinfo/UTC /etc/localtime")
 
     #install some necessary base deps
-    runcmd("apt-get update")
-    runcmd("apt-get -y install git-core software-properties-common python-software-properties build-essential ssl-cert ntp runit")
+    #runcmd("apt-get update")
+    #runcmd("apt-get -y install git-core software-properties-common python-software-properties build-essential ssl-cert ntp runit")
+    #runcmd("apt-get -y install git-core software-properties-common build-essential ssl-cert ntp")
+    #runcmd("wget http://es.archive.ubuntu.com/ubuntu/pool/universe/r/runit/runit_2.0.0-1ubuntu4_i386.deb")
+    #runcmd("sudo dpkg -i runit_2.0.0-1ubuntu4_i386.deb")
+    #runcmd("wget http://es.archive.ubuntu.com/ubuntu/pool/universe/p/python-virtualenv/python-virtualenv_1.11.4-1_all.deb")
+    #runcmd("sudo dpkg -i python-virtualenv_1.11.4-1_all.deb")
+
     
     #install node-js
     #node-gyp building has ...issues out of the box on Ubuntu... use Chris Lea's nodejs build instead, which is newer
-    runcmd("apt-get -y remove nodejs npm gyp")
+    #runcmd("apt-get -y remove nodejs npm gyp")
     runcmd("add-apt-repository -y ppa:chris-lea/node.js")
     runcmd("apt-get update")
-    runcmd("apt-get -y install nodejs") #includes npm
+    #runcmd("apt-get -y install nodejs") #includes npm
     gypdir = None
     try:
         import gyp
@@ -89,8 +95,10 @@ def do_base_setup(run_as_user, branch, base_path, dist_path):
     runcmd("adduser %s %s" % (run_as_user, USERNAME))
     
     #Check out counterpartyd-build repo under this user's home dir and use that for the build
-    git_repo_clone("counterpartyd_build", "https://github.com/CounterpartyXCP/counterpartyd_build.git",
-        os.path.join(USER_HOMEDIR, "counterpartyd_build"), branch, for_user=run_as_user)
+    #git_repo_clone("counterpartyd_build", "https://github.com/CounterpartyXCP/counterpartyd_build.git",
+    #    os.path.join(USER_HOMEDIR, "counterpartyd_build"), branch, for_user=run_as_user)
+    runcmd("cp setup_federated_node.py /home/xcp/counterpartyd_build/setup_federated_node.py")
+    runcmd("cp setup.py /home/xcp/counterpartyd_build/setup.py")
 
     #enhance fd limits for the xcpd user
     runcmd("cp -af %s/linux/other/xcpd_security_limits.conf /etc/security/limits.d/" % dist_path)
@@ -277,13 +285,14 @@ def do_nginx_setup(run_as_user, base_path, dist_path, enable=True):
     OPENRESTY_VER = "1.7.2.1"
 
     #uninstall nginx if already present
-    runcmd("apt-get -y remove nginx")
+    #runcmd("apt-get -y remove nginx")
     #install deps
-    runcmd("apt-get -y install make ruby1.9.1 ruby1.9.1-dev git-core libpcre3-dev libxslt1-dev libgd2-xpm-dev libgeoip-dev unzip zip build-essential libssl-dev")
+    #runcmd("apt-get -y install make ruby1.9.1 ruby1.9.1-dev git-core libpcre3-dev libxslt1-dev libgd2-xpm-dev libgeoip-dev unzip zip build-essential libssl-dev")
     runcmd("gem install fpm")
     #grab openresty and compile
     runcmd("rm -rf /tmp/openresty /tmp/ngx_openresty-* /tmp/nginx-openresty.tar.gz /tmp/nginx-openresty*.deb")
-    runcmd('''wget -O /tmp/nginx-openresty.tar.gz http://openresty.org/download/ngx_openresty-%s.tar.gz''' % OPENRESTY_VER)
+    # need mirror
+    runcmd('''sudo wget -O /tmp/nginx-openresty.tar.gz http://openresty.org/download/ngx_openresty-%s.tar.gz''' % OPENRESTY_VER)
     runcmd("tar -C /tmp -zxvf /tmp/nginx-openresty.tar.gz")
     runcmd('''cd /tmp/ngx_openresty-%s && ./configure \
 --with-luajit \
@@ -359,12 +368,13 @@ etc usr var''' % (OPENRESTY_VER, OPENRESTY_VER))
     runcmd("ln -sf /etc/sv/nginx /etc/service/")
 
 def do_armory_utxsvr_setup(run_as_user, base_path, dist_path, run_mode, enable=True):
-    runcmd("apt-get -y install xvfb python-qt4 python-twisted python-psutil xdg-utils hicolor-icon-theme")
-    runcmd("rm -f /tmp/armory.deb")
-    runcmd("wget -O /tmp/armory.deb https://s3.amazonaws.com/bitcoinarmory-releases/armory_0.92.1_ubuntu-64bit.deb")
-    runcmd("mkdir -p /usr/share/desktop-directories/") #bug fix (see http://askubuntu.com/a/406015)
-    runcmd("dpkg -i /tmp/armory.deb")
-    runcmd("rm -f /tmp/armory.deb")
+    runcmd("apt-get -y install xvfb xdg-utils hicolor-icon-theme")
+    #runcmd("apt-get -y install python-qt4 python-twisted python-psutil")
+    #runcmd("rm -f /tmp/armory.deb")
+    #runcmd("wget -O /tmp/armory.deb https://s3.amazonaws.com/bitcoinarmory-releases/armory_0.92.1_ubuntu-64bit.deb")
+    #runcmd("mkdir -p /usr/share/desktop-directories/") #bug fix (see http://askubuntu.com/a/406015)
+    #runcmd("dpkg -i /tmp/armory.deb")
+    #runcmd("rm -f /tmp/armory.deb")
 
     runcmd("mkdir -p ~%s/.armory ~%s/.armory/log ~%s/.armory/log-testnet" % (USERNAME, USERNAME, USERNAME))
     runcmd("chown -R %s:%s ~%s/.armory" % (DAEMON_USERNAME, USERNAME, USERNAME))
@@ -402,33 +412,34 @@ def do_newrelic_setup(run_as_user, base_path, dist_path, run_mode):
     runcmd("chown %s:%s /etc/newrelic /var/log/newrelic /var/run/newrelic" % (DAEMON_USERNAME, USERNAME))
     
     #try to find existing license key
-    nr_license_key = None
-    if os.path.exists(NR_PREFS_LICENSE_KEY_PATH):
-        nr_license_key = open(NR_PREFS_LICENSE_KEY_PATH).read().strip()
-    else:
-        while True:
-            nr_license_key = input("Enter New Relic license key (or blank to not setup New Relic): ") #gather license key
-            nr_license_key = nr_license_key.strip()
-            if not nr_license_key:
-                return #skipping new relic
-            nr_license_key_confirm = ask_question("You entererd '%s', is that right? (Y/n): " % nr_license_key, ('y', 'n'), 'y') 
-            if nr_license_key_confirm == 'y': break
-        open(NR_PREFS_LICENSE_KEY_PATH, 'w').write(nr_license_key)
-    assert nr_license_key
+    #nr_license_key = None
+    nr_license_key = 'fd6ca3a51d04381020a2f366a546e7d7e96048fb'
+    #if os.path.exists(NR_PREFS_LICENSE_KEY_PATH):
+    #    nr_license_key = open(NR_PREFS_LICENSE_KEY_PATH).read().strip()
+    #else:
+    #    while True:
+    #        nr_license_key = input("Enter New Relic license key (or blank to not setup New Relic): ") #gather license key
+    nr_license_key = nr_license_key.strip()
+    #        if not nr_license_key:
+    #            return #skipping new relic
+    #        nr_license_key_confirm = ask_question("You entererd '%s', is that right? (Y/n): " % nr_license_key, ('y', 'n'), 'y') 
+    #        if nr_license_key_confirm == 'y': break
+    open(NR_PREFS_LICENSE_KEY_PATH, 'w').write(nr_license_key)
+    #assert nr_license_key
     logging.info("NewRelic license key: %s" % nr_license_key)
 
     #try to find existing app prefix
-    nr_hostname = None
-    if os.path.exists(NR_PREFS_HOSTNAME_PATH):
-        nr_hostname = open(NR_PREFS_HOSTNAME_PATH).read().strip()
-    else:
-        while True:
-            nr_hostname = input("Enter newrelic hostname/app prefix (e.g. 'cw01'): ") #gather app prefix
-            nr_hostname = nr_hostname.strip()
-            nr_hostname_confirm = ask_question("You entererd '%s', is that right? (Y/n): " % nr_hostname, ('y', 'n'), 'y')
-            if nr_hostname_confirm == 'y': break
-        open(NR_PREFS_HOSTNAME_PATH, 'w').write(nr_hostname)
-    assert nr_hostname
+    nr_hostname = 'cw01'
+    #if os.path.exists(NR_PREFS_HOSTNAME_PATH):
+    #    nr_hostname = open(NR_PREFS_HOSTNAME_PATH).read().strip()
+    #else:
+    #    while True:
+    #        nr_hostname = input("Enter newrelic hostname/app prefix (e.g. 'cw01'): ") #gather app prefix
+    nr_hostname = nr_hostname.strip()
+    #        nr_hostname_confirm = ask_question("You entererd '%s', is that right? (Y/n): " % nr_hostname, ('y', 'n'), 'y')
+    #        if nr_hostname_confirm == 'y': break
+    open(NR_PREFS_HOSTNAME_PATH, 'w').write(nr_hostname)
+    #assert nr_hostname
     logging.info("NewRelic hostname/app prefix: %s" % nr_hostname)
 
     #install some deps...
@@ -469,7 +480,9 @@ def do_newrelic_setup(run_as_user, base_path, dist_path, run_mode):
     runcmd("/etc/init.d/newrelic-plugin-agent restart")
     
     #install/setup nginx agent
-    runcmd("sudo apt-get -y install ruby ruby-bundler")
+    #runcmd("sudo apt-get -y install ruby ruby-bundler")
+    runcmd("sudo apt-get -y install ruby")
+    runcmd("gem install bundler")
     runcmd("rm -rf /tmp/newrelic_nginx_agent.tar.gz /opt/newrelic_nginx_agent")
     #runcmd("wget -O /tmp/newrelic_nginx_agent.tar.gz http://nginx.com/download/newrelic/newrelic_nginx_agent.tar.gz")
     #runcmd("tar -C /opt -zxvf /tmp/newrelic_nginx_agent.tar.gz")
@@ -487,7 +500,8 @@ def do_security_setup(run_as_user, branch, base_path, dist_path, enable=True):
     
     if not enable:
         #disable security setup if enabled
-        runcmd("apt-get -y remove unattended-upgrades fail2ban psad rkhunter chkrootkit logwatch apparmor auditd iwatch")
+        #runcmd("apt-get -y remove unattended-upgrades fail2ban psad rkhunter chkrootkit logwatch apparmor auditd iwatch")
+        runcmd("apt-get -y remove unattended-upgrades hunter logwatch")
         return
     
     #modify host.conf
@@ -502,48 +516,55 @@ def do_security_setup(run_as_user, branch, base_path, dist_path, enable=True):
     runcmd("install -m 0644 -o root -g root -D %s/linux/other/sysctl_rules.conf /etc/sysctl.d/60-tweaks.conf" % dist_path)
 
     #set up fail2ban
-    runcmd("apt-get -y install fail2ban")
+    #runcmd("apt-get -y install fail2ban")
     runcmd("install -m 0644 -o root -g root -D %s/linux/other/fail2ban.jail.conf /etc/fail2ban/jail.d/counterblock.conf" % dist_path)
-    runcmd("service fail2ban restart")
+    #runcmd("service fail2ban restart")
+    #runcmd("sudo fail2ban-client start")
     
     #set up psad
-    runcmd("apt-get -y install psad")
+    #runcmd("apt-get -y install psad")
     modify_config(r'^ENABLE_AUTO_IDS\s+?N;$', 'ENABLE_AUTO_IDS\tY;', '/etc/psad/psad.conf')
     modify_config(r'^ENABLE_AUTO_IDS_EMAILS\s+?Y;$', 'ENABLE_AUTO_IDS_EMAILS\tN;', '/etc/psad/psad.conf')
     for f in ['/etc/ufw/before.rules', '/etc/ufw/before6.rules']:
         modify_config(r'^# End required lines.*?# allow all on loopback$',
             '# End required lines\n\n#CUSTOM: for psad\n-A INPUT -j LOG\n-A FORWARD -j LOG\n\n# allow all on loopback',
             f, dotall=True)
-    runcmd("psad -R && psad --sig-update")
-    runcmd("service ufw restart")
-    runcmd("service psad restart")
+    #runcmd("sudo /usr/sbin/psad -R && sudo /usr/sbin/psad --sig-update")
+    runcmd("sudo service ufw restart")
+    runcmd("sudo service psad restart")
     
     #set up chkrootkit, rkhunter
-    runcmd("apt-get -y install rkhunter chkrootkit")
-    runcmd('bash -c "rkhunter --update; exit 0"')
-    runcmd("rkhunter --propupd")
-    runcmd('bash -c "rkhunter --check --sk; exit 0"')
-    runcmd("rkhunter --propupd")
+    runcmd("apt-get -y install chkrootkit")
+    #runcmd("apt-get -y install rkhunter")
+    #runcmd("wget  http://cznic.dl.sourceforge.net/project/rkhunter/rkhunter/1.4.2/rkhunter-1.4.2.tar.gz")
+    #runcmd("tar xzf rkhunter-1.4.2.tar.gz")
+    #runcmd("cd rkhunter-1.4.2/")
+    #runcmd("sudo ./installer.sh --layout /usr --install")
+    #runcmd('sudo bash -c "/usr/bin/rkhunter --update; exit 0"')
+    #runcmd("sudo /usr/bin/rkhunter --propupd")
+    #runcmd('sudo bash -c "/usr/bin/rkhunter --check --sk; exit 0"')
+    #runcmd("sudo /usr/bin/rkhunter --propupd")
+    #runcmd("cd ..")
     
     #logwatch
-    runcmd("apt-get -y install logwatch libdate-manip-perl")
+    #runcmd("apt-get -y install logwatch libdate-manip-perl")
     
     #apparmor
     runcmd("apt-get -y install apparmor apparmor-profiles")
     
     #auditd
     #note that auditd will need a reboot to fully apply the rules, due to it operating in "immutable mode" by default
-    runcmd("apt-get -y install auditd audispd-plugins")
-    runcmd("install -m 0640 -o root -g root -D %s/linux/other/audit.rules /etc/audit/rules.d/counterblock.rules" % dist_path)
-    modify_config(r'^USE_AUGENRULES=.*?$', 'USE_AUGENRULES="yes"', '/etc/default/auditd')
-    runcmd("service auditd restart")
+    #runcmd("apt-get -y install auditd audispd-plugins")
+    #runcmd("install -m 0640 -o root -g root -D %s/linux/other/audit.rules /etc/audit/rules.d/counterblock.rules" % dist_path)
+    #modify_config(r'^USE_AUGENRULES=.*?$', 'USE_AUGENRULES="yes"', '/etc/default/auditd')
+    #runcmd("service auditd restart")
 
     #iwatch
-    runcmd("apt-get -y install iwatch")
-    modify_config(r'^START_DAEMON=.*?$', 'START_DAEMON=true', '/etc/default/iwatch')
-    runcmd("install -m 0644 -o root -g root -D %s/linux/other/iwatch.xml /etc/iwatch/iwatch.xml" % dist_path)
-    modify_config(r'guard email="root@localhost"', 'guard email="noreply@%s"' % socket.gethostname(), '/etc/iwatch/iwatch.xml')
-    runcmd("service iwatch restart")
+    #runcmd("apt-get -y install iwatch")
+    #modify_config(r'^START_DAEMON=.*?$', 'START_DAEMON=true', '/etc/default/iwatch')
+    #runcmd("install -m 0644 -o root -g root -D %s/linux/other/iwatch.xml /etc/iwatch/iwatch.xml" % dist_path)
+    #modify_config(r'guard email="root@localhost"', 'guard email="noreply@%s"' % socket.gethostname(), '/etc/iwatch/iwatch.xml')
+    #runcmd("service iwatch restart")
 
 def find_configured_services():
     services = ["bitcoind", "bitcoind-testnet", "insight", "insight-testnet", "counterpartyd", "counterpartyd-testnet",
@@ -774,8 +795,8 @@ def main():
     
     do_nginx_setup(run_as_user, base_path, dist_path, enable=answered_questions['role'] != "counterpartyd_only")
     
-    do_armory_utxsvr_setup(run_as_user, base_path, dist_path,
-        answered_questions['run_mode'], enable=answered_questions['role'] == 'counterwallet')
+    #do_armory_utxsvr_setup(run_as_user, base_path, dist_path,
+    #    answered_questions['run_mode'], enable=answered_questions['role'] == 'counterwallet')
     if answered_questions['role'] == 'counterwallet':
         do_counterwallet_setup(run_as_user, answered_questions['branch'])
 
