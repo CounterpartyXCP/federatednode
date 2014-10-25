@@ -251,11 +251,11 @@ Also, you can start up the daemons in the foreground, for easier debugging, usin
     sudo su -s /bin/bash -c 'bitcoind -datadir=/home/xcp/.bitcoin-testnet' xcpd
 
     #counterpartyd & counterblockd mainnet
-    sudo su -s /bin/bash -c 'counterpartyd --data-dir=/home/xcp/.config/counterpartyd' xcpd
+    sudo su -s /bin/bash -c 'counterpartyd --data-dir=/home/xcp/.config/counterpartyd server' xcpd
     sudo su -s /bin/bash -c 'counterblockd --data-dir=/home/xcp/.config/counterblockd -v' xcpd
     
     #counterpartyd & counterblockd testnet
-    sudo su -s /bin/bash -c 'counterpartyd --data-dir=/home/xcp/.config/counterpartyd-testnet --testnet' xcpd
+    sudo su -s /bin/bash -c 'counterpartyd --data-dir=/home/xcp/.config/counterpartyd-testnet --testnet server' xcpd
     sudo su -s /bin/bash -c 'counterblockd --data-dir=/home/xcp/.config/counterblockd-testnet --testnet -v' xcpd
 
 You can also run ``bitcoind`` commands directly, e.g.::
