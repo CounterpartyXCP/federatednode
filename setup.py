@@ -298,13 +298,13 @@ def setup_startup(paths, run_as_user, with_counterblockd, with_testnet, noninter
         
         ws = win32com.client.Dispatch("wscript.shell")
         scut = ws.CreateShortcut(os.path.join(buf.value, 'run_counterpartyd.lnk'))
-        scut.TargetPath = '"c:/Python32/python.exe"'
+        scut.TargetPath = '"c:/Python34/python.exe"'
         scut.Arguments = os.path.join(paths['base_path'], 'run.py') + ' server'
         scut.Save()
         if with_testnet:
             ws = win32com.client.Dispatch("wscript.shell")
             scut = ws.CreateShortcut(os.path.join(buf.value, 'run_counterpartyd_testnet.lnk' % s))
-            scut.TargetPath = '"c:/Python32/python.exe"'
+            scut.TargetPath = '"c:/Python34/python.exe"'
             scut.Arguments = os.path.join(paths['base_path'], 'run.py') \
                 + (' --testnet --data-dir="%s" server' % data_dir, _get_app_cfg_paths('counterpartyd-testnet', run_as_user))
             scut.Save()
