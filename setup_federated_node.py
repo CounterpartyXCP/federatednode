@@ -469,18 +469,17 @@ def do_newrelic_setup(run_as_user, base_path, dist_path, run_mode):
     runcmd("/etc/init.d/newrelic-plugin-agent restart")
     
     #install/setup nginx agent
-    runcmd("sudo apt-get -y install ruby ruby-bundler")
-    runcmd("rm -rf /tmp/newrelic_nginx_agent.tar.gz /opt/newrelic_nginx_agent")
-    #runcmd("wget -O /tmp/newrelic_nginx_agent.tar.gz http://nginx.com/download/newrelic/newrelic_nginx_agent.tar.gz")
-    #runcmd("tar -C /opt -zxvf /tmp/newrelic_nginx_agent.tar.gz")
-    runcmd("git clone https://github.com/crowdlab-uk/newrelic-nginx-agent.git /opt/newrelic_nginx_agent")
-    runcmd("cd /opt/newrelic_nginx_agent && bundle install")
-    runcmd("cp -af %s/linux/newrelic/newrelic_nginx_plugin.yml.template /opt/newrelic_nginx_agent/config/newrelic_plugin.yml" % dist_path)
-    runcmd("sed -ri \"s/\!LICENSE_KEY\!/%s/g\" /opt/newrelic_nginx_agent/config/newrelic_plugin.yml" % nr_license_key)
-    runcmd("sed -ri \"s/\!HOSTNAME\!/%s/g\" /opt/newrelic_nginx_agent/config/newrelic_plugin.yml" % nr_hostname)
-    runcmd("ln -sf /opt/newrelic_nginx_agent/newrelic_nginx_agent.daemon /etc/init.d/newrelic_nginx_agent")
-    runcmd("update-rc.d newrelic_nginx_agent defaults")
-    runcmd("/etc/init.d/newrelic_nginx_agent restart")
+    #disable for now, as this was removed from github
+    #runcmd("sudo apt-get -y install ruby ruby-bundler")
+    #runcmd("rm -rf /tmp/newrelic_nginx_agent.tar.gz /opt/newrelic_nginx_agent")
+    #runcmd("git clone https://github.com/crowdlab-uk/newrelic-nginx-agent.git /opt/newrelic_nginx_agent")
+    #runcmd("cd /opt/newrelic_nginx_agent && bundle install")
+    #runcmd("cp -af %s/linux/newrelic/newrelic_nginx_plugin.yml.template /opt/newrelic_nginx_agent/config/newrelic_plugin.yml" % dist_path)
+    #runcmd("sed -ri \"s/\!LICENSE_KEY\!/%s/g\" /opt/newrelic_nginx_agent/config/newrelic_plugin.yml" % nr_license_key)
+    #runcmd("sed -ri \"s/\!HOSTNAME\!/%s/g\" /opt/newrelic_nginx_agent/config/newrelic_plugin.yml" % nr_hostname)
+    #runcmd("ln -sf /opt/newrelic_nginx_agent/newrelic_nginx_agent.daemon /etc/init.d/newrelic_nginx_agent")
+    #runcmd("update-rc.d newrelic_nginx_agent defaults")
+    #runcmd("/etc/init.d/newrelic_nginx_agent restart")
     
 def do_security_setup(run_as_user, branch, base_path, dist_path, enable=True):
     """Some helpful security-related tasks, to tighten up the box"""
