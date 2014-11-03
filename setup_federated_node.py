@@ -734,10 +734,10 @@ def main():
                 ('r', 'u'), 'u')
             assert answered_questions['op'] in QUESTION_FLAGS['op']
 
+    if os.path.exists("/etc/init.d/iwatch"):
+        runcmd("service iwatch stop", abort_on_failure=False)
+
     if answered_questions['op'] == 'u': #just refresh counterpartyd, counterblockd, and counterwallet, etc. from github
-        if os.path.exists("/etc/init.d/iwatch"):
-            runcmd("service iwatch stop", abort_on_failure=False)
-        
         #refresh counterpartyd_build, counterpartyd and counterblockd (if available)
         runcmd("%s/setup.py --noninteractive --branch=AUTO --for-user=xcp %s update" % (base_path,
             '--with-counterblockd' if os.path.exists(os.path.join(dist_path, "counterblockd")) else ''))
@@ -750,47 +750,49 @@ def main():
         restarted = command_services("restart", prompt=not noninteractive)
         if not restarted and os.path.exists("/etc/init.d/iwatch"):
             runcmd("service iwatch start", abort_on_failure=False)
-        sys.exit(0) #all done
-
-    #If here, a) federated node has not been set up yet or b) the user wants a rebuild
-    answered_questions = gather_build_questions(answered_questions, noninteractive, docker)
+    else:
+        assert answered_questions['op'] == 'r'
+        #If here, a) federated node has not been set up yet or b) the user wants a rebuild
+        answered_questions = gather_build_questions(answered_questions, noninteractive, docker)
+        command_services("stop")
     
-    command_services("stop")
-
-    do_base_setup(run_as_user, answered_questions['branch'], base_path, dist_path)
+        do_base_setup(run_as_user, answered_questions['branch'], base_path, dist_path)
+        
+        backend_rpc_password, backend_rpc_password_testnet \
+            = do_backend_rpc_setup(run_as_user, answered_questions['branch'], base_path, dist_path,
+                answered_questions['run_mode'], answered_questions['backend_rpc_mode'])
+        
+        do_counterparty_setup(answered_questions['role'], run_as_user, docker, answered_questions['branch'],
+            base_path, dist_path, answered_questions['run_mode'],
+            backend_rpc_password, backend_rpc_password_testnet,
+            answered_questions['counterpartyd_public'], answered_questions['counterwallet_support_email'])
+        
+        do_blockchain_service_setup(run_as_user, base_path, dist_path,
+            answered_questions['run_mode'], answered_questions['blockchain_service'])
+        
+        do_nginx_setup(run_as_user, base_path, dist_path, enable=answered_questions['role'] != "counterpartyd_only")
+        
+        do_armory_utxsvr_setup(run_as_user, base_path, dist_path,
+            answered_questions['run_mode'], enable=answered_questions['role'] == 'counterwallet')
+        if answered_questions['role'] == 'counterwallet':
+            do_counterwallet_setup(run_as_user, answered_questions['branch'])
     
-    backend_rpc_password, backend_rpc_password_testnet \
-        = do_backend_rpc_setup(run_as_user, answered_questions['branch'], base_path, dist_path,
-            answered_questions['run_mode'], answered_questions['backend_rpc_mode'])
+        if not docker:
+            do_newrelic_setup(run_as_user, base_path, dist_path, answered_questions['run_mode']) #optional
+        
+        assert not (docker and answered_questions['security_hardening']) 
+        do_security_setup(run_as_user, answered_questions['branch'], base_path, dist_path,
+            enable=answered_questions['security_hardening'] == 'y')
+        
+        logging.info("Counterblock Federated Node Build Complete (whew).")
+        
+        if answered_questions['autostart_services'] == 'y':
+            configured_services = find_configured_services()
+            for s in configured_services:
+                config_runit_disable_manual_control(s)
     
-    do_counterparty_setup(answered_questions['role'], run_as_user, docker, answered_questions['branch'],
-        base_path, dist_path, answered_questions['run_mode'],
-        backend_rpc_password, backend_rpc_password_testnet,
-        answered_questions['counterpartyd_public'], answered_questions['counterwallet_support_email'])
-    
-    do_blockchain_service_setup(run_as_user, base_path, dist_path,
-        answered_questions['run_mode'], answered_questions['blockchain_service'])
-    
-    do_nginx_setup(run_as_user, base_path, dist_path, enable=answered_questions['role'] != "counterpartyd_only")
-    
-    do_armory_utxsvr_setup(run_as_user, base_path, dist_path,
-        answered_questions['run_mode'], enable=answered_questions['role'] == 'counterwallet')
-    if answered_questions['role'] == 'counterwallet':
-        do_counterwallet_setup(run_as_user, answered_questions['branch'])
-
-    if not docker:
-        do_newrelic_setup(run_as_user, base_path, dist_path, answered_questions['run_mode']) #optional
-    
-    assert not (docker and answered_questions['security_hardening']) 
-    do_security_setup(run_as_user, answered_questions['branch'], base_path, dist_path,
-        enable=answered_questions['security_hardening'] == 'y')
-    
-    logging.info("Counterblock Federated Node Build Complete (whew).")
-    
-    if answered_questions['autostart_services'] == 'y':
-        configured_services = find_configured_services()
-        for s in configured_services:
-            config_runit_disable_manual_control(s)
+        if os.path.exists("/etc/init.d/iwatch"):
+            runcmd("service iwatch start", abort_on_failure=False)
 
 if __name__ == "__main__":
     main()
