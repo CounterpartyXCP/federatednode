@@ -564,7 +564,7 @@ def command_services(command, prompt=False):
     logging.warn("STOPPING SERVICES" if command == 'stop' else "RESTARTING SERVICES")
     
     if os.path.exists("/etc/init.d/iwatch"):
-        runcmd("sv %s iwatch" % command, abort_on_failure=False)
+        runcmd("service iwatch %s" % command, abort_on_failure=False)
         
     configured_services = find_configured_services()
     for s in configured_services:
