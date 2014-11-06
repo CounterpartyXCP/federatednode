@@ -156,7 +156,7 @@ def install_dependencies(paths, with_counterblockd, noninteractive):
                             break
                 if db_locally.lower() == 'y':
                     #install mongo-10gen (newer than what ubuntu has), pegged to a specific version
-                    MONGO_VERSION = "2.6.4"
+                    MONGO_VERSION = "2.6.5"
                     runcmd("apt-get -y remove mongodb mongodb-server") #remove ubuntu stock packages, if installed
                     runcmd("apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10")
                     runcmd("/bin/bash -c \"echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | sudo tee /etc/apt/sources.list.d/mongodb.list\"")
