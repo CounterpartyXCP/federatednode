@@ -730,7 +730,7 @@ def main():
     else: #setup has already been run at least once
         if not (answered_questions.get('op', None) in QUESTION_FLAGS['op']):
             answered_questions['op'] = ask_question(
-                "It appears this setup has been run already. (r)ebuild node, or just (U)pdate from git? (r/U)",
+                "It appears this setup has been run already or has another instance of counterpartyd or Federated Node. (r)ebuild node, or just (U)pdate from git? (r/U)",
                 ('r', 'u'), 'u')
             assert answered_questions['op'] in QUESTION_FLAGS['op']
 
