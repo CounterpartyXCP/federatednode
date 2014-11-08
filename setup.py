@@ -451,6 +451,14 @@ def main():
     if command == "update": #auto update from git
         logging.info("Updating relevant Counterparty repos")
         checkout(branch, paths, run_as_user, with_counterblockd, command == "update")
+        
+        logging.info("Updating relevant Counterparty python dependencies")
+        runcmd("%s install --upgrade -r %s" % (paths['pip_path'],
+            os.path.join(paths['dist_path'], "counterpartyd", "pip-requirements.txt")))
+        
+        if with_counterblockd:
+            runcmd("%s install --upgrade -r %s" % (paths['pip_path.counterblockd'],
+                os.path.join(paths['dist_path'], "counterblockd", "pip-requirements.txt")))
     else: #setup mode
         assert command == "setup"
         logging.info("Installing Counterparty from source%s..." % (

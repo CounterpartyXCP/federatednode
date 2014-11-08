@@ -3,4 +3,5 @@
 USER=xcpd
 export USER_HOME=/home/xcp
 ulimit -n 4096
+rm -f ${USER_HOME}/.config/counterpartyd-testnet/counterpartyd.*.db.lock
 exec su -s /bin/bash -c '/usr/local/bin/counterpartyd --data-dir=${USER_HOME}/.config/counterpartyd-testnet --testnet server' ${USER}
