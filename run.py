@@ -32,11 +32,23 @@ env_path = os.path.join(base_path, "env")
 dist_path = os.path.join(base_path, "dist")
 python_path = os.path.join(env_path, "Scripts" if os.name == "nt" else "bin", "python.exe" if os.name == "nt" else "python")
 
+def delete_lockfile(component):
+    import appdirs #installed earlier
+    import glob
+    running_testnet = " --testnet" in args
+    data_dir = appdirs.user_data_dir(appauthor='Counterparty',
+        appname="%s%s" % (component, "-testnet" if running_testnet else ''), roaming=True)
+    lockfile_paths = glob.glob(os.path.join("%s%scounterpartyd.*.db.lock" % (data_dir, os.sep))
+    for p in lockfile_paths:
+        print "Removing stale lock file at '%s'" % p
+        os.remove(p)
+
 if run_tests:
     pytest_path = os.path.join(env_path, "Scripts" if os.name == "nt" else "bin", "py.test.exe" if os.name == "nt" else "py.test")
     counterpartyd_tests_path = os.path.join(dist_path, "counterpartyd", "test", "test_.py")
     command = "%s %s %s" % (pytest_path, counterpartyd_tests_path, ' '.join(args))
 elif run_counterblockd:
+    delete_lockfile("counterblockd")
     counterblockd_env_path = os.path.join(base_path, "env.counterblockd")
     counterblockd_python_path = os.path.join(counterblockd_env_path, "Scripts" if os.name == "nt" else "bin", "python.exe" if os.name == "nt" else "python")
     counterblockd_path = os.path.join(dist_path, "counterblockd", "counterblockd.py")
@@ -47,6 +59,7 @@ elif run_armory_utxsvr:
     armory_utxsvr_path = os.path.join(dist_path, "counterblockd", "armory_utxsvr.py")
     command = "DISPLAY=localhost:1.0 xvfb-run --auto-servernum %s %s %s" % (armory_utxsvr_python_path, armory_utxsvr_path, ' '.join(args))
 else: #run counterpartyd
+    delete_lockfile("counterpartyd")
     counterpartyd_path = os.path.join(dist_path, "counterpartyd", "counterpartyd.py")
     command = "%s %s %s" % (python_path, counterpartyd_path, ' '.join(args))
 
