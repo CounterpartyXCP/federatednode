@@ -38,7 +38,7 @@ def delete_lockfile(component):
     running_testnet = " --testnet" in args
     data_dir = appdirs.user_data_dir(appauthor='Counterparty',
         appname="%s%s" % (component, "-testnet" if running_testnet else ''), roaming=True)
-    lockfile_paths = glob.glob(os.path.join("%s%scounterpartyd.*.db.lock" % (data_dir, os.sep))
+    lockfile_paths = glob.glob(os.path.join("%s%scounterpartyd.*.db.lock" % (data_dir, os.sep)))
     for p in lockfile_paths:
         print "Removing stale lock file at '%s'" % p
         os.remove(p)
