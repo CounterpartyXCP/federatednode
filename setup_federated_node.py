@@ -112,6 +112,7 @@ def do_backend_rpc_setup(run_as_user, branch, base_path, dist_path, run_mode, ba
         runcmd("git clone 'https://github.com/jmcorgan/bitcoin.git' --branch=addrindex-0.9.2 /tmp/bitcoin.addrindex-0.9.2")
         runcmd("cd /tmp/bitcoin.addrindex-0.9.2 && ./autogen.sh && ./configure --without-gui && make && sudo checkinstall -y -D --install")
         runcmd("rm -rf /tmp/bitcoin.addrindex-0.9.2")
+        runcmd("ln -sf /usr/local/bin/bitcoind /usr/bin/bitcoind && ln -sf /usr/local/bin/bitcoin-cli /usr/bin/bitcoin-cli")
 
         #Do basic inital bitcoin config (for both testnet and mainnet)
         runcmd("mkdir -p ~%s/.bitcoin ~%s/.bitcoin-testnet" % (USERNAME, USERNAME))
