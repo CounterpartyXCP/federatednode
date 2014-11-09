@@ -35,7 +35,7 @@ python_path = os.path.join(env_path, "Scripts" if os.name == "nt" else "bin", "p
 def delete_lockfile(component):
     import appdirs #installed earlier
     import glob
-    running_testnet = " --testnet" in args
+    running_testnet = "--testnet" in args
     data_dir = appdirs.user_data_dir(appauthor='Counterparty',
         appname="%s%s" % (component, "-testnet" if running_testnet else ''), roaming=True)
     lockfile_paths = glob.glob(os.path.join("%s%scounterpartyd.*.db.lock" % (data_dir, os.sep)))
