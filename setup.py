@@ -267,8 +267,9 @@ def setup_startup(paths, run_as_user, with_counterblockd, with_testnet, noninter
             runcmd("chmod +x /usr/local/bin/counterblockd")
     elif os.name == "nt":
         #create a batch script
-        batch_contents = "echo off%sREM Launch counterpartyd (source build) under windows%s%s %s %%*" % (
-            os.linesep, os.linesep, os.path.join(paths['sys_python_path'], "python.exe"), os.path.join(paths['base_path'], "run.py"))
+        lockfile_location = "%%APPDATA%%\Counterparty\counterpartyd\counterpartyd.*.db.lock"
+        batch_contents = "echo off%sREM Launch counterpartyd (source build) under windows%sif exist %s del %s%s%s %s %%*" % (
+            os.linesep, os.linesep, lockfile_location, lockfile_location, os.linesep, os.path.join(paths['sys_python_path'], "python.exe"), os.path.join(paths['base_path'], "run.py"))
         f = open("%s" % os.path.join(os.environ['WINDIR'], "counterpartyd.bat"), "w")
         f.write(batch_contents)
         f.close()
