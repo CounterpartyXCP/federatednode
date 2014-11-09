@@ -101,7 +101,7 @@ def do_backend_rpc_setup(run_as_user, branch, base_path, dist_path, run_mode, ba
     backend_rpc_password_testnet = pass_generator()
 
     if backend_rpc_mode == 'b': #bitcoind
-        #Install deps (see )
+        #Install deps (see https://help.ubuntu.com/community/bitcoin)
         runcmd("apt-get -y install build-essential libtool autotools-dev autoconf pkg-config libssl-dev libboost-dev libboost-all-dev software-properties-common checkinstall")
         runcmd("add-apt-repository -y ppa:bitcoin/bitcoin")
         runcmd("apt-get update")
