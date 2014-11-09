@@ -101,15 +101,18 @@ def do_backend_rpc_setup(run_as_user, branch, base_path, dist_path, run_mode, ba
     backend_rpc_password_testnet = pass_generator()
 
     if backend_rpc_mode == 'b': #bitcoind
-        #Install bitcoind
-        BITCOIND_VER = "0.9.2.1"
-        runcmd("rm -rf /tmp/bitcoind.tar.gz /tmp/bitcoin-%s-linux" % BITCOIND_VER)
-        runcmd("wget -O /tmp/bitcoind.tar.gz https://bitcoin.org/bin/%s/bitcoin-%s-linux.tar.gz" % (BITCOIND_VER, BITCOIND_VER))
-        runcmd("tar -C /tmp -zxvf /tmp/bitcoind.tar.gz")
-        runcmd("cp -af /tmp/bitcoin-%s-linux/bin/64/bitcoind /usr/bin" % BITCOIND_VER)
-        runcmd("cp -af /tmp/bitcoin-%s-linux/bin/64/bitcoin-cli /usr/bin" % BITCOIND_VER)
-        runcmd("rm -rf /tmp/bitcoind.tar.gz /tmp/bitcoin-%s-linux" % BITCOIND_VER)
-    
+        #Install deps (see )
+        runcmd("apt-get -y install build-essential libtool autotools-dev autoconf pkg-config libssl-dev libboost-dev libboost-all-dev software-properties-common checkinstall")
+        runcmd("add-apt-repository -y ppa:bitcoin/bitcoin")
+        runcmd("apt-get update")
+        runcmd("apt-get install libdb4.8-dev libdb4.8++-dev")
+        
+        #Install bitcoind (jmcorgan 0.9.2 branch)
+        runcmd("rm -rf /tmp/bitcoin.addrindex-0.9.2")
+        runcmd("git clone 'https://github.com/jmcorgan/bitcoin.git' --branch=addrindex-0.9.2 /tmp/bitcoin.addrindex-0.9.2")
+        runcmd("cd /tmp/bitcoin.addrindex-0.9.2 && ./autogen.sh && ./configure --without-gui && make && sudo checkinstall -y -D --install")
+        runcmd("rm -rf /tmp/bitcoin.addrindex-0.9.2")
+
         #Do basic inital bitcoin config (for both testnet and mainnet)
         runcmd("mkdir -p ~%s/.bitcoin ~%s/.bitcoin-testnet" % (USERNAME, USERNAME))
         if not os.path.exists(os.path.join(USER_HOMEDIR, '.bitcoin', 'bitcoin.conf')):
