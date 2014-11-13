@@ -47,7 +47,7 @@ After launching a DOS command window using the instructions in the note above, t
     cd counterpartyd_build
     C:\Python34\python.exe setup.py --with-bootstrap-db
 
-Some notes::
+Some notes:
 
 * The above steps will check out the build scripts to ``C:\counterpartyd_build``, and run the ``setup.py`` script, which
   will check out the newest version of ``counterpartyd`` itself from git, create a virtual environment with the
@@ -74,7 +74,7 @@ You can then open up another command window and run any of ``counterpartyd’s``
 
 For more examples, see `this link <https://github.com/CounterpartyXCP/counterpartyd#examples>`__.
 
-To run the ``counterpartyd`` testsuite::
+To run the ``counterpartyd`` testsuite (not yet completed for Windows)::
 
     counterpartyd tests 
 
@@ -82,7 +82,7 @@ To run the ``counterpartyd`` testsuite::
 Updating to the newest source
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-As the code is enhanced and improved on Github, you can refresh your local copy of the repositories like so::
+As the code is enhanced and improved on Github, you can refresh your local copy of the repositories like so (assuming Python 3.4)::
 
     cd C:\counterpartyd_build
     C:\Python34\python.exe setup.py update
@@ -91,7 +91,7 @@ If, upon running counterpartyd, you get a missing dependency or some other error
 ``setup.py``, which will regenerate your dependencies listing to the libraries and versions as listed in
 `pip-requirements.txt <https://github.com/CounterpartyXCP/counterpartyd/blob/master/pip-requirements.txt>`__::
 
-    cd counterpartyd_build
+    cd C:\counterpartyd_build
     C:\Python34\python.exe setup.py
 
 In case of a problem, refer to the list of requirements in ``pip-requirements.txt`` above and update system as
