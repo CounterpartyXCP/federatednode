@@ -182,10 +182,22 @@ def rmtree(path):
 
 def fetch_counterpartyd_bootstrap_db(data_dir, testnet=False, chown_user=None):
     """download bootstrap data for counterpartyd"""
+    from progressbar import Percentage, Bar, RotatingMarker, ETA, FileTransferSpeed, ProgressBar
+
+    widgets = ['Bootstrap: ', Percentage(), ' ', Bar(marker=RotatingMarker()), ' ', ETA(), ' ', FileTransferSpeed()]
+    pbar = ProgressBar(widgets=widgets)
+
+    def dl_progress(count, blockSize, totalSize):
+        if pbar.maxval is None:
+            pbar.maxval = totalSize
+            pbar.start()
+        pbar.update(min(count * blockSize, totalSize))
+
     bootstrap_url = "http://counterparty-bootstrap.s3.amazonaws.com/counterpartyd%s-db.latest.tar.gz" % ('-testnet' if testnet else '')
     appname = "counterpartyd%s" % ('-testnet' if testnet else '',)
     logging.info("Downloading %s DB bootstrap data from %s ..." % (appname, bootstrap_url))
-    bootstrap_filename, headers = urllib.request.urlretrieve(bootstrap_url)
+    bootstrap_filename, headers = urllib.request.urlretrieve(bootstrap_url, reporthook=dl_progress)
+    pbar.finish()
     logging.info("%s DB bootstrap data downloaded to %s ..." % (appname, bootstrap_filename))
     tfile = tarfile.open(bootstrap_filename, 'r:gz')
     logging.info("Extracting %s DB bootstrap data to %s ..." % (appname, data_dir))

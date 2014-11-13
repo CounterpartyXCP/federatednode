@@ -212,7 +212,7 @@ def install_dependencies(paths, with_counterblockd, noninteractive):
         runcmd("apt-get -y install sqlite sqlite3 libleveldb-dev")
         
         #now that pip is installed, install necessary deps outside of the virtualenv (e.g. for this script)
-        runcmd("pip3 install appdirs==1.2.0")
+        runcmd("pip3 install appdirs==1.2.0 progressbar33")
     elif os.name == 'nt':
         logging.info("WINDOWS: Installing Required Packages...")
         if not os.path.exists(os.path.join(paths['sys_python_path'], "Scripts", "easy_install.exe")):
@@ -225,7 +225,7 @@ def install_dependencies(paths, with_counterblockd, noninteractive):
         runcmd("%s virtualenv==1.11.6 pip==1.4.1" % (os.path.join(paths['sys_python_path'], "Scripts", "easy_install.exe")))
 
         #now that pip is installed, install necessary deps outside of the virtualenv (e.g. for this script)
-        runcmd("%s install appdirs==1.2.0" % (os.path.join(paths['sys_python_path'], "Scripts", "pip.exe")))
+        runcmd("%s install appdirs==1.2.0 progressbar33" % (os.path.join(paths['sys_python_path'], "Scripts", "pip.exe")))
 
 def create_virtualenv(paths, with_counterblockd):
     def create_venv(env_path, pip_path, python_path, virtualenv_args, reqs_filename, delete_if_exists=True):
