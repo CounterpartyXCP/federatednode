@@ -301,7 +301,10 @@ User Configuration
 ^^^^^^^^^^^^^^^^^^^^
 
 Note that when you set up a federated node, the script creates two new users on the system: ``xcp`` and ``xcpd``. (The
-``xcp`` user also has an ``xcp`` group created for it as well.)
+``xcp`` user also has an ``xcp`` group created for it as well.) 
+
+**Important**: The setup script by default creates user home under the ``/home``. If you wish to store the ``xcp`` user's data on another volume, mount it to ``/home/xcp`` 
+(rather than, for example, ``/xcp``).
 
 The script installs ``counterpartyd``, ``counterwallet``, etc into the home directory of the ``xcp`` user. This
 user also owns all installed files. However, the daemons (i.e. ``bitcoind``, ``insight``, ``counterpartyd``,
