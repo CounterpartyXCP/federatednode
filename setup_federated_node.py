@@ -102,7 +102,7 @@ def do_backend_rpc_setup(run_as_user, branch, base_path, dist_path, run_mode):
     runcmd("apt-get -y install build-essential libtool autotools-dev autoconf pkg-config libssl-dev libboost-dev libboost-all-dev software-properties-common checkinstall")
     runcmd("add-apt-repository -y ppa:bitcoin/bitcoin")
     runcmd("apt-get update")
-    runcmd("apt-get install libdb4.8-dev libdb4.8++-dev")
+    runcmd("apt-get -y install libdb4.8-dev libdb4.8++-dev")
     
     #Install bitcoind (jmcorgan 0.9.2 branch)
     runcmd("rm -rf /tmp/bitcoin.addrindex-0.9.2")
