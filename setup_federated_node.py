@@ -177,9 +177,9 @@ backend_rpc_password_testnet, counterpartyd_public, counterwallet_support_email)
         config='counterpartyd', net='testnet', for_user=USERNAME)
         
     #backend for counterpartyd should now be jmcorgan
-    modify_cp_config(r'^blockchain-service-name=.*?$', 'blockchain-service-name=jmcorgan',
+    modify_cp_config(r'^blockchain\-service\-name=.*?$', 'blockchain-service-name=jmcorgan',
         config='counterpartyd', net='mainnet', for_user=USERNAME)
-    modify_cp_config(r'^blockchain-service-name=.*?$', 'blockchain-service-name=jmcorgan',
+    modify_cp_config(r'^blockchain\-service\-name=.*?$', 'blockchain-service-name=jmcorgan',
         config='counterpartyd', net='testnet', for_user=USERNAME)
 
     if role == 'counterpartyd_only' and counterpartyd_public == 'y':
