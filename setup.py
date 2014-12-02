@@ -161,7 +161,7 @@ def install_dependencies(paths, with_counterblockd, noninteractive):
                     runcmd("apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10")
                     runcmd("/bin/bash -c \"echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | sudo tee /etc/apt/sources.list.d/mongodb.list\"")
                     runcmd("apt-get update")
-                    runcmd("apt-get -y install mongodb-org=%s mongodb-org-server=%s mongodb-org-shell=%s mongodb-org-mongos=%s mongodb-org-tools=%s" % (
+                    runcmd("apt-get -y --force-yes install mongodb-org=%s mongodb-org-server=%s mongodb-org-shell=%s mongodb-org-mongos=%s mongodb-org-tools=%s" % (
                         MONGO_VERSION, MONGO_VERSION, MONGO_VERSION, MONGO_VERSION, MONGO_VERSION))
                     for p in ('mongodb-org', 'mongodb-org-server', 'mongodb-org-shell', 'mongodb-org-mongos', 'mongodb-org-tools'):
                         runcmd("echo \"%s hold\" | sudo dpkg --set-selections" % p)

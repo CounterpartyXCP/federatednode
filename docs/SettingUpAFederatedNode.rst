@@ -6,10 +6,11 @@ Introduction
 
 A Counterblock Federated Node is a self-contained server that runs the software necessary to support one or more "roles".
 Such roles may be:
-   * Counterwallet server
-   * Vending machine (future)
-   * Block explorer server (future)
-   * A plain old ``counterpartyd`` server
+
+- Counterwallet server
+- Vending machine (future)
+- Block explorer server (future)
+- A plain old ``counterpartyd`` server
 
 Each backend server runs `multiple services <http://counterparty.io/docs/components/>`__ (some required, and some optional, or based on the role chosen).
 As each server is self-contained, they can be combined by the client-side software to allow for high-availability/load balancing.
@@ -90,13 +91,14 @@ Here are the recommendations and/or requirements when setting up a production-gr
 - Hosted in a secure data center with physical security and access controls
 - DDOS protection recommended if you will be offering your service to others
 
-** Disk Space Requirements **
-The exact disk space required will be dependent on what services are run on the node::
+**Disk Space Requirements:**
 
-* Base System: **20GB** (to be safe)
-* ``counterpartyd``, ``counterblockd`` databases: **~200MB**
-* ``insight``: **~30GB** (mainnet), **~3GB** (testnet)
-* ``armory_utxsvr``: **~25GB** (mainnet), **~3GB** (testnet)
+The exact disk space required will be dependent on what services are run on the node:
+
+- Base System: **20GB** (to be safe)
+- ``counterpartyd``, ``counterblockd`` databases: **~200MB**
+- ``insight``: **~30GB** (mainnet), **~3GB** (testnet)
+- ``armory_utxsvr``: **~25GB** (mainnet), **~3GB** (testnet)
 
 Generally, we recommend building on a server with at least 120GB of available disk space.
 
@@ -140,7 +142,9 @@ Once the server is provisioned and set up as above, you will need to install all
 installation script for this, that is fully automated **and installs ALL dependencies, including ``bitcoind`` and ``insight``**::
 
     BRANCH=master
-    cd ~ && wget -q https://raw.github.com/CounterpartyXCP/counterpartyd_build/${BRANCH}/setup_federated_node.py https://raw.github.com/CounterpartyXCP/counterpartyd_build/${BRANCH}/setup_util.py && sudo python3 setup_federated_node.py
+    cd ~ && wget -q https://raw.github.com/CounterpartyXCP/counterpartyd_build/${BRANCH}/setup_federated_node.py \
+    https://raw.github.com/CounterpartyXCP/counterpartyd_build/${BRANCH}/setup_util.py && \
+    sudo python3 setup_federated_node.py
 
 Then just follow the on-screen prompts (choosing to build from *master* if you are building a production node,
 or from *develop* **only** if you are a developer or want access to bleeding edge code that is not fully tested).
@@ -255,8 +259,10 @@ Also, you can start up the daemons in the foreground, for easier debugging, usin
     sudo su -s /bin/bash -c 'counterblockd --data-dir=/home/xcp/.config/counterblockd -v' xcpd
     
     #counterpartyd & counterblockd testnet
-    sudo su -s /bin/bash -c 'counterpartyd --data-dir=/home/xcp/.config/counterpartyd-testnet --testnet server' xcpd
-    sudo su -s /bin/bash -c 'counterblockd --data-dir=/home/xcp/.config/counterblockd-testnet --testnet -v' xcpd
+    sudo su -s /bin/bash -c 'counterpartyd --data-dir=/home/xcp/.config/counterpartyd-testnet \
+    --testnet server' xcpd
+    sudo su -s /bin/bash -c 'counterblockd --data-dir=/home/xcp/.config/counterblockd-testnet \
+    --testnet -v' xcpd
 
 You can also run ``bitcoind`` commands directly, e.g.::
 
@@ -301,7 +307,10 @@ User Configuration
 ^^^^^^^^^^^^^^^^^^^^
 
 Note that when you set up a federated node, the script creates two new users on the system: ``xcp`` and ``xcpd``. (The
-``xcp`` user also has an ``xcp`` group created for it as well.)
+``xcp`` user also has an ``xcp`` group created for it as well.) 
+
+**Important**: The setup script by default creates user home under the ``/home``. If you wish to store the ``xcp`` user's data on another volume, mount it to ``/home/xcp`` 
+(rather than, for example, ``/xcp``).
 
 The script installs ``counterpartyd``, ``counterwallet``, etc into the home directory of the ``xcp`` user. This
 user also owns all installed files. However, the daemons (i.e. ``bitcoind``, ``insight``, ``counterpartyd``,
@@ -359,14 +368,9 @@ Here's a description of the possible fields:
 
 **Required fields:**
 
-* **servers**: Counterwallet should work out-of-the-box in a scenario where you have a single Counterblock Federated Node that both hosts the
-static site content, as well as the backend Counterblock API services. However, Counterwallet can also be set up to work
-in MultiAPI mode, where it can query more than one server (to allow for both redundancy and load balancing). To do this,
-set this ``servers`` parameter as a list of multiple server URIs. Each URI can have a ``http://`` or ``https://`` prefix
-(we strongly recommend using HTTPS), and the strings must *not* end in a slash (just leave it off). If the server hostname
-does not start with ``http://`` or ``https://``, then ``https://`` is assumed.
+* **servers**: Counterwallet should work out-of-the-box in a scenario where you have a single Counterblock Federated Node that both hosts the static site content, as well as the backend Counterblock API services. However, Counterwallet can also be set up to work in MultiAPI mode, where it can query more than one server (to allow for both redundancy and load balancing). To do this, set this ``servers`` parameter as a list of multiple server URIs. Each URI can have a ``http://`` or ``https://`` prefix (we strongly recommend using HTTPS), and the strings must *not* end in a slash (just leave it off). If the server hostname does not start with ``http://`` or ``https://``, then ``https://`` is assumed.
 
-*If you just want to use the current server (and don't have a multi-server setup), just specify this as ``[]`` (empty list).*
+If you just want to use the current server (and don't have a multi-server setup), just specify this as ``[]`` (empty list).*
 
 **Optional fields:**
 
