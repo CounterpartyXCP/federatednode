@@ -175,6 +175,12 @@ backend_rpc_password_testnet, counterpartyd_public, counterwallet_support_email)
         config='counterpartyd', net='mainnet', for_user=USERNAME)
     modify_cp_config(r'^rpc\-password=.*?$', 'rpc-password=%s' % counterpartyd_rpc_password_testnet,
         config='counterpartyd', net='testnet', for_user=USERNAME)
+        
+    #backend for counterpartyd should now be jmcorgan
+    modify_cp_config(r'^blockchain-service-name=.*?$', 'blockchain-service-name=jmcorgan',
+        config='counterpartyd', net='mainnet', for_user=USERNAME)
+    modify_cp_config(r'^blockchain-service-name=.*?$', 'blockchain-service-name=jmcorgan',
+        config='counterpartyd', net='testnet', for_user=USERNAME)
 
     if role == 'counterpartyd_only' and counterpartyd_public == 'y':
         modify_cp_config(r'^rpc\-host=.*?$', 'rpc-host=0.0.0.0', config='counterpartyd', for_user=USERNAME)
@@ -690,7 +696,7 @@ def main():
             backend_rpc_password, backend_rpc_password_testnet,
             answered_questions['counterpartyd_public'], answered_questions['counterwallet_support_email'])
         
-        runcmd("rm -rf /etc/sv/insight /etc/sv/insight-testnet") # so insight doesn't start if it was in use before
+        runcmd("rm -rf /etc/sv/insight /etc/sv/insight-testnet /etc/service/insight /etc/service/insight-testnet") # so insight doesn't start if it was in use before
         
         do_nginx_setup(run_as_user, base_path, dist_path, enable=answered_questions['role'] != "counterpartyd_only")
         
