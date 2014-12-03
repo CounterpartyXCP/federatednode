@@ -212,7 +212,8 @@ def install_dependencies(paths, with_counterblockd, noninteractive):
         runcmd("apt-get -y install sqlite sqlite3 libleveldb-dev")
         
         #now that pip is installed, install necessary deps outside of the virtualenv (e.g. for this script)
-        runcmd("pip3 install appdirs==1.2.0 progressbar33")
+        #(install plyvel to enable counterpartyd to read the bitcoind data files directly, for faster bootstrapping)
+        runcmd("pip3 install appdirs==1.2.0 progressbar33 plyvel==0.9")
     elif os.name == 'nt':
         logging.info("WINDOWS: Installing Required Packages...")
         if not os.path.exists(os.path.join(paths['sys_python_path'], "Scripts", "easy_install.exe")):
