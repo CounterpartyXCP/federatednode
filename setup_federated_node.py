@@ -51,7 +51,7 @@ def do_base_setup(run_as_user, branch, base_path, dist_path):
 
     #install some necessary base deps
     runcmd("apt-get update")
-    runcmd("apt-get -y install git-core software-properties-common python-software-properties build-essential ssl-cert ntp runit")
+    runcmd("apt-get -y install git-core software-properties-common python-software-properties build-essential ssl-cert ntp runit curl")
     
     #install node-js
     #node-gyp building has ...issues out of the box on Ubuntu... use Chris Lea's nodejs build instead, which is newer
