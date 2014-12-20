@@ -146,9 +146,10 @@ everything works fine::
     counterpartyd server
     
 (The above assumes ``/usr/local/bin`` is in your PATH, which is where the ``counterpartyd`` symlink (which just
-points to the ``run.py`` script) is placed. If not, run ``/usr/local/bin/counterpartyd`` instead.
+points to the ``run.py`` script) is placed. If not, run ``/usr/local/bin/counterpartyd`` instead.)
 
-Once you're sure it launches and runs fine, press CTRL-C to exit it, and then run ``counterpartyd`` as a background process via::
+Once you're sure it launches and runs fine, you can press CTRL-C to exit it and - if you configured ``counterpartyd`` 
+to start automatically on system startup - then run ``counterpartyd`` as a background process via this command:
 
     sudo sv start counterpartyd
 
