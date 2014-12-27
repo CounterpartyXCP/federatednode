@@ -341,6 +341,7 @@ def do_armory_utxsvr_setup(run_as_user, base_path, dist_path, run_mode, enable=T
 
 def do_counterwallet_setup(run_as_user, branch, updateOnly=False):
     #check out counterwallet from git
+    assert os.path.exists(os.path.join(USER_HOMEDIR, "counterwallet"))
     git_repo_clone("counterwallet", "https://github.com/CounterpartyXCP/counterwallet.git",
         os.path.join(USER_HOMEDIR, "counterwallet"), branch, for_user=run_as_user)
     if not updateOnly:
@@ -589,7 +590,7 @@ def gather_build_questions(answered_questions, noninteractive, docker):
                 counterwallet_support_email = counterwallet_support_email.strip()
                 if counterwallet_support_email:
                     counterwallet_support_email_confirm = ask_question(
-                        "You entererd '%s', is that right? (Y/n): " % counterwallet_support_email, ('y', 'n'), 'y') 
+                        "You entered '%s', is that right? (Y/n): " % counterwallet_support_email, ('y', 'n'), 'y') 
                     if counterwallet_support_email_confirm == 'y': break
                 else: break
             answered_questions['counterwallet_support_email'] = counterwallet_support_email
@@ -675,7 +676,7 @@ def main():
             '--with-counterblockd' if os.path.exists(os.path.join(dist_path, "counterblockd")) else ''))
         
         #refresh counterwallet (if available)
-        if os.path.exists(os.path.exists(os.path.expanduser("~%s/counterwallet" % USERNAME))):
+        if os.path.exists(os.path.expanduser("~%s/counterwallet" % USERNAME)):
             do_counterwallet_setup(run_as_user, "AUTO", updateOnly=True)
 
         #offer to restart services
