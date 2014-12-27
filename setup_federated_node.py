@@ -226,7 +226,7 @@ backend_rpc_password_testnet, counterpartyd_public, counterwallet_support_email)
 
 def do_nginx_setup(run_as_user, base_path, dist_path, enable=True):
     if not enable:
-        runcmd("apt-get -y remove nginx-openresty")
+        runcmd("apt-get -y remove nginx-openresty", abort_on_failure=False)
         return
     
     #Build and install nginx (openresty) on Ubuntu
