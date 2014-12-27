@@ -51,7 +51,7 @@ def do_base_setup(run_as_user, branch, base_path, dist_path):
 
     #install some necessary base deps
     runcmd("apt-get update")
-    runcmd("apt-get -y install git-core software-properties-common python-software-properties build-essential ssl-cert ntp runit")
+    runcmd("apt-get -y install git-core software-properties-common python-software-properties build-essential ssl-cert ntp runit curl")
     
     #install node-js
     #node-gyp building has ...issues out of the box on Ubuntu... use Chris Lea's nodejs build instead, which is newer
@@ -231,7 +231,7 @@ def do_nginx_setup(run_as_user, base_path, dist_path, enable=True):
     
     #Build and install nginx (openresty) on Ubuntu
     #Most of these build commands from http://brian.akins.org/blog/2013/03/19/building-openresty-on-ubuntu/
-    OPENRESTY_VER = "1.7.4.1"
+    OPENRESTY_VER = "1.7.7.1"
 
     #uninstall nginx if already present
     runcmd("apt-get -y remove nginx")
