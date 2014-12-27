@@ -35,7 +35,7 @@ DAEMON_USERNAME = "xcpd"
 USER_HOMEDIR = "/home/xcp"
 QUESTION_FLAGS = collections.OrderedDict({
     "op": ('u', 'r'),
-    "role": ('counterwallet', 'counterpartyd_only'),
+    "role": ('counterwallet', 'counterpartyd_only', 'counterblockd_basic'),
     "branch": ('master', 'develop'),
     "run_mode": ('t', 'm', 'b'),
     "security_hardening": ('y', 'n'),
@@ -533,15 +533,18 @@ def gather_build_questions(answered_questions, noninteractive, docker):
         answered_questions['role'] = '1' 
     elif 'role' not in answered_questions:
         role = ask_question("Enter the number for the role you want to build:\n"
-                + "\t1: Counterwallet server\n\t2: counterpartyd-only\n"
+                + "\t1: Counterwallet server\n\t2: counterpartyd-only\n\t3: counterblockd basic (no Counterwallet)\n"
                 + "Your choice",
-            ('1', '2'), '1')
+            ('1', '2', '3'), '1')
         if role == '1':
             role = 'counterwallet'
             role_desc = "Counterwallet server"
         elif role == '2':
             role = 'counterpartyd_only'
             role_desc = "Counterpartyd server"
+        elif role == '3':
+            role = 'counterblockd_basic'
+            role_desc = "Basic counterblockd server"
         print("\tBuilding a %s" % role_desc)
         answered_questions['role'] = role
     assert answered_questions['role'] in QUESTION_FLAGS['role']
@@ -698,7 +701,7 @@ def main():
         
         runcmd("rm -rf /etc/sv/insight /etc/sv/insight-testnet /etc/service/insight /etc/service/insight-testnet") # so insight doesn't start if it was in use before
         
-        do_nginx_setup(run_as_user, base_path, dist_path, enable=answered_questions['role'] != "counterpartyd_only")
+        do_nginx_setup(run_as_user, base_path, dist_path, enable=answered_questions['role'] not in ["counterpartyd_only", "counterblockd_basic"])
         
         do_armory_utxsvr_setup(run_as_user, base_path, dist_path,
             answered_questions['run_mode'], enable=answered_questions['role'] == 'counterwallet')
