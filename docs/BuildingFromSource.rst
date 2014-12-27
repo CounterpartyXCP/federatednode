@@ -70,7 +70,8 @@ After installing, open a command window and run ``counterpartyd`` in the foregro
 
 You can then open up another command window and run any of ``counterpartyd’s`` other functions, for example::
 
-    counterpartyd send --source=12WQTnVbzhJRswra4TvGxq1RyhUkmiVXXm --destination=1QGZ4sCpvCgRizL5v4NniaKdZKzxBtVN3q --asset=XCP --quantity=5
+    counterpartyd send --source=12WQTnVbzhJRswra4TvGxq1RyhUkmiVXXm \
+    --destination=1QGZ4sCpvCgRizL5v4NniaKdZKzxBtVN3q --asset=XCP --quantity=5
 
 For more examples, see `this link <https://github.com/CounterpartyXCP/counterpartyd#examples>`__.
 
@@ -155,7 +156,8 @@ to start automatically on system startup - then run ``counterpartyd`` as a backg
 
 You can then open up another command window and run any of ``counterpartyd’s`` other functions, for example::
 
-    counterpartyd send --source=12WQTnVbzhJRswra4TvGxq1RyhUkmiVXXm --destination=1QGZ4sCpvCgRizL5v4NniaKdZKzxBtVN3q --asset=XCP --quantity=5
+    counterpartyd send --source=12WQTnVbzhJRswra4TvGxq1RyhUkmiVXXm \
+    --destination=1QGZ4sCpvCgRizL5v4NniaKdZKzxBtVN3q --asset=XCP --quantity=5
 
 For more examples, see `this link <https://github.com/CounterpartyXCP/counterpartyd#examples>`__.
 
