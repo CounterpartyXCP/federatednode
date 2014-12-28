@@ -1,8 +1,7 @@
 Setting up insight
 ====================
 
-**NOTE:** ***This section is optional: By default, both counterpartyd and counterblockd utilize blockr.io instead of insight. ***
-However, using insight allows for more reliability than blockr.io, and is thus recommended for production builds especially.
+**NOTE:** ***This section is optional: If you are using jmcorgan or blockr.io as your blockchain backend, this is not necessary.**
      
 As part of operating, ``counterpartyd`` may and ``counterblockd`` does require data that ``bitcoind`` cannot currently provide. This includes things such
 as a BTC balance from an address not in the local ``bitcoind`` wallet, and a list of unspent transaction outputs (UXTO)

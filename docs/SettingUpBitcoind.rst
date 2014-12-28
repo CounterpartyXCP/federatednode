@@ -27,6 +27,7 @@ Say Yes to when Notepad asks if you want to create a new file, then paste in the
     rpcpassword=1234
     server=1
     daemon=1
+    rpcthreads=12
     txindex=1
 
 **NOTE**:
