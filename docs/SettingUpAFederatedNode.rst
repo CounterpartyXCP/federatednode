@@ -360,8 +360,7 @@ This file will contain a valid JSON-formatted object, containing an a number of 
         "pages/matchedbets.html": ["US"],
         "pages/rps.html": ["US"],
         "dividend": ["US"]
-      },
-      "autoBTCEscrowServer": "btcescrow.counterwallet.co"
+      }
     }
 
 Here's a description of the possible fields:
@@ -382,9 +381,6 @@ If you just want to use the current server (and don't have a multi-server setup)
   this can just be ``[]`` (an empty list) to not disable anything.
 * **restrictedAreas**: Set to an object containing a specific page path as the key (or "dividend" for dividend functionality),
   and a list of one or more ISO 2-letter country codes as the key value, to allow for country-level blacklisting of pages/features.
-* **autoBTCEscrowServer**: The hostname to use for automatic BTC escrow services (where an external server will hold the BTC
-  related to open orders selling BTC and make BTCpays from it automatically). If not specified, or left blank, then
-  automatic BTC escrows will be disabled.
 
 Once done, save this file and make sure it exists on all servers you are hosting Counterwallet static content on. Now, when you go
 to your Counterwallet site, the server will read in this file immediately after loading the page, and set the list of
