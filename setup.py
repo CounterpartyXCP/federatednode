@@ -260,6 +260,13 @@ def create_virtualenv(paths, with_counterblockd):
 def setup_startup(paths, run_as_user, with_counterblockd, with_testnet, noninteractive):
     if os.name == "posix":
         runcmd("ln -sf %s/run.py /usr/local/bin/counterpartyd" % paths['base_path'])
+
+        #make a short script to launch counterpartyd-cli
+        f = open("/usr/local/bin/counterpartyd-cli", 'w')
+        f.write("#!/bin/sh\n%s/run.py counterpartyd-cli \"$@\"" % paths['base_path'])
+        f.close()
+        runcmd("chmod +x /usr/local/bin/counterpartyd-cli")
+        
         if with_counterblockd:
             #make a short script to launch counterblockd
             f = open("/usr/local/bin/counterblockd", 'w')

@@ -87,7 +87,8 @@ In this ``BitcoinTest`` directory, create a ``bitcoin.conf`` file with the follo
     rpcpassword=1234
     server=1
     daemon=1
-    rpcthreads=12
+    rpcthreads=100
+    rpctimeout=300
     txindex=1
     testnet=1
 
