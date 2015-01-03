@@ -290,11 +290,13 @@ def setup_startup(paths, run_as_user, with_counterblockd, with_testnet, noninter
                 logging.error("Please enter 'y' or 'n'")
             else:
                 break
-    if start_choice.lower() == 'n':
-        return
+    
+    start_on_boot = start_choice.lower() == 'y'
     
     #windows - no automatic startup from the script itself (auto startup is used when installing from installer)
     if os.name == "nt":
+        if not start_on_boot: return
+        
         #add a shortcut to run.py to the startup group
         import win32com.client
         import ctypes.wintypes
@@ -321,22 +323,29 @@ def setup_startup(paths, run_as_user, with_counterblockd, with_testnet, noninter
         assert run_as_user
         user_homedir = os.path.expanduser("~" + run_as_user)
         
-        config_runit_for_service(paths['dist_path'], "counterpartyd", manual_control=True)
-        config_runit_for_service(paths['dist_path'], "counterpartyd-testnet", enabled=with_testnet, manual_control=True)
-        config_runit_for_service(paths['dist_path'], "counterblockd", enabled=with_counterblockd, manual_control=True)
-        config_runit_for_service(paths['dist_path'], "counterblockd-testnet", enabled=with_counterblockd and with_testnet, manual_control=True)
+        config_runit_for_service(paths['dist_path'], "counterpartyd", manual_control=not start_on_boot)
+        config_runit_for_service(paths['dist_path'], "counterpartyd-testnet",
+            enabled=with_testnet, manual_control=not start_on_boot)
+        config_runit_for_service(paths['dist_path'], "counterblockd", enabled=with_counterblockd,
+            manual_control=not start_on_boot)
+        config_runit_for_service(paths['dist_path'], "counterblockd-testnet",
+            enabled=with_counterblockd and with_testnet, manual_control=not start_on_boot)
         
         runcmd("sed -ri \"s/USER=xcpd/USER=%s/g\" /etc/service/counterpartyd/run" % run_as_user)
-        runcmd("sed -ri \"s/USER_HOME=\/home\/xcp/USER_HOME=%s/g\" /etc/service/counterpartyd/run" % user_homedir.replace('/', '\/'))
+        runcmd("sed -ri \"s/USER_HOME=\/home\/xcp/USER_HOME=%s/g\" /etc/service/counterpartyd/run"
+            % user_homedir.replace('/', '\/'))
         if with_testnet:
             runcmd("sed -ri \"s/USER=xcpd/USER=%s/g\" /etc/service/counterpartyd-testnet/run" % run_as_user)
-            runcmd("sed -ri \"s/USER_HOME=\/home\/xcp/USER_HOME=%s/g\" /etc/service/counterpartyd-testnet/run" % user_homedir.replace('/', '\/'))
+            runcmd("sed -ri \"s/USER_HOME=\/home\/xcp/USER_HOME=%s/g\" /etc/service/counterpartyd-testnet/run"
+                % user_homedir.replace('/', '\/'))
         if with_counterblockd:
             runcmd("sed -ri \"s/USER=xcpd/USER=%s/g\" /etc/service/counterblockd/run" % run_as_user)
-            runcmd("sed -ri \"s/USER_HOME=\/home\/xcp/USER_HOME=%s/g\" /etc/service/counterblockd/run" % user_homedir.replace('/', '\/'))
+            runcmd("sed -ri \"s/USER_HOME=\/home\/xcp/USER_HOME=%s/g\" /etc/service/counterblockd/run"
+                % user_homedir.replace('/', '\/'))
         if with_counterblockd and with_testnet:
             runcmd("sed -ri \"s/USER=xcpd/USER=%s/g\" /etc/service/counterblockd-testnet/run" % run_as_user)
-            runcmd("sed -ri \"s/USER_HOME=\/home\/xcp/USER_HOME=%s/g\" /etc/service/counterblockd-testnet/run" % user_homedir.replace('/', '\/'))
+            runcmd("sed -ri \"s/USER_HOME=\/home\/xcp/USER_HOME=%s/g\" /etc/service/counterblockd-testnet/run"
+                % user_homedir.replace('/', '\/'))
 
 def create_default_datadir_and_config(paths, run_as_user, with_bootstrap_db, with_counterblockd, with_testnet):
     def create_config(appname, default_config):
