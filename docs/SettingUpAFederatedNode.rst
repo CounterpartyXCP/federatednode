@@ -360,7 +360,7 @@ This file will contain a valid JSON-formatted object, containing an a number of 
         "pages/matchedbets.html": ["US"],
         "pages/rps.html": ["US"],
         "dividend": ["US"]
-      }
+      },
     }
 
 Here's a description of the possible fields:
