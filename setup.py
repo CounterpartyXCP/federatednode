@@ -151,7 +151,7 @@ def install_dependencies(paths, with_counterblockd, noninteractive):
                     while True:
                         db_locally = input("counterblockd: Run mongo and redis locally? (y/n): ")
                         if db_locally.lower() not in ('y', 'n'):
-                            logger.error("Please enter 'y' or 'n'")
+                            logging.error("Please enter 'y' or 'n'")
                         else:
                             break
                 if db_locally.lower() == 'y':
@@ -287,7 +287,7 @@ def setup_startup(paths, run_as_user, with_counterblockd, with_testnet, noninter
         while True:
             start_choice = input("Start counterpartyd automatically on system startup? (y/n): ")
             if start_choice.lower() not in ('y', 'n'):
-                logger.error("Please enter 'y' or 'n'")
+                logging.error("Please enter 'y' or 'n'")
             else:
                 break
     if start_choice.lower() == 'n':
