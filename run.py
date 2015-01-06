@@ -57,6 +57,9 @@ elif run == 'armory_utxsvr':
     armory_utxsvr_python_path = os.path.join(armory_utxsvr_env_path, "Scripts" if os.name == "nt" else "bin", "python.exe" if os.name == "nt" else "python")
     armory_utxsvr_path = os.path.join(dist_path, "counterblockd", "armory_utxsvr.py")
     command = "DISPLAY=localhost:1.0 xvfb-run --auto-servernum %s %s %s" % (armory_utxsvr_python_path, armory_utxsvr_path, ' '.join(args))
+elif run == 'counterpartyd-cli':
+    counterpartyd_cli_path = os.path.join(dist_path, "counterpartyd", "counterpartyd-cli.py")
+    command = "%s %s %s" % (python_path, counterpartyd_cli_path, ' '.join(args))
 else:
     assert run == 'counterpartyd'
     delete_counterpartyd_lockfile()

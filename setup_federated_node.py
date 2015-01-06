@@ -114,13 +114,13 @@ def do_backend_rpc_setup(run_as_user, branch, base_path, dist_path, run_mode):
     #Do basic inital bitcoin config (for both testnet and mainnet)
     runcmd("mkdir -p ~%s/.bitcoin ~%s/.bitcoin-testnet" % (USERNAME, USERNAME))
     if not os.path.exists(os.path.join(USER_HOMEDIR, '.bitcoin', 'bitcoin.conf')):
-        runcmd(r"""bash -c 'echo -e "rpcuser=rpc\nrpcpassword=%s\nserver=1\ndaemon=1\ntxindex=1\naddrindex=1" > ~%s/.bitcoin/bitcoin.conf'""" % (
+        runcmd(r"""bash -c 'echo -e "rpcuser=rpc\nrpcpassword=%s\nserver=1\ndaemon=1\nrpcthreads=1000\nrpctimeout=300\ntxindex=1\naddrindex=1" > ~%s/.bitcoin/bitcoin.conf'""" % (
             backend_rpc_password, USERNAME))
     else: #grab the existing RPC password
         backend_rpc_password = subprocess.check_output(
             r"""bash -c "cat ~%s/.bitcoin/bitcoin.conf | sed -n 's/.*rpcpassword=\([^ \n]*\).*/\1/p'" """ % USERNAME, shell=True).strip().decode('utf-8')
     if not os.path.exists(os.path.join(USER_HOMEDIR, '.bitcoin-testnet', 'bitcoin.conf')):
-        runcmd(r"""bash -c 'echo -e "rpcuser=rpc\nrpcpassword=%s\nserver=1\ndaemon=1\ntxindex=1\naddrindex=1\ntestnet=1" > ~%s/.bitcoin-testnet/bitcoin.conf'""" % (
+        runcmd(r"""bash -c 'echo -e "rpcuser=rpc\nrpcpassword=%s\nserver=1\ndaemon=1\nrpcthreads=1000\nrpctimeout=300\ntxindex=1\naddrindex=1\ntestnet=1" > ~%s/.bitcoin-testnet/bitcoin.conf'""" % (
             backend_rpc_password_testnet, USERNAME))
     else:
         backend_rpc_password_testnet = subprocess.check_output(
@@ -317,11 +317,12 @@ etc usr var''' % (OPENRESTY_VER, OPENRESTY_VER))
 
 def do_armory_utxsvr_setup(run_as_user, base_path, dist_path, run_mode, enable=True):
     runcmd("apt-get -y install xvfb python-qt4 python-twisted python-psutil xdg-utils hicolor-icon-theme")
-    runcmd("rm -f /tmp/armory.deb")
-    runcmd("wget -O /tmp/armory.deb https://s3.amazonaws.com/bitcoinarmory-releases/armory_0.92.1_ubuntu-64bit.deb")
+    ARMORY_VERSION = "0.92.3_ubuntu-64bit"
+    if not os.path.exists("/tmp/armory_%s.deb" % ARMORY_VERSION):
+        runcmd("wget -O /tmp/armory_%s.deb https://s3.amazonaws.com/bitcoinarmory-releases/armory_%s.deb"
+            % (ARMORY_VERSION, ARMORY_VERSION))
     runcmd("mkdir -p /usr/share/desktop-directories/") #bug fix (see http://askubuntu.com/a/406015)
-    runcmd("dpkg -i /tmp/armory.deb")
-    runcmd("rm -f /tmp/armory.deb")
+    runcmd("dpkg -i /tmp/armory_%s.deb" % ARMORY_VERSION)
 
     runcmd("mkdir -p ~%s/.armory ~%s/.armory/log ~%s/.armory/log-testnet" % (USERNAME, USERNAME, USERNAME))
     runcmd("chown -R %s:%s ~%s/.armory" % (DAEMON_USERNAME, USERNAME, USERNAME))
@@ -589,7 +590,7 @@ def gather_build_questions(answered_questions, noninteractive, docker):
                 counterwallet_support_email = counterwallet_support_email.strip()
                 if counterwallet_support_email:
                     counterwallet_support_email_confirm = ask_question(
-                        "You entererd '%s', is that right? (Y/n): " % counterwallet_support_email, ('y', 'n'), 'y') 
+                        "You entered '%s', is that right? (Y/n): " % counterwallet_support_email, ('y', 'n'), 'y') 
                     if counterwallet_support_email_confirm == 'y': break
                 else: break
             answered_questions['counterwallet_support_email'] = counterwallet_support_email
@@ -675,7 +676,7 @@ def main():
             '--with-counterblockd' if os.path.exists(os.path.join(dist_path, "counterblockd")) else ''))
         
         #refresh counterwallet (if available)
-        if os.path.exists(os.path.exists(os.path.expanduser("~%s/counterwallet" % USERNAME))):
+        if os.path.exists(os.path.expanduser("~%s/counterwallet" % USERNAME)):
             do_counterwallet_setup(run_as_user, "AUTO", updateOnly=True)
 
         #offer to restart services

@@ -33,10 +33,10 @@ If not using the Windows installer, the ``setup.py`` script will create a basic 
 options that tell ``counterpartyd`` where and how to connect to your ``bitcoind`` process. Here's an example of the default file created::
 
     [Default]
-    bitcoind-rpc-connect=localhost
-    bitcoind-rpc-port=8332
-    bitcoind-rpc-user=rpc
-    bitcoind-rpc-password=1234
+    backend-rpc-connect=localhost
+    backend-rpc-port=8332
+    backend-rpc-user=rpc
+    backend-rpc-password=1234
     rpc-user=my_api_user
     rpc-password=my_api_password
 
@@ -87,6 +87,8 @@ In this ``BitcoinTest`` directory, create a ``bitcoin.conf`` file with the follo
     rpcpassword=1234
     server=1
     daemon=1
+    rpcthreads=100
+    rpctimeout=300
     txindex=1
     testnet=1
 
