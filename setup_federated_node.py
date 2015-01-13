@@ -104,11 +104,17 @@ def do_backend_rpc_setup(run_as_user, branch, base_path, dist_path, run_mode):
     runcmd("apt-get update")
     runcmd("apt-get -y install libdb4.8-dev libdb4.8++-dev")
     
-    #Install bitcoind (jmcorgan 0.9.2 branch)
-    runcmd("rm -rf /tmp/bitcoin.addrindex-0.9.2")
-    runcmd("git clone 'https://github.com/jmcorgan/bitcoin.git' --branch=addrindex-0.9.2 /tmp/bitcoin.addrindex-0.9.2")
-    runcmd("cd /tmp/bitcoin.addrindex-0.9.2 && ./autogen.sh && ./configure --without-gui && make && sudo checkinstall -y -D --install")
-    runcmd("rm -rf /tmp/bitcoin.addrindex-0.9.2")
+    #Install bitcoind (btcbrak's 0.10.0 addrindex branch)
+    BITCOIND_VERSION="0.10-rc2"
+    BITCOIND_DEB_VERSION="0.10.0-2"
+    runcmd("sudo apt-get -y remove bitcoin.addrindex", abort_on_failure=False) #remove old version if it exists
+    runcmd("rm -rf /tmp/bitcoin-addrindex-%s" % BITCOIND_VERSION)
+    runcmd("wget -O /tmp/bitcoin-addrindex-%s.tar.gz https://github.com/btcdrak/bitcoin/archive/addrindex-%s.tar.gz"
+        % (BITCOIND_VERSION, BITCOIND_VERSION))
+    runcmd("cd /tmp && tar -zxvf /tmp/bitcoin-addrindex-%s.tar.gz" % BITCOIND_VERSION)
+    runcmd("cd /tmp/bitcoin-addrindex-%s && ./autogen.sh && ./configure --without-gui && make && sudo checkinstall -y -D --install --pkgversion=%s"
+        % (BITCOIND_VERSION, BITCOIND_DEB_VERSION))
+    runcmd("rm -rf /tmp/bitcoin-addrindex-%s" % BITCOIND_VERSION)
     runcmd("ln -sf /usr/local/bin/bitcoind /usr/bin/bitcoind && ln -sf /usr/local/bin/bitcoin-cli /usr/bin/bitcoin-cli")
 
     #Do basic inital bitcoin config (for both testnet and mainnet)
