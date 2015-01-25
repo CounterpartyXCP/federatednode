@@ -24,6 +24,16 @@ def runcmd(command, abort_on_failure=True):
         logging.error("Command failed: '%s'" % command)
         sys.exit(1) 
 
+def get_python_version():
+    python3_ver = None
+    allowed_vers = ["3.4", "3.3"]
+    for ver in allowed_vers:
+        if which("python%s" % ver):
+            python3_ver = ver
+            logging.info("Found Python version %s" % PYTHON3_VER)
+            break
+    return python3_ver
+                
 def do_federated_node_prerun_checks(require_sudo=True):
     #make sure this is running on a supported OS
     if os.name != "posix" or platform.dist()[0] != "Ubuntu" or platform.architecture()[0] != '64bit':
