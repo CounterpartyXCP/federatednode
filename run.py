@@ -21,7 +21,6 @@ import platform
 import collections
 import tempfile
 import tarfile
-import stat
 import random
 import string
 import subprocess
@@ -80,14 +79,14 @@ def modify_cp_config(param_re, content_to_add, replace_if_exists=True, config='c
     cfg_filenames = []
     if config in ('counterparty', 'both'):
         if net in ('mainnet', 'both'):
-            cfg_filenames.append(os.path.join(paths['config_path'] % "counterparty-server", "counterparty-server.conf"))
+            cfg_filenames.append(os.path.join(paths['config_path.template'] % "counterparty-server", "counterparty-server.conf"))
         if net in ('testnet', 'both'):
-            cfg_filenames.append(os.path.join(paths['config_path'] % "counterparty-server-testnet", "counterparty-server.conf"))
+            cfg_filenames.append(os.path.join(paths['config_path.template'] % "counterparty-server-testnet", "counterparty-server.conf"))
     if config in ('counterblock', 'both'):
         if net in ('mainnet', 'both'):
-            cfg_filenames.append(os.path.join(paths['config_path'] % "counterblock", "counterblock.conf"))
+            cfg_filenames.append(os.path.join(paths['config_path.template'] % "counterblock", "counterblock.conf"))
         if net in ('testnet', 'both'):
-            cfg_filenames.append(os.path.join(paths['config_path'] % "counterblock-testnet", "counterblock.conf"))
+            cfg_filenames.append(os.path.join(paths['config_path.template'] % "counterblock-testnet", "counterblock.conf"))
     modify_config(param_re, content_to_add, cfg_filenames, replace_if_exists=replace_if_exists)
 
 def ask_question(question, options, default_option):
@@ -266,6 +265,9 @@ def do_base_setup(run_as_user):
 
 def do_backend_rpc_setup():
     """Installs and configures bitcoind"""
+    DEFAULT_CONFIG = "rpcuser=rpc\nrpcpassword=%s\nserver=1\ndaemon=1\nrpcthreads=1000\nrpctimeout=300\ntxindex=1\naddrindex=1"
+    DEFAULT_CONFIG_TESTNET = DEFAULT_CONFIG + "\ntestnet=1"
+    
     backend_rpc_password = pass_generator()
     backend_rpc_password_testnet = pass_generator()
 
@@ -292,14 +294,15 @@ def do_backend_rpc_setup():
     #Do basic inital bitcoin config (for both testnet and mainnet)
     runcmd("mkdir -p ~%s/.bitcoin ~%s/.bitcoin-testnet" % (USERNAME, USERNAME))
     if not os.path.exists(os.path.join(USER_HOMEDIR, '.bitcoin', 'bitcoin.conf')):
-        runcmd(r"""bash -c 'echo -e "rpcuser=rpc\nrpcpassword=%s\nserver=1\ndaemon=1\nrpcthreads=1000\nrpctimeout=300\ntxindex=1\naddrindex=1" > ~%s/.bitcoin/bitcoin.conf'""" % (
-            backend_rpc_password, USERNAME))
+        runcmd(r"""bash -c 'echo -e "%s" > ~%s/.bitcoin/bitcoin.conf'""" % (
+            DEFAULT_CONFIG % backend_rpc_password, USERNAME))
     else: #grab the existing RPC password
         backend_rpc_password = subprocess.check_output(
             r"""bash -c "cat ~%s/.bitcoin/bitcoin.conf | sed -n 's/.*rpcpassword=\([^ \n]*\).*/\1/p'" """ % USERNAME, shell=True).strip().decode('utf-8')
+    
     if not os.path.exists(os.path.join(USER_HOMEDIR, '.bitcoin-testnet', 'bitcoin.conf')):
-        runcmd(r"""bash -c 'echo -e "rpcuser=rpc\nrpcpassword=%s\nserver=1\ndaemon=1\nrpcthreads=1000\nrpctimeout=300\ntxindex=1\naddrindex=1\ntestnet=1" > ~%s/.bitcoin-testnet/bitcoin.conf'""" % (
-            backend_rpc_password_testnet, USERNAME))
+        runcmd(r"""bash -c 'echo -e "%s" > ~%s/.bitcoin-testnet/bitcoin.conf'""" % (
+            DEFAULT_CONFIG_TESTNET % backend_rpc_password_testnet, USERNAME))
     else:
         backend_rpc_password_testnet = subprocess.check_output(
             r"""bash -c "cat ~%s/.bitcoin-testnet/bitcoin.conf | sed -n 's/.*rpcpassword=\([^ \n]*\).*/\1/p'" """
@@ -319,7 +322,8 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
     """Installs and configures counterparty-server and counterblock"""
     
     username_uid = pwd.getpwnam(USERNAME).pw_uid
-    username_gid = grp.getgrnam(USERNAME).gr_gid 
+    username_gid = grp.getgrnam(USERNAME).gr_gid
+    daemon_username_uid = pwd.getpwnam(DAEMON_USERNAME).pw_uid
     
     def install_dependencies():
         runcmd("apt-get -y update")
@@ -392,7 +396,8 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
             for dir in [paths['log_path.template'] % service, paths['config_path.template'] % service, paths['data_path.template'] % service]:
                 if not os.path.exists(dir):
                     os.makedirs(dir)
-                    os.chown(dir, username_uid, username_gid)        
+                os.chown(dir, daemon_username_uid, username_gid)
+                os.chmod(dir, 0o775)   
         
     def create_default_config(with_bootstrap_db=True):
         DEFAULT_CONFIG = "[Default]\nbackend-connect=localhost\nbackend-port=8332\nbackend-user=rpc\nbackend-password=1234\nrpc-host=localhost\nrpc-port=4000\nrpc-user=rpc\nrpc-password=xcppw1234\n"
@@ -400,7 +405,7 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
         DEFAULT_CONFIG_COUNTERBLOCK = "[Default]\nbackend-connect=localhost\nbackend-port=8332\nbackend-user=rpc\nbackend-password=1234\ncounterparty-host=localhost\ncounterparty-port=4000\ncounterparty-user=rpc\ncounterparty-password=xcppw1234\nrpc-host=0.0.0.0\nsocketio-host=0.0.0.0\nsocketio-chat-host=0.0.0.0\nredis-enable-apicache=0\n"
         DEFAULT_CONFIG_COUNTERBLOCK_TESTNET = "[Default]\nbackend-connect=localhost\nbackend-port=18332\nbackend-user=rpc\nbackend-password=1234\ncounterparty-host=localhost\ncounterparty-port=14000\ncounterparty-user=rpc\ncounterparty-password=xcppw1234\nrpc-host=0.0.0.0\nsocketio-host=0.0.0.0\nsocketio-chat-host=0.0.0.0\nredis-enable-apicache=0\ntestnet=1\n"
 
-        def fetch_counterparty_bootstrap_db(data_dir, testnet=False, chown_user=None):
+        def fetch_counterparty_bootstrap_db(data_dir, testnet=False):
             """download bootstrap data for counterpartyd"""
             from progressbar import Percentage, Bar, RotatingMarker, ETA, FileTransferSpeed, ProgressBar
         
@@ -422,12 +427,8 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
             tfile = tarfile.open(bootstrap_filename, 'r:gz')
             logging.info("Extracting %s DB bootstrap data to %s ..." % (app_name, data_dir))
             tfile.extractall(path=data_dir)
-            try:
-                os.remove(bootstrap_filename)
-            except:
-                pass #windows errors out on this
-            if chown_user:
-                runcmd("chown -R %s %s" % (chown_user, data_dir))
+            os.remove(bootstrap_filename)
+            runcmd("chown %s:%s %s/* && chmod 660 %s/*" % (DAEMON_USERNAME, USERNAME, data_dir, data_dir))
                 
         def create_config(app_name, cfg_name, default_config):
             cfg_path = os.path.join(paths['config_path.template'] % app_name, cfg_name)
@@ -438,12 +439,12 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
                 cfg = open(cfg_path, 'w')
                 cfg.write(default_config)
                 cfg.close()
-                #set proper file ownership and mode
-                os.chown(cfg_path, username_uid, username_gid)
-                os.chmod(cfg_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP) #660
                 logging.info("NOTE: %s config file has been created at '%s'" % (app_name, cfg_path))
             else:
                 logging.info("%s config file already exists at: '%s'" % (app_name, cfg_path))
+            #set/reset proper file ownership and mode
+            os.chown(cfg_path, daemon_username_uid, username_gid)
+            os.chmod(cfg_path, 0o660)
                 
             if app_name in ("counterparty", "counterparty-testnet") and cfg_missing and with_bootstrap_db:
                 fetch_counterparty_bootstrap_db(cfg_dir, testnet=app_name=="counterparty-server-testnet")
@@ -505,12 +506,12 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
             runcmd("rm -f /etc/service/counterparty")
         if questions.with_testnet:
             config_runit_for_service(paths['dist_path'], "counterparty-testnet",
-                enabled=questions.with_testnet, manual_control=not start_on_boot)
+                enabled=questions.with_testnet, manual_control=not questions.start_on_boot)
         else:
             runcmd("rm -f /etc/service/counterparty-testnet")
         if questions.with_counterblock and questions.with_mainnet:
             config_runit_for_service(paths['dist_path'], "counterblock", enabled=questions.with_counterblock,
-                manual_control=not start_on_boot)
+                manual_control=not questions.start_on_boot)
         else:
             runcmd("rm -f /etc/service/counterblock")
         if questions.with_counterblock and questions.with_testnet:
@@ -996,8 +997,9 @@ def main():
         
         do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_password_testnet)
         
-        do_nginx_setup(run_as_user,
-            enable=questions.role not in ["counterparty-server_only", "counterblock_basic"])
+        #REMOVE (well, uncomment)
+        #do_nginx_setup(run_as_user,
+        #    enable=questions.role not in ["counterparty-server_only", "counterblock_basic"])
         
         do_armory_utxsvr_setup(run_as_user, enable=questions.role == 'counterwallet')
         
