@@ -1,9 +1,0 @@
-#!/bin/sh
-
-USER=xcpd
-export USER_HOME=/home/xcp
-PYTHON_PATH=${USER_HOME}/counterpartyd_build/env/bin/python3
-RPC_PASSWORD=changeme
-
-exec 2>&1
-exec su -s /bin/bash -c '${PYTHON_PATH} ${USER_HOME}/pyrpcwallet/pyrpcwallet.py --rpc-port 8333 --rpc-user rpc --rpc-password ${RPC_PASSWORD}' ${USER}

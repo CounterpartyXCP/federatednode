@@ -72,15 +72,15 @@ def modify_config(param_re, content_to_add, filenames, replace_if_exists=True, d
         f.close()
 
 def modify_cp_config(param_re, content_to_add, replace_if_exists=True, config='counterpartyd', net='both', for_user='xcp'):
-    assert config in ('counterpartyd', 'counterblockd', 'both')
+    assert config in ('counterparty', 'counterblock', 'both')
     assert net in ('mainnet', 'testnet', 'both')
     cfg_filenames = []
-    if config in ('counterpartyd', 'both'):
+    if config in ('counterparty', 'both'):
         if net in ('mainnet', 'both'):
             cfg_filenames.append(os.path.join(os.path.expanduser('~'+for_user), ".config", "counterpartyd", "counterpartyd.conf"))
         if net in ('testnet', 'both'):
             cfg_filenames.append(os.path.join(os.path.expanduser('~'+for_user), ".config", "counterpartyd-testnet", "counterpartyd.conf"))
-    if config in ('counterblockd', 'both'):
+    if config in ('counterblock', 'both'):
         if net in ('mainnet', 'both'):
             cfg_filenames.append(os.path.join(os.path.expanduser('~'+for_user), ".config", "counterblockd", "counterblockd.conf"))
         if net in ('testnet', 'both'):
