@@ -4,8 +4,8 @@ Sets up an Ubuntu 14.04 x64 server to be a Counterblock Federated Node.
 
 NOTE: The system should be properly secured before running this script.
 
-TODO: This is admittedly a (bit of a) hack. In the future, take this kind of functionality out to a .deb with
-      a postinst script to do all of this, possibly.
+This is admittedly a (bit of a) hack. In the future, most likely
+utilize a cleaner, docker-based approach.
 """
 import os
 import sys
@@ -21,6 +21,7 @@ import platform
 import collections
 import tempfile
 import tarfile
+import stat
 import random
 import string
 import subprocess
@@ -31,25 +32,15 @@ try: #ignore import errors on windows
 except ImportError:
     pass
 
-from setup_util import *
-
 REPO_NAME = "federatednode_build"
 REPO_URL = "https://github.com/CounterpartyXCP/federatednode_build.git"
 USERNAME = "xcp"
 DAEMON_USERNAME = "xcpd"
 USER_HOMEDIR = "/home/xcp"
+PYTHON2_VER = "2.7" #Ubuntu 14.04 uses python2.7
 PYTHON3_VER = "3.4" #Ubuntu 14.04 uses python3.4
-QUESTION_FLAGS = collections.OrderedDict({
-    "op": ('u', 'r'),
-    "role": ('counterwallet', 'counterparty-server_only', 'counterblock_basic'),
-    "branch": ('master', 'develop'),
-    "run_mode": ('t', 'm', 'b'),
-    "security_hardening": ('y', 'n'),
-    "counterparty_server_public": ('y', 'n'),
-    "counterwallet_support_email": None,
-    "autostart_services": ('y', 'n'),
-})
-paths = {}
+paths = None
+questions = None
 
 ###
 ### UTILITY METHODS
@@ -64,24 +55,6 @@ def runcmd(command, abort_on_failure=True):
         logging.error("Command failed: '%s'" % command)
         sys.exit(1) 
                 
-def do_federated_node_prerun_checks(require_sudo=True):
-    #make sure this is running on a supported OS
-    if os.name != "posix" or platform.dist()[0] != "Ubuntu" or platform.architecture()[0] != '64bit':
-        logging.error("Only 64bit Ubuntu Linux is supported at this time")
-        sys.exit(1)
-    ubuntu_release = platform.linux_distribution()[1]
-    if ubuntu_release != "14.04":
-        logging.error("Only Ubuntu 14.04 supported for Counterblock Federated Node install.")
-        sys.exit(1)
-    #script must be run as root
-    if os.geteuid() != 0:
-        logging.error("This script must be run as root (use 'sudo' to run)")
-        sys.exit(1)
-    assert os.name == "posix"
-    if require_sudo and "SUDO_USER" not in os.environ:
-        logging.error("Please use `sudo` to run this script.")
-        sys.exit(1)
-
 def modify_config(param_re, content_to_add, filenames, replace_if_exists=True, dotall=False):
     if not isinstance(filenames, (list, tuple)):
         filenames = [filenames,]
@@ -101,21 +74,20 @@ def modify_config(param_re, content_to_add, filenames, replace_if_exists=True, d
         f.write(content)
         f.close()
 
-def modify_cp_config(param_re, content_to_add, replace_if_exists=True, config='counterpartyd', net='both', for_user='xcp'):
+def modify_cp_config(param_re, content_to_add, replace_if_exists=True, config='counterpartyd', net='both'):
     assert config in ('counterparty', 'counterblock', 'both')
     assert net in ('mainnet', 'testnet', 'both')
     cfg_filenames = []
     if config in ('counterparty', 'both'):
         if net in ('mainnet', 'both'):
-            cfg_filenames.append(os.path.join(os.path.expanduser('~'+for_user), ".config", "counterpartyd", "counterpartyd.conf"))
+            cfg_filenames.append(os.path.join(paths['config_path'] % "counterparty-server", "counterparty-server.conf"))
         if net in ('testnet', 'both'):
-            cfg_filenames.append(os.path.join(os.path.expanduser('~'+for_user), ".config", "counterpartyd-testnet", "counterpartyd.conf"))
+            cfg_filenames.append(os.path.join(paths['config_path'] % "counterparty-server-testnet", "counterparty-server.conf"))
     if config in ('counterblock', 'both'):
         if net in ('mainnet', 'both'):
-            cfg_filenames.append(os.path.join(os.path.expanduser('~'+for_user), ".config", "counterblockd", "counterblockd.conf"))
+            cfg_filenames.append(os.path.join(paths['config_path'] % "counterblock", "counterblock.conf"))
         if net in ('testnet', 'both'):
-            cfg_filenames.append(os.path.join(os.path.expanduser('~'+for_user), ".config", "counterblockd-testnet", "counterblockd.conf"))
-        
+            cfg_filenames.append(os.path.join(paths['config_path'] % "counterblock-testnet", "counterblock.conf"))
     modify_config(param_re, content_to_add, cfg_filenames, replace_if_exists=replace_if_exists)
 
 def ask_question(question, options, default_option):
@@ -181,7 +153,25 @@ def config_runit_disable_manual_control(service_name):
 
 ###
 ### PRIMARY FUNCTIONS
-###        
+###
+def do_federated_node_prerun_checks(require_sudo=True):
+    #make sure this is running on a supported OS
+    if os.name != "posix" or platform.dist()[0] != "Ubuntu" or platform.architecture()[0] != '64bit':
+        logging.error("Only 64bit Ubuntu Linux is supported at this time")
+        sys.exit(1)
+    ubuntu_release = platform.linux_distribution()[1]
+    if ubuntu_release != "14.04":
+        logging.error("Only Ubuntu 14.04 supported for Counterblock Federated Node install.")
+        sys.exit(1)
+    #script must be run as root
+    if os.geteuid() != 0:
+        logging.error("This script must be run as root (use 'sudo' to run)")
+        sys.exit(1)
+    assert os.name == "posix"
+    if require_sudo and "SUDO_USER" not in os.environ:
+        logging.error("Please use `sudo` to run this script.")
+        sys.exit(1)
+      
 def get_base_paths():
     paths = {}
     paths['sys_python_path'] = os.path.dirname(sys.executable)
@@ -205,21 +195,28 @@ def get_base_paths():
     paths['pip_path.counterblock'] = os.path.join(paths['env_path.counterblock'], "bin", "pip")
     paths['python_path.counterblock'] = os.path.join(paths['env_path.counterblock'], "bin", "python")
     
+    #user paths
+    paths['log_path.template'] = os.path.join(USER_HOMEDIR, ".cache", "%s", "log")
+    paths['config_path.template'] = os.path.join(USER_HOMEDIR, ".config", "%s")
+    paths['data_path.template'] = os.path.join(USER_HOMEDIR, ".local", "share", "%s")
+    
     return paths
 
 def remove_old():
     "remove old things from the previous counterpartyd_build system"
     #program links/executiables
     runcmd("rm -f /usr/local/bin/counterpartyd /usr/local/bin/counterblockd /usr/local/bin/armory_utxsvr")
+    #remove any insight stuff...
+    runcmd("rm -rf /etc/sv/insight /etc/sv/insight-testnet /etc/service/insight /etc/service/insight-testnet")
     #runit entries
     def remove_runit(service_name):
         runcmd("rm -f /etc/service/%s" % service_name)
         runcmd("rm -rf /etc/sv/%s" % service_name)
-    for service_name in ("counterpartyd", "counterpartyd-testnet", "counterblockd",
-                         "counterblockd-testnet", "armory_utxsvr", "armory_utxsvr-testnet"):
+    for service_name in ("bitcoind", "bitcoind0testnet",
+    "counterpartyd", "counterpartyd-testnet", "counterblockd", "counterblockd-testnet"):
         remove_runit(service_name)
         
-def do_base_setup(run_as_user, branch):
+def do_base_setup(run_as_user):
     """This creates the xcp and xcpd users and checks out the federatednode_build system from git"""
     #change time to UTC
     runcmd("ln -sf /usr/share/zoneinfo/UTC /etc/localtime")
@@ -262,12 +259,12 @@ def do_base_setup(run_as_user, branch):
     runcmd("adduser %s %s" % (run_as_user, USERNAME))
     
     #Check out federatednode_build repo under this user's home dir and use that for the build
-    git_repo_clone(REPO_NAME, REPO_URL, paths['base_path'], branch, for_user=run_as_user)
+    git_repo_clone(REPO_NAME, REPO_URL, paths['base_path'], questions.branch, for_user=run_as_user)
 
     #enhance fd limits for the xcpd user
     runcmd("cp -af %s/linux/other/xcpd_security_limits.conf /etc/security/limits.d/" % paths['dist_path'])
 
-def do_backend_rpc_setup(run_mode):
+def do_backend_rpc_setup():
     """Installs and configures bitcoind"""
     backend_rpc_password = pass_generator()
     backend_rpc_password_testnet = pass_generator()
@@ -308,54 +305,28 @@ def do_backend_rpc_setup(run_mode):
             r"""bash -c "cat ~%s/.bitcoin-testnet/bitcoin.conf | sed -n 's/.*rpcpassword=\([^ \n]*\).*/\1/p'" """
             % USERNAME, shell=True).strip().decode('utf-8')
 
-    #remove pyrpcwallet startup scripts if present
-    runcmd("rm -f /etc/service/pyrpcwallet /etc/service/pyrpcwallet-testnet")
     #install logrotate file
     runcmd("cp -dRf --preserve=mode %s/linux/logrotate/bitcoind /etc/logrotate.d/bitcoind" % paths['dist_path'])
     #set permissions
     runcmd("chown -R %s:%s ~%s/.bitcoin ~%s/.bitcoin-testnet" % (DAEMON_USERNAME, USERNAME, USERNAME, USERNAME))
     #set up runit startup scripts
-    config_runit_for_service(paths['dist_path'], "bitcoind", enabled=run_mode in ['m', 'b'])
-    config_runit_for_service(paths['dist_path'], "bitcoind-testnet", enabled=run_mode in ['t', 'b'])
+    config_runit_for_service(paths['dist_path'], "bitcoin", enabled=questions.with_mainnet)
+    config_runit_for_service(paths['dist_path'], "bitcoin-testnet", enabled=questions.with_testnet)
     
     return backend_rpc_password, backend_rpc_password_testnet
 
-def install_base_via_pip(branch="AUTO"):
-    BRANCH_SETTINGS_PATH = os.path.join(paths['base_path'], ".base_branch")
-    if branch == "AUTO": #used with updates
-        assert os.path.exists(BRANCH_SETTINGS_PATH)
-        f = open(BRANCH_SETTINGS_PATH, 'r')
-        branch = f.read()
-        f.close()
-        assert branch != "AUTO"
-    #pip install counterparty-cli, counterparty-lib and (optionally) counterblock for the chosen branch
-    PIP_COUNTERPARTY_LIB = "https://github.com/CounterpartyXCP/counterpartyd/archive/%s.zip" % branch
-    PIP_COUNTERPARTY_CLI = "https://github.com/CounterpartyXCP/counterparty-cli/archive/%s.zip" % branch  
-    PIP_COUNTERBLOCK = "https://github.com/CounterpartyXCP/counterblock/archive/%s.zip" % branch
-    runcmd("sudo su -s /bin/bash -c '%s install --upgrade %s' %s" % (paths['pip_path'], PIP_COUNTERPARTY_LIB, USERNAME))
-    runcmd("sudo su -s /bin/bash -c '%s install --upgrade %s' %s" % (paths['pip_path'], PIP_COUNTERPARTY_CLI, USERNAME))
-    if with_counterblock:
-        runcmd("sudo su -s /bin/bash -c '%s install --upgrade %s' %s"
-            % (paths['pip_path.counterblockd'], PIP_COUNTERBLOCK, USERNAME))
-    if branch != "AUTO":
-        f = open(BRANCH_SETTINGS_PATH, 'w')
-        f.write(branch)
-        f.close()
-
-def do_counterparty_setup(role, run_as_user, branch, run_mode, backend_rpc_password,
-backend_rpc_password_testnet, counterparty_server_public, counterwallet_support_email):
+def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_password_testnet):
     """Installs and configures counterparty-server and counterblock"""
     
-    with_counterblock = role != "counterparty-server_only"
-    with_mainnet = run_mode in ['m', 'b']
-    with_testnet = run_mode in ['t', 'b']
+    username_uid = pwd.getpwnam(USERNAME).pw_uid
+    username_gid = grp.getgrnam(USERNAME).gr_gid 
     
     def install_dependencies():
         runcmd("apt-get -y update")
         runcmd("apt-get -y install runit software-properties-common python-software-properties git-core wget \
         python3 python3-setuptools python3-dev python3-pip build-essential python3-sphinx python-virtualenv libsqlite3-dev python3-apsw python3-zmq")
         
-        if with_counterblock:
+        if questions.with_counterblock:
             #counterblockd currently uses Python 2.7 due to gevent-socketio's lack of support for Python 3
             runcmd("apt-get -y install python python-dev python-setuptools python-pip python-sphinx python-zmq libzmq3 libzmq3-dev libxml2-dev libxslt-dev zlib1g-dev libimage-exiftool-perl libevent-dev cython")
     
@@ -382,7 +353,7 @@ backend_rpc_password_testnet, counterparty_server_public, counterwallet_support_
         #install sqlite utilities (not technically required, but nice to have)
         runcmd("apt-get -y install sqlite sqlite3 libleveldb-dev")
         #now that pip is installed, install necessary deps outside of the virtualenv (e.g. for this script)
-        runcmd("pip3 install appdirs==1.4.0 progressbar33")
+        runcmd("pip3 install progressbar33")
     
     def create_virtualenv():
         def create_venv(env_path, pip_path, python_path, virtualenv_args, delete_if_exists=True):
@@ -405,13 +376,25 @@ backend_rpc_password_testnet, counterparty_server_public, counterwallet_support_
                 sys.exit(1)
     
         create_venv(paths['env_path'], paths['pip_path'], paths['python_path'], paths['virtualenv_args']) 
-        if with_counterblock:
+        if questions.with_counterblock:
             #as counterblockd uses python 2.x, it needs its own virtualenv
             runcmd("rm -rf %s && mkdir -p %s" % (paths['env_path.counterblock'], paths['env_path.counterblock']))
             create_venv(paths['env_path.counterblock'], paths['pip_path.counterblock'], paths['python_path.counterblock'],
                 paths['virtualenv_args.counterblock'], delete_if_exists=False)   
     
-    def create_default_config(with_bootstrap_db):
+    def create_default_dirs():
+        services = []
+        if questions.with_mainnet: services.append("counterparty-server")
+        if questions.with_testnet: services.append("counterparty-server-testnet")
+        if questions.with_counterblock and questions.with_mainnet: services.append("counterblock")
+        if questions.with_counterblock and questions.with_testnet: services.append("counterblock-testnet")
+        for service in services:
+            for dir in [paths['log_path.template'] % service, paths['config_path.template'] % service, paths['data_path.template'] % service]:
+                if not os.path.exists(dir):
+                    os.makedirs(dir)
+                    os.chown(dir, username_uid, username_gid)        
+        
+    def create_default_config(with_bootstrap_db=True):
         DEFAULT_CONFIG = "[Default]\nbackend-connect=localhost\nbackend-port=8332\nbackend-user=rpc\nbackend-password=1234\nrpc-host=localhost\nrpc-port=4000\nrpc-user=rpc\nrpc-password=xcppw1234\n"
         DEFAULT_CONFIG_TESTNET = "[Default]\nbackend-connect=localhost\nbackend-port=18332\nbackend-user=rpc\nbackend-password=1234\nrpc-host=localhost\nrpc-port=14000\nrpc-user=rpc\nrpc-password=xcppw1234\ntestnet=1\n"
         DEFAULT_CONFIG_COUNTERBLOCK = "[Default]\nbackend-connect=localhost\nbackend-port=8332\nbackend-user=rpc\nbackend-password=1234\ncounterparty-host=localhost\ncounterparty-port=4000\ncounterparty-user=rpc\ncounterparty-password=xcppw1234\nrpc-host=0.0.0.0\nsocketio-host=0.0.0.0\nsocketio-chat-host=0.0.0.0\nredis-enable-apicache=0\n"
@@ -431,13 +414,13 @@ backend_rpc_password_testnet, counterparty_server_public, counterwallet_support_
                 pbar.update(min(count * blockSize, totalSize))
         
             bootstrap_url = "http://counterparty-bootstrap.s3.amazonaws.com/counterpartyd%s-db.latest.tar.gz" % ('-testnet' if testnet else '')
-            appname = "counterparty-server%s" % ('-testnet' if testnet else '',)
-            logging.info("Downloading %s DB bootstrap data from %s ..." % (appname, bootstrap_url))
+            app_name = "counterparty-server%s" % ('-testnet' if testnet else '',)
+            logging.info("Downloading %s DB bootstrap data from %s ..." % (app_name, bootstrap_url))
             bootstrap_filename, headers = urllib.request.urlretrieve(bootstrap_url, reporthook=dl_progress)
             pbar.finish()
-            logging.info("%s DB bootstrap data downloaded to %s ..." % (appname, bootstrap_filename))
+            logging.info("%s DB bootstrap data downloaded to %s ..." % (app_name, bootstrap_filename))
             tfile = tarfile.open(bootstrap_filename, 'r:gz')
-            logging.info("Extracting %s DB bootstrap data to %s ..." % (appname, data_dir))
+            logging.info("Extracting %s DB bootstrap data to %s ..." % (app_name, data_dir))
             tfile.extractall(path=data_dir)
             try:
                 os.remove(bootstrap_filename)
@@ -446,17 +429,8 @@ backend_rpc_password_testnet, counterparty_server_public, counterwallet_support_
             if chown_user:
                 runcmd("chown -R %s %s" % (chown_user, data_dir))
                 
-        def create_config(appname, cfg_name, default_config):
-            import appdirs #installed earlier
-            cfg_dir = appdirs.user_config_dir(appauthor='Counterparty', appname='counterparty-server', roaming=True)
-            cfg_path = os.path.join(cfg_dir, 'counterparty-server.conf')
-            username_uid = pwd.getpwnam(USERNAME).pw_uid
-            username_gid = grp.getgrnam(USERNAME).gr_gid 
-    
-            if not os.path.exists(cfg_dir):
-                os.makedirs(cfg_dir)
-                os.chown(cfg_dir, username_uid, username_gid)
-            
+        def create_config(app_name, cfg_name, default_config):
+            cfg_path = os.path.join(paths['config_path.template'] % app_name, cfg_name)
             cfg_missing = not os.path.exists(cfg_path)
             if not os.path.exists(cfg_path):
                 logging.info("Creating new configuration file at: %s" % cfg_path)
@@ -467,96 +441,145 @@ backend_rpc_password_testnet, counterparty_server_public, counterwallet_support_
                 #set proper file ownership and mode
                 os.chown(cfg_path, username_uid, username_gid)
                 os.chmod(cfg_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP) #660
-                logging.info("NOTE: %s config file has been created at '%s'" % (appname, cfg_path))
+                logging.info("NOTE: %s config file has been created at '%s'" % (app_name, cfg_path))
             else:
-                logging.info("%s config file already exists at: '%s'" % (appname, cfg_path))
+                logging.info("%s config file already exists at: '%s'" % (app_name, cfg_path))
                 
-            if appname in ("counterparty", "counterparty-testnet") and cfg_missing and with_bootstrap_db:
-                fetch_counterparty_bootstrap_db(cfg_dir, testnet=appname=="counterparty-server-testnet")
+            if app_name in ("counterparty", "counterparty-testnet") and cfg_missing and with_bootstrap_db:
+                fetch_counterparty_bootstrap_db(cfg_dir, testnet=app_name=="counterparty-server-testnet")
         
         create_config('counterparty-server', 'counterparty-server.conf', DEFAULT_CONFIG)
-        if with_testnet:
+        if questions.with_testnet:
             create_config('counterparty-server-testnet', 'counterparty-server.conf', DEFAULT_CONFIG_TESTNET)
-        if with_counterblockd:
+        if questions.with_counterblock:
             create_config('counterblock', 'counterblock.conf', DEFAULT_CONFIG_COUNTERBLOCK)
-            if with_testnet:
+            if questions.with_testnet:
                 create_config('counterblock-testnet', 'counterblock.conf', DEFAULT_CONFIG_COUNTERBLOCK_TESTNET)
 
     def alter_config():
         #modify out configuration values as necessary
-        counterparty_rpc_password = '1234' if role == 'counterparty-server_only' and counterparty_server_public == 'y' else pass_generator()
-        counterparty_rpc_password_testnet = '1234' if role == 'counterparty-server_only' and counterparty_server_public == 'y' else pass_generator()
+        counterparty_rpc_password = '1234' if questions.role == 'counterparty-server_only' \
+            and questions.counterparty_server_public == 'y' else pass_generator()
+        counterparty_rpc_password_testnet = '1234' if questions.role == 'counterparty-server_only' \
+            and questions.counterparty_server_public == 'y' else pass_generator()
         for net, backend_password, cp_password in (
             ('mainnet', backend_rpc_password, counterparty_rpc_password),
             ('testnet', backend_rpc_password_testnet, counterparty_rpc_password_testnet)):
             #modify the default stored bitcoind passwords in counterparty conf
             modify_cp_config(r'^(backend\-rpc|backend)\-password=.*?$',
-                'backend-rpc-password=%s' % backend_password, config='counterparty', net=net, for_user=USERNAME)
+                'backend-password=%s' % backend_password, config='counterparty', net=net)
             #modify the counterparty API rpc password in counterparty conf
             modify_cp_config(r'^rpc\-password=.*?$', 'rpc-password=%s' % cp_password,
-                config='counterparty', net=net, for_user=USERNAME)
+                config='counterparty', net=net)
             #backend for counterpartyd should be addrindex
             modify_cp_config(r'^(blockchain\-service|backend)\-name=.*?$', 'backend-name=addrindex',
-                config='counterparty', net=net, for_user=USERNAME)
+                config='counterparty', net=net)
     
-            if role == 'counterparty-server_only' and counterparty_server_public == 'y':
-                modify_cp_config(r'^rpc\-host=.*?$', 'rpc-host=0.0.0.0', config='counterparty', net=net, for_user=USERNAME)
+            if questions.role == 'counterparty-server_only' and questions.counterparty_server_public == 'y':
+                modify_cp_config(r'^rpc\-host=.*?$', 'rpc-host=0.0.0.0', config='counterparty', net=net)
                 
-            if with_counterblock:
+            if questions.with_counterblock:
                 modify_cp_config(r'^(backend\-rpc|backend)\-password=.*?$',
-                    'backend-password=%s' % backend_password, config='counterblock', net=net, for_user=USERNAME)
+                    'backend-password=%s' % backend_password, config='counterblock', net=net)
                 #modify the counterparty API rpc password in counterblockd.conf
                 modify_cp_config(r'^counterparty\-password=.*?$',
-                    'counterparty-password=%s' % cp_password, config='counterblock', net=net, for_user=USERNAME)
+                    'counterparty-password=%s' % cp_password, config='counterblock', net=net)
             
                 #role-specific counterblockd.conf values
                 modify_cp_config(r'^armory\-utxsvr\-enable=.*?$', 'armory-utxsvr-enable=%s' % 
-                    ('1' if role == 'counterwallet' else '0'), config='counterblock', for_user=USERNAME)
-                if role == 'counterwallet':
-                    modify_cp_config(r'^support\-email=.*?$', 'support-email=%s' % counterwallet_support_email,
-                        config='counterblock', for_user=USERNAME) #may be blank string
+                    ('1' if questions.role == 'counterwallet' else '0'), config='counterblock')
+                if questions.role == 'counterwallet':
+                    modify_cp_config(r'^support\-email=.*?$',
+                        'support-email=%s' % questions.counterwallet_support_email, config='counterblock') #may be blank string
 
-    def configure_startup(start_on_boot):
+    def configure_startup():
         #link over counterparty and counterblock script
         runcmd("ln -sf %s/bin/counterparty-server /usr/local/bin/counterparty-server" % paths['env_path'])
         runcmd("ln -sf %s/bin/counterparty-cli /usr/local/bin/counterparty-cli" % paths['env_path'])
-        if with_counterblock:
+        if questions.with_counterblock:
             runcmd("ln -sf %s/bin/counterblock /usr/local/bin/counterblock" % paths['env_path.counterblock'])
     
-            #create armory_utxsvr script
-            f = open("/usr/local/bin/armory_utxsvr", 'w')
-            f.write("#!/bin/sh\nDISPLAY=localhost:1.0 xvfb-run --auto-servernum %s/bin/armory_utxsvr \"$@\""
-                % paths['env_path.counterblock'])
-            f.close()
-            runcmd("chmod +x /usr/local/bin/armory_utxsvr")
-
-        if with_mainnet:
-            config_runit_for_service(paths['dist_path'], "counterparty", manual_control=not start_on_boot)
+        if questions.with_mainnet:
+            config_runit_for_service(paths['dist_path'], "counterparty", manual_control=not questions.start_on_boot)
         else:
             runcmd("rm -f /etc/service/counterparty")
-        if with_testnet:
+        if questions.with_testnet:
             config_runit_for_service(paths['dist_path'], "counterparty-testnet",
-                enabled=with_testnet, manual_control=not start_on_boot)
+                enabled=questions.with_testnet, manual_control=not start_on_boot)
         else:
             runcmd("rm -f /etc/service/counterparty-testnet")
-        if with_counterblock and with_mainnet:
-            config_runit_for_service(paths['dist_path'], "counterblock", enabled=with_counterblock,
+        if questions.with_counterblock and questions.with_mainnet:
+            config_runit_for_service(paths['dist_path'], "counterblock", enabled=questions.with_counterblock,
                 manual_control=not start_on_boot)
         else:
             runcmd("rm -f /etc/service/counterblock")
-        if with_counterblock and with_testnet:
+        if questions.with_counterblock and questions.with_testnet:
             config_runit_for_service(paths['dist_path'], "counterblock-testnet",
-                enabled=with_counterblock and with_testnet, manual_control=not start_on_boot)
+                enabled=questions.with_counterblock and questions.with_testnet, manual_control=not questions.start_on_boot)
         else:
             runcmd("rm -f /etc/service/counterblock-testnet")
            
     install_dependencies()
     create_virtualenv()
-    install_base_via_pip(branch)
-    create_default_config(True)
+    create_default_dirs()
+    create_default_config()
     alter_config()
-    configure_startup(answered_questions['autostart_services'] == 'y')
+    install_base_via_pip(questions.branch)
+    configure_startup()
 
+def install_base_via_pip(branch="AUTO"):
+    PIP_COUNTERPARTY_LIB = "https://github.com/CounterpartyXCP/counterpartyd/archive/%s.zip" % branch
+    PIP_COUNTERPARTY_CLI = "https://github.com/CounterpartyXCP/counterparty-cli/archive/%s.zip" % branch  
+    PIP_COUNTERBLOCK = "https://github.com/CounterpartyXCP/counterblock/archive/%s.zip" % branch
+    COUNTERPARTY_LIB_DIST_PATH = os.path.join(paths['dist_path'], "counterparty-lib")
+    COUNTERPARTY_CLI_DIST_PATH = os.path.join(paths['dist_path'], "counterparty-cli")
+    COUNTERBLOCK_DIST_PATH = os.path.join(paths['dist_path'], "counterblock")
+    BRANCH_SETTINGS_PATH = os.path.join(paths['base_path'], ".base_branch")
+    found_counterblock = os.path.exists(paths['env_path.counterblock'])
+    
+    if branch == "AUTO": #used with updates
+        assert os.path.exists(BRANCH_SETTINGS_PATH)
+        f = open(BRANCH_SETTINGS_PATH, 'r')
+        branch = f.read()
+        f.close()
+        assert branch != "AUTO"
+    
+    #pip install counterparty-cli, counterparty-lib and (optionally) counterblock for the chosen branch
+    #only do this if there's not a directory there (this allows people to check out the repo and put it at that path)
+    if not os.path.exists(COUNTERPARTY_LIB_DIST_PATH) or os.path.islink(COUNTERPARTY_LIB_DIST_PATH):
+        runcmd("sudo su -s /bin/bash -c '%s install --upgrade %s' %s" % (paths['pip_path'], PIP_COUNTERPARTY_LIB, USERNAME))
+        runcmd("ln -sf %s %s" % ( #create symlink
+            os.path.join(paths['env_path'], "lib", "python"+PYTHON3_VER, "site-packages", "counterpartylib"),
+            COUNTERPARTY_LIB_DIST_PATH))
+    else:
+        assert os.path.exists(os.path.join(COUNTERPARTY_LIB_DIST_PATH, "setup.py"))
+        runcmd("%s %s install" % (paths['python_path'], os.path.join(COUNTERPARTY_LIB_DIST_PATH, "setup.py")))
+    
+    if not os.path.exists(COUNTERPARTY_CLI_DIST_PATH) or os.path.islink(COUNTERPARTY_CLI_DIST_PATH):
+        runcmd("sudo su -s /bin/bash -c '%s install --upgrade %s' %s" % (paths['pip_path'], PIP_COUNTERPARTY_CLI, USERNAME))
+        runcmd("ln -sf %s %s" % ( #create symlink
+            os.path.join(paths['env_path'], "lib", "python" + PYTHON3_VER, "site-packages", "counterpartycli"),
+            COUNTERPARTY_CLI_DIST_PATH))
+    else:
+        assert os.path.exists(os.path.join(COUNTERPARTY_CLI_DIST_PATH, "setup.py"))
+        runcmd("%s %s install" % (paths['python_path'], os.path.join(COUNTERPARTY_CLI_DIST_PATH, "setup.py")))
+
+    if found_counterblock:
+        if not os.path.exists(COUNTERBLOCK_DIST_PATH) or os.path.islink(COUNTERBLOCK_DIST_PATH):
+            runcmd("sudo su -s /bin/bash -c '%s install --upgrade %s' %s"
+                % (paths['pip_path.counterblock'], PIP_COUNTERBLOCK, USERNAME))
+            runcmd("ln -sf %s %s" % (
+                os.path.join(paths['env_path.counterblock'], "lib", "python" + PYTHON2_VER, "site-packages", "counterblock"),
+                COUNTERBLOCK_DIST_PATH))
+        else:
+            assert os.path.exists(os.path.join(COUNTERBLOCK_DIST_PATH, "setup.py"))
+            runcmd("%s %s install" % (paths['python_path.counterblock'], os.path.join(COUNTERBLOCK_DIST_PATH, "setup.py")))
+            
+    if branch != "AUTO":
+        f = open(BRANCH_SETTINGS_PATH, 'w')
+        f.write(branch)
+        f.close()
+        
 def do_nginx_setup(run_as_user, enable=True):
     if not enable:
         runcmd("apt-get -y remove nginx-openresty", abort_on_failure=False)
@@ -648,7 +671,7 @@ etc usr var''' % (OPENRESTY_VER, OPENRESTY_VER))
     #set up init
     runcmd("ln -sf /etc/sv/nginx /etc/service/")
 
-def do_armory_utxsvr_setup(run_as_user, run_mode, enable=True):
+def do_armory_utxsvr_setup(run_as_user, enable=True):
     runcmd("apt-get -y install xvfb python-qt4 python-twisted python-psutil xdg-utils hicolor-icon-theme")
     ARMORY_VERSION = "0.92.3_ubuntu-64bit"
     if not os.path.exists("/tmp/armory_%s.deb" % ARMORY_VERSION):
@@ -663,15 +686,16 @@ def do_armory_utxsvr_setup(run_as_user, run_mode, enable=True):
     runcmd("sudo ln -sf ~%s/.bitcoin-testnet/testnet3 ~%s/.bitcoin/" % (USERNAME, USERNAME))
     #^ ghetto hack, as armory has hardcoded dir settings in certain place
     
-    #make a short script to launch armory_utxsvr
+    #create armory_utxsvr script
     f = open("/usr/local/bin/armory_utxsvr", 'w')
-    f.write("#!/bin/sh\n%s/run.py armory_utxsvr \"$@\"" % paths['base_path'])
+    f.write("#!/bin/sh\nDISPLAY=localhost:1.0 xvfb-run --auto-servernum %s/bin/armory_utxsvr \"$@\""
+        % paths['env_path.counterblock'])
     f.close()
     runcmd("chmod +x /usr/local/bin/armory_utxsvr")
-
+    
     #Set up upstart scripts (will be disabled later from autostarting on system startup if necessary)
-    config_runit_for_service(paths['dist_path'], "armory_utxsvr", enabled=enable and run_mode in ['m', 'b'])
-    config_runit_for_service(paths['dist_path'], "armory_utxsvr-testnet", enabled=enable and run_mode in ['t', 'b'])
+    config_runit_for_service(paths['dist_path'], "armory_utxsvr", enabled=enable and questions.with_mainnet)
+    config_runit_for_service(paths['dist_path'], "armory_utxsvr-testnet", enabled=enable and questions.with_testnet)
 
 def do_counterwallet_setup(run_as_user, branch, updateOnly=False):
     #check out counterwallet from git
@@ -709,7 +733,7 @@ def do_security_setup(run_as_user, branch, enable=True):
     runcmd("install -m 0644 -o root -g root -D %s/linux/other/fail2ban.jail.conf /etc/fail2ban/jail.d/counterblock.conf" % paths['dist_path'])
     runcmd("service fail2ban restart")
     
-    #set up psad
+    #set up psad (this will install postfix, which will prompt the user)
     runcmd("apt-get -y install psad")
     modify_config(r'^ENABLE_AUTO_IDS\s+?N;$', 'ENABLE_AUTO_IDS\tY;', '/etc/psad/psad.conf')
     modify_config(r'^ENABLE_AUTO_IDS_EMAILS\s+?Y;$', 'ENABLE_AUTO_IDS_EMAILS\tN;', '/etc/psad/psad.conf')
@@ -749,7 +773,7 @@ def do_security_setup(run_as_user, branch, enable=True):
     runcmd("service iwatch restart")
 
 def find_configured_services():
-    services = ["bitcoind", "bitcoind-testnet", "counterparty", "counterparty-testnet",
+    services = ["bitcoin", "bitcoin-testnet", "counterparty", "counterparty-testnet",
         "counterblock", "counterblock-testnet", "armory_utxsvr", "armory_utxsvr-testnet"]
     configured_services = []
     for s in services:
@@ -764,7 +788,6 @@ def command_services(command, prompt=False):
         confirmation = ask_question("%s services? (y/N)" % command.capitalize(), ('y', 'n',), 'n')
         if confirmation == 'n':
             return False
-    
     logging.warn("STOPPING SERVICES" if command == 'stop' else "RESTARTING SERVICES")
     
     if os.path.exists("/etc/init.d/iwatch"):
@@ -775,93 +798,128 @@ def command_services(command, prompt=False):
         runcmd("sv %s %s" % (command, s), abort_on_failure=False)
     return True
 
-def gather_build_questions(answered_questions, noninteractive):
-    if 'role' not in answered_questions and noninteractive:
-        answered_questions['role'] = '1' 
-    elif 'role' not in answered_questions:
-        role = ask_question("Enter the number for the role you want to build:\n"
-                + "\t1: Counterwallet server\n\t2: counterparty-server only\n\t3: counterblock basic (no Counterwallet)\n"
-                + "Your choice",
-            ('1', '2', '3'), '1')
-        if role == '1':
-            role = 'counterwallet'
-            role_desc = "Counterwallet server"
-        elif role == '2':
-            role = 'counterparty-server_only'
-            role_desc = "counterparty-server only"
-        elif role == '3':
-            role = 'counterblock_basic'
-            role_desc = "Basic counterblock server"
-        print("\tBuilding a %s" % role_desc)
-        answered_questions['role'] = role
-    assert answered_questions['role'] in QUESTION_FLAGS['role']
-
-    if 'branch' not in answered_questions and noninteractive:
-        answered_questions['branch'] = 'master' 
-    elif 'branch' not in answered_questions:
-        branch = ask_question("Build from branch (M)aster or (d)evelop? (M/d)", ('m', 'd'), 'm')
-        if branch == 'm': branch = 'master'
-        elif branch == 'd': branch = 'develop'
-        print("\tWorking with branch: %s" % branch)
-        answered_questions['branch'] = branch
-    assert answered_questions['branch'] in QUESTION_FLAGS['branch']
-
-    if 'run_mode' not in answered_questions and noninteractive:
-        answered_questions['run_mode'] = 'b' 
-    elif 'run_mode' not in answered_questions:
-        answered_questions['run_mode'] = ask_question(
-            "Run as (t)estnet node, (m)ainnet node, or (B)oth? (t/m/B)", ('t', 'm', 'b'), 'b')
-        print("\tSetting up to run on %s" % ('testnet' if answered_questions['run_mode'].lower() == 't' 
-            else ('mainnet' if answered_questions['run_mode'].lower() == 'm' else 'testnet and mainnet')))
-    assert answered_questions['run_mode'] in QUESTION_FLAGS['run_mode']
-
-    if answered_questions['role'] == 'counterparty-server_only':
-        if 'counterparty_server_public' not in answered_questions and noninteractive:
-            answered_questions['counterparty_server_public'] = 'y' 
-        elif 'counterparty_server_public' not in answered_questions:
-            answered_questions['counterparty_server_public'] = ask_question(
-                "Enable public Counterpartyd setup (listen on all network interfaces w/ rpc/1234 user) (Y/n)", ('y', 'n'), 'y')
-        else:
-            answered_questions['counterparty_server_public'] = answered_questions.get('counterparty_server_public', 'n') #does not apply
-        assert answered_questions['counterparty_server_public'] in QUESTION_FLAGS['counterparty_server_public']
-    else: answered_questions['counterparty_server_public'] = None
-
-    if answered_questions['role'] == 'counterwallet':
-        counterwallet_support_email = None
-        if 'counterwallet_support_email' not in answered_questions and noninteractive:
-            answered_questions['counterwallet_support_email'] = '' 
-        elif 'counterwallet_support_email' not in answered_questions:
-            while True:
-                counterwallet_support_email = input("Email address where support cases should go (blank to disable): ")
-                counterwallet_support_email = counterwallet_support_email.strip()
-                if counterwallet_support_email:
-                    counterwallet_support_email_confirm = ask_question(
-                        "You entered '%s', is that right? (Y/n): " % counterwallet_support_email, ('y', 'n'), 'y') 
-                    if counterwallet_support_email_confirm == 'y': break
-                else: break
-            answered_questions['counterwallet_support_email'] = counterwallet_support_email
-        else:
-            answered_questions['counterwallet_support_email'] = answered_questions.get('counterwallet_support_email', '').strip()
-    else: answered_questions['counterwallet_support_email'] = None 
-
-    if 'security_hardening' not in answered_questions and noninteractive:
-        answered_questions['security_hardening'] = 'y' 
-    elif 'security_hardening' not in answered_questions:
-        answered_questions['security_hardening'] = ask_question("Set up security hardening? (Y/n)", ('y', 'n'), 'y')
-    assert answered_questions['security_hardening'] in QUESTION_FLAGS['security_hardening']
+class BuildQuestions:
+    VALID = collections.OrderedDict({
+        "op": ('u', 'r'),
+        "role": ('counterwallet', 'counterparty-server_only', 'counterblock_basic'),
+        "branch": ('master', 'develop'),
+        "net": ('t', 'm', 'b'),
+        "security_hardening": ('y', 'n'),
+        "counterparty_server_public": ('y', 'n'),
+        "counterwallet_support_email": None,
+        "autostart_services": ('y', 'n'),
+    })
     
-    if 'autostart_services' not in answered_questions and noninteractive:
-        answered_questions['autostart_services'] = 'n' 
-    elif 'autostart_services' not in answered_questions:
-        answered_questions['autostart_services'] = ask_question("Autostart services (including on boot)? (y/N)", ('y', 'n'), 'n')
-    assert answered_questions['autostart_services'] in QUESTION_FLAGS['autostart_services']
-
-    logging.debug("answered_questions: %s" % answered_questions)
-    return answered_questions
-
+    def __init__(self):
+        self.op = None
+        self.role = None
+        self.branch = None
+        self.net = None
+        self.security_hardening = None
+        self.counterparty_server_public = None
+        self.counterwallet_support_email = None
+        self.autostart_services = None
+        
+    def gather(self, noninteractive):
+        if not questions.role and noninteractive:
+            self.role = '1' 
+        elif not self.role:
+            role = ask_question("Enter the number for the role you want to build:\n"
+                    + "\t1: Counterwallet server\n\t2: counterparty-server only\n\t3: counterblock basic (no Counterwallet)\n"
+                    + "Your choice",
+                ('1', '2', '3'), '1')
+            if role == '1':
+                role = 'counterwallet'
+                role_desc = "Counterwallet server"
+            elif role == '2':
+                role = 'counterparty-server_only'
+                role_desc = "counterparty-server only"
+            elif role == '3':
+                role = 'counterblock_basic'
+                role_desc = "Basic counterblock server"
+            print("\tBuilding a %s" % role_desc)
+            self.role = role
+        assert self.role in self.VALID['role']
+    
+        if not self.branch and noninteractive:
+            self.branch = 'master' 
+        elif not self.branch:
+            branch = ask_question("Build from branch (M)aster or (d)evelop? (M/d)", ('m', 'd'), 'm')
+            if branch == 'm': branch = 'master'
+            elif branch == 'd': branch = 'develop'
+            print("\tWorking with branch: %s" % branch)
+            self.branch = branch
+        assert self.branch in self.VALID['branch']
+    
+        if not self.net and noninteractive:
+            self.net = 'b' 
+        elif not self.net:
+            self.net = ask_question(
+                "Run as (t)estnet node, (m)ainnet node, or (B)oth? (t/m/B)", ('t', 'm', 'b'), 'b')
+            print("\tSetting up to run on %s" % ('testnet' if self.net.lower() == 't' 
+                else ('mainnet' if self.net.lower() == 'm' else 'testnet and mainnet')))
+        assert self.net in self.VALID['net']
+    
+        if self.role == 'counterparty-server_only':
+            if not self.counterparty_server_public and noninteractive:
+                self.counterparty_server_public = 'y' 
+            elif not self.counterparty_server_public:
+                self.counterparty_server_public = ask_question(
+                    "Enable public Counterpartyd setup (listen on all network interfaces w/ rpc/1234 user) (Y/n)", ('y', 'n'), 'y')
+            else:
+                self.counterparty_server_public = getattr(self, 'counterparty_server_public', 'n') #does not apply
+            assert self.counterparty_server_public in self.VALID['counterparty_server_public']
+        else: self.counterparty_server_public = None
+    
+        if self.role == 'counterwallet':
+            counterwallet_support_email = None
+            if not self.counterwallet_support_email and noninteractive:
+                self.counterwallet_support_email = '' 
+            elif not self.counterwallet_support_email:
+                while True:
+                    counterwallet_support_email = input("Email address where support cases should go (blank to disable): ")
+                    counterwallet_support_email = getattr(self, counterwallet_support_email, '').strip()
+                    if counterwallet_support_email:
+                        counterwallet_support_email_confirm = ask_question(
+                            "You entered '%s', is that right? (Y/n): " % counterwallet_support_email, ('y', 'n'), 'y') 
+                        if counterwallet_support_email_confirm == 'y': break
+                    else: break
+                self.counterwallet_support_email = counterwallet_support_email
+            else:
+                self.counterwallet_support_email = self.counterwallet_support_email.strip()
+        else: self.counterwallet_support_email = None 
+    
+        if not self.security_hardening and noninteractive:
+            self.security_hardening = 'y' 
+        elif not self.security_hardening:
+            self.security_hardening = ask_question("Set up security hardening? (Y/n)", ('y', 'n'), 'y')
+        assert self.security_hardening in self.VALID['security_hardening']
+        
+        if not self.autostart_services and noninteractive:
+            self.autostart_services = 'n' 
+        elif not self.autostart_services:
+            self.autostart_services = ask_question("Autostart services (including on boot)? (y/N)", ('y', 'n'), 'n')
+        assert self.autostart_services in self.VALID['autostart_services']
+        
+    def _with_mainnet(self):
+        return self.net in ['m', 'b']
+    with_mainnet = property(_with_mainnet)
+        
+    def _with_testnet(self):
+        return self.net in ['t', 'b']
+    with_testnet = property(_with_testnet)
+        
+    def _with_counterblock(self):
+        return self.role != 'counterparty-server_only'
+    with_counterblock = property(_with_counterblock)
+    
+    def _start_on_boot(self):
+        return self.autostart_services == 'y'
+    start_on_boot = property(_start_on_boot)
+    
 def usage():
     print("SYNTAX: %s [-h] [--noninteractive] %s" % (
-        sys.argv[0], ' '.join([('[--%s=%s]' % (q, '|'.join(v) if v else '')) for q, v in QUESTION_FLAGS.items()])))
+        sys.argv[0], ' '.join([('[--%s=%s]' % (q, '|'.join(v) if v else '')) for q, v in BuildQuestions.VALID.items()])))
 
 def main():
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s|%(levelname)s: %(message)s')
@@ -872,13 +930,14 @@ def main():
 
     global paths
     paths = get_base_paths()
-    
-    answered_questions = {}
+
+    global questions
+    questions = BuildQuestions() #don't gather yet
 
     #parse any command line objects
     noninteractive = False
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "h", ["help", "noninteractive"] + ['%s=' % q for q in QUESTION_FLAGS.keys()])
+        opts, args = getopt.getopt(sys.argv[1:], "h", ["help", "noninteractive"] + ['%s=' % q for q in BuildQuestions.VALID.keys()])
     except getopt.GetoptError as err:
         usage()
         sys.exit(2)
@@ -889,7 +948,7 @@ def main():
         elif o == "--noninteractive":
             noninteractive = True
         elif o in ['--%s' % q for q in QUESTION_FLAGS.keys()]: #process flags for non-interactivity
-            answered_questions[o.lstrip('-')] = a
+            setattr(questions, o.lstrip('-'), a)
         else:
             assert False, "Unhandled or unimplemented switch or option"
 
@@ -898,18 +957,18 @@ def main():
     try:
         pwd.getpwnam(USERNAME) #hacky check ...as this user is created by the script
     except:
-        answered_questions['op'] = 'r' #do a build
+        questions.op = 'r' #do a build
     else: #setup has already been run at least once
-        if not (answered_questions.get('op', None) in QUESTION_FLAGS['op']):
-            answered_questions['op'] = ask_question(
+        if questions.op not in BuildQuestions.VALID['op']:
+            questions.op = ask_question(
                 "It appears this setup has been run already or has another instance of counterpartyd or Federated Node. (r)ebuild node, or just (U)pdate from git? (r/U)",
                 ('r', 'u'), 'u')
-            assert answered_questions['op'] in QUESTION_FLAGS['op']
+            assert questions.op in BuildQuestions.VALID['op']
 
     if os.path.exists("/etc/init.d/iwatch"):
         runcmd("service iwatch stop", abort_on_failure=False)
 
-    if answered_questions['op'] == 'u': #just refresh counterpartyd, counterblockd, and counterwallet, etc. from github
+    if questions.op == 'u': #just refresh counterpartyd, counterblockd, and counterwallet, etc. from github
         #refresh this repo
         git_repo_clone(REPO_NAME, REPO_URL, paths['base_dir'], for_user=USERNAME)        
         
@@ -918,41 +977,38 @@ def main():
         
         #refresh counterwallet (if available)
         if os.path.exists(os.path.expanduser("~%s/counterwallet" % USERNAME)):
-            do_counterwallet_setup(run_as_user, "AUTO", updateOnly=True
+            do_counterwallet_setup(run_as_user, "AUTO", updateOnly=True)
         
         #offer to restart services
         restarted = command_services("restart", prompt=not noninteractive)
         if not restarted and os.path.exists("/etc/init.d/iwatch"):
             runcmd("service iwatch start", abort_on_failure=False)
     else:
-        assert answered_questions['op'] == 'r'
+        assert questions.op == 'r'
         #If here, a) federated node has not been set up yet or b) the user wants a rebuild
-        answered_questions = gather_build_questions(answered_questions, noninteractive)
+        questions.gather(noninteractive)        
         command_services("stop")
     
-        do_base_setup(run_as_user, answered_questions['branch'])
+        remove_old()
+        do_base_setup(run_as_user)  
         
-        backend_rpc_password, backend_rpc_password_testnet = do_backend_rpc_setup(answered_questions['run_mode'])
+        backend_rpc_password, backend_rpc_password_testnet = do_backend_rpc_setup()
         
-        do_counterparty_setup(answered_questions['role'], run_as_user, answered_questions['branch'],
-            answered_questions['run_mode'], backend_rpc_password, backend_rpc_password_testnet,
-            answered_questions['counterparty_server_public'], answered_questions['counterwallet_support_email'])
+        do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_password_testnet)
         
-        runcmd("rm -rf /etc/sv/insight /etc/sv/insight-testnet /etc/service/insight /etc/service/insight-testnet") # so insight doesn't start if it was in use before
+        do_nginx_setup(run_as_user,
+            enable=questions.role not in ["counterparty-server_only", "counterblock_basic"])
         
-        do_nginx_setup(run_as_user, enable=answered_questions['role'] not in ["counterparty-server_only", "counterblock_basic"])
+        do_armory_utxsvr_setup(run_as_user, enable=questions.role == 'counterwallet')
         
-        do_armory_utxsvr_setup(run_as_user, answered_questions['run_mode'],
-            enable=answered_questions['role'] == 'counterwallet')
-        if answered_questions['role'] == 'counterwallet':
-            do_counterwallet_setup(run_as_user, answered_questions['branch'])
+        if questions.role == 'counterwallet':
+            do_counterwallet_setup(run_as_user, questions.branch)
         
-        do_security_setup(run_as_user, answered_questions['branch'],
-            enable=answered_questions['security_hardening'] == 'y')
+        do_security_setup(run_as_user, questions.branch, enable=questions.security_hardening == 'y')
         
         logging.info("Counterblock Federated Node Build Complete (whew).")
         
-        if answered_questions['autostart_services'] == 'y':
+        if questions.start_on_boot:
             configured_services = find_configured_services()
             for s in configured_services:
                 config_runit_disable_manual_control(s)
