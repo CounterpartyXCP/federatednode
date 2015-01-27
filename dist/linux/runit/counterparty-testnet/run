@@ -4,4 +4,4 @@ USER=xcpd
 export USER_HOME=/home/xcp
 ulimit -n 4096
 sleep 2 #prevent cpu maxing out if cpd has a crashing problem
-exec su -s /bin/bash -c '/usr/local/bin/counterparty-server --testnet --config-file=${USER_HOME}/.config/counterparty-server-testnet/counterparty-server.conf --database-file=${USER_HOME}/.config/counterparty-server-testnet/counterparty-server.9.db --log-file=${USER_HOME}/.config/counterparty-server-testnet/counterparty-server.log --api-log-file=${USER_HOME}/.config/counterparty-server-testnet/counterparty-server.api.log start' ${USER}
+exec su -s /bin/bash -c '/usr/local/bin/counterparty-server --testnet --config-file=${USER_HOME}/.config/counterparty/server.testnet.conf start' ${USER}

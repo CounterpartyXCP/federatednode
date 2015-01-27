@@ -3,4 +3,4 @@
 USER=xcpd
 USER_HOME=/home/xcp
 
-exec chpst -u ${USER} bitcoind -daemon=0 -testnet -datadir=${USER_HOME}/.bitcoin-testnet
+exec chpst -u ${USER} bitcoind -daemon=0 -testnet -datadir=${USER_HOME}/.bitcoin -conf=bitcoin.testnet.conf
