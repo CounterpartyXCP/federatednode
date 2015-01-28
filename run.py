@@ -182,7 +182,6 @@ def get_base_paths():
     #compose the rest of the paths...
     paths['dist_path'] = os.path.join(paths['base_path'], "dist")
     paths['env_path'] = os.path.join(paths['base_path'], "env") # home for the virtual environment
-    paths['bin_path'] = os.path.join(paths['base_path'], "bin")
     #the pip executable that we'll be using does not exist yet, but it will, once we've created the virtualenv
     paths['pip_path'] = os.path.join(paths['env_path'], "bin", "pip")
     paths['python_path'] = os.path.join(paths['env_path'], "bin", "python3")
@@ -396,9 +395,9 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
                 os.chmod(dir, 0o775)   
         
     def create_default_config():
-        DEFAULT_CONFIG = "[Default]\nbackend-password=1234\nrpc-password=xcppw1234\n"
+        DEFAULT_CONFIG = "[Default]\nbackend_user=rpc\nbackend-password=1234\nrpc-password=xcppw1234\n"
         DEFAULT_CONFIG_TESTNET = DEFAULT_CONFIG + "\ntestnet=1\n"
-        DEFAULT_CONFIG_COUNTERBLOCK = "[Default]\nbackend-password=1234\ncounterparty-password=xcppw1234\nrpc-host=0.0.0.0\nsocketio-host=0.0.0.0\nsocketio-chat-host=0.0.0.0\nredis-enable-apicache=0\n"
+        DEFAULT_CONFIG_COUNTERBLOCK = "[Default]\nbackend-user=rpc\nbackend-password=1234\ncounterparty-password=xcppw1234\nrpc-host=0.0.0.0\nsocketio-host=0.0.0.0\nsocketio-chat-host=0.0.0.0\nredis-enable-apicache=0\n"
         DEFAULT_CONFIG_COUNTERBLOCK_TESTNET = DEFAULT_CONFIG_COUNTERBLOCK + "\ntestnet=1\n"
 
         def create_config(dir_base, cfg_name, default_config):
@@ -515,22 +514,19 @@ def install_base_via_pip(branch="AUTO"):
     
     #pip install counterparty-cli, counterparty-lib and (optionally) counterblock for the chosen branch
     #only do this if there's not a directory there (this allows people to check out the repo and put it at that path)
+    do_bootstrap = not os.path.exists(COUNTERPARTY_LIB_DIST_PATH)
     if not os.path.exists(COUNTERPARTY_LIB_DIST_PATH) or os.path.islink(COUNTERPARTY_LIB_DIST_PATH):
-        do_bootstrap = not os.path.exists() #download only if there's no link or directory there, for now at least...
-        runcmd("sudo su -s /bin/bash -c '%s install --upgrade %s %s' %s"
-            % (paths['pip_path'], PIP_COUNTERPARTY_LIB, "--bootstrap" if do_bootstrap else '', USERNAME))
+        runcmd("sudo su -s /bin/bash -c '%s install --upgrade %s' %s"
+            % (paths['pip_path'], PIP_COUNTERPARTY_LIB, USERNAME))
         runcmd("ln -sf %s %s" % ( #create symlink
-            os.path.join(paths['env_path'], "lib", "python"+PYTHON3_VER, "site-packages", "counterpartylib"),
+            os.path.join(paths['env_path'], "lib", "python" + PYTHON3_VER, "site-packages", "counterpartylib"),
             COUNTERPARTY_LIB_DIST_PATH))
-        if do_bootstrap: #now, adjust downloaded bootstrap permissions
-            bootstrap_dir = paths['data_path.template'] % "counterparty-server"
-            runcmd("chown %s:%s %s/* && chmod 660 %s/*" % (DAEMON_USERNAME, USERNAME, bootstrap_dir, bootstrap_dir))
     else:
         assert os.path.exists(os.path.join(COUNTERPARTY_LIB_DIST_PATH, "setup.py"))
         runcmd("%s %s install" % (paths['python_path'], os.path.join(COUNTERPARTY_LIB_DIST_PATH, "setup.py")))
 
     if not os.path.exists(COUNTERPARTY_CLI_DIST_PATH) or os.path.islink(COUNTERPARTY_CLI_DIST_PATH):
-        runcmd("sudo su -s /bin/bash -c '%s install --no-use-wheel --pre --upgrade %s' %s" % (paths['pip_path'], PIP_COUNTERPARTY_CLI, USERNAME))
+        runcmd("sudo su -s /bin/bash -c '%s install --upgrade %s' %s" % (paths['pip_path'], PIP_COUNTERPARTY_CLI, USERNAME))
         runcmd("ln -sf %s %s" % ( #create symlink
             os.path.join(paths['env_path'], "lib", "python" + PYTHON3_VER, "site-packages", "counterpartycli"),
             COUNTERPARTY_CLI_DIST_PATH))
@@ -538,6 +534,10 @@ def install_base_via_pip(branch="AUTO"):
         assert os.path.exists(os.path.join(COUNTERPARTY_CLI_DIST_PATH, "setup.py"))
         runcmd("%s %s install" % (paths['python_path'], os.path.join(COUNTERPARTY_CLI_DIST_PATH, "setup.py")))
 
+    #install bootstrap
+    if do_bootstrap:
+        runcmd("bash -c '%s bootstrap' %s" % (os.path.join(paths['env_path'], "bin", "counterparty-server"), DAEMON_USERNAME))
+        
     if found_counterblock:
         if not os.path.exists(COUNTERBLOCK_DIST_PATH) or os.path.islink(COUNTERBLOCK_DIST_PATH):
             runcmd("sudo su -s /bin/bash -c '%s install --upgrade %s' %s"
