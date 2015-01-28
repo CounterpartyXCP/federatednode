@@ -941,7 +941,7 @@ def main():
 
     if questions.op == 'u': #just refresh counterpartyd, counterblockd, and counterwallet, etc. from github
         #refresh this repo
-        git_repo_clone(REPO_NAME, REPO_URL, paths['base_dir'], for_user=USERNAME)        
+        git_repo_clone(REPO_NAME, REPO_URL, paths['base_path'], for_user=USERNAME)        
         
         #refresh counterparty-server, counterparty-cli and counterblock (if available)
         install_base_via_pip()
