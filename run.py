@@ -84,9 +84,9 @@ def modify_cp_config(param_re, content_to_add, replace_if_exists=True, config='c
             cfg_filenames.append(os.path.join(paths['config_path.template'] % "counterparty", "server.testnet.conf"))
     if config in ('counterblock', 'both'):
         if net in ('mainnet', 'both'):
-            cfg_filenames.append(os.path.join(paths['config_path.template'] % "counterblock", "counterblock.conf"))
+            cfg_filenames.append(os.path.join(paths['config_path.template'] % "counterblock", "server.conf"))
         if net in ('testnet', 'both'):
-            cfg_filenames.append(os.path.join(paths['config_path.template'] % "counterblock", "counterblock.testnet.conf"))
+            cfg_filenames.append(os.path.join(paths['config_path.template'] % "counterblock", "server.testnet.conf"))
     modify_config(param_re, content_to_add, cfg_filenames, replace_if_exists=replace_if_exists)
 
 def ask_question(question, options, default_option):
@@ -420,9 +420,9 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
         if questions.with_testnet:
             create_config('counterparty', 'server.testnet.conf', DEFAULT_CONFIG_TESTNET)
         if questions.with_counterblock:
-            create_config('counterblock', 'counterblock.conf', DEFAULT_CONFIG_COUNTERBLOCK)
+            create_config('counterblock', 'server.conf', DEFAULT_CONFIG_COUNTERBLOCK)
             if questions.with_testnet:
-                create_config('counterblock', 'counterblock.testnet.conf', DEFAULT_CONFIG_COUNTERBLOCK_TESTNET)
+                create_config('counterblock', 'server.testnet.conf', DEFAULT_CONFIG_COUNTERBLOCK_TESTNET)
 
     def alter_config():
         #modify out configuration values as necessary
