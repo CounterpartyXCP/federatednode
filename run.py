@@ -395,7 +395,7 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
                 os.chmod(dir, 0o775)   
         
     def create_default_config():
-        DEFAULT_CONFIG = "[Default]\nbackend_user=rpc\nbackend-password=1234\nrpc-password=xcppw1234\n"
+        DEFAULT_CONFIG = "[Default]\nbackend-user=rpc\nbackend-password=1234\nrpc-password=xcppw1234\n"
         DEFAULT_CONFIG_TESTNET = DEFAULT_CONFIG + "\ntestnet=1\n"
         DEFAULT_CONFIG_COUNTERBLOCK = "[Default]\nbackend-user=rpc\nbackend-password=1234\ncounterparty-password=xcppw1234\nrpc-host=0.0.0.0\nsocketio-host=0.0.0.0\nsocketio-chat-host=0.0.0.0\nredis-enable-apicache=0\n"
         DEFAULT_CONFIG_COUNTERBLOCK_TESTNET = DEFAULT_CONFIG_COUNTERBLOCK + "\ntestnet=1\n"
