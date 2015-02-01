@@ -210,7 +210,7 @@ def remove_old():
     def remove_runit(service_name):
         runcmd("rm -f /etc/service/%s" % service_name)
         runcmd("rm -rf /etc/sv/%s" % service_name)
-    for service_name in ("bitcoind", "bitcoind0testnet",
+    for service_name in ("bitcoind", "bitcoind-testnet",
     "counterpartyd", "counterpartyd-testnet", "counterblockd", "counterblockd-testnet"):
         remove_runit(service_name)
         
