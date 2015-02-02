@@ -270,25 +270,24 @@ def do_backend_rpc_setup():
     backend_rpc_password = pass_generator()
     backend_rpc_password_testnet = pass_generator()
 
-    #REMOVE (well, uncomment)
     #Install deps (see https://help.ubuntu.com/community/bitcoin)
-    #runcmd("apt-get -y install build-essential libtool autotools-dev autoconf pkg-config libssl-dev libboost-dev libboost-all-dev software-properties-common checkinstall")
-    #runcmd("add-apt-repository -y ppa:bitcoin/bitcoin")
-    #runcmd("apt-get update")
-    #runcmd("apt-get -y install libdb4.8-dev libdb4.8++-dev")
+    runcmd("apt-get -y install build-essential libtool autotools-dev autoconf pkg-config libssl-dev libboost-dev libboost-all-dev software-properties-common checkinstall")
+    runcmd("add-apt-repository -y ppa:bitcoin/bitcoin")
+    runcmd("apt-get update")
+    runcmd("apt-get -y install libdb4.8-dev libdb4.8++-dev")
     
     #Install bitcoind (btcbrak's 0.10.0 addrindex branch)
-    #BITCOIND_VERSION="0.10-rc2"
-    #BITCOIND_DEB_VERSION="0.10.0-2"
-    #runcmd("sudo apt-get -y remove bitcoin.addrindex", abort_on_failure=False) #remove old version if it exists
-    #runcmd("rm -rf /tmp/bitcoin-addrindex-%s" % BITCOIND_VERSION)
-    #runcmd("wget -O /tmp/bitcoin-addrindex-%s.tar.gz https://github.com/btcdrak/bitcoin/archive/addrindex-%s.tar.gz"
-    #    % (BITCOIND_VERSION, BITCOIND_VERSION))
-    #runcmd("cd /tmp && tar -zxvf /tmp/bitcoin-addrindex-%s.tar.gz" % BITCOIND_VERSION)
-    #runcmd("cd /tmp/bitcoin-addrindex-%s && ./autogen.sh && ./configure --without-gui && make && sudo checkinstall -y -D --install --pkgversion=%s"
-    #    % (BITCOIND_VERSION, BITCOIND_DEB_VERSION))
-    #runcmd("rm -rf /tmp/bitcoin-addrindex-%s" % BITCOIND_VERSION)
-    #runcmd("ln -sf /usr/local/bin/bitcoind /usr/bin/bitcoind && ln -sf /usr/local/bin/bitcoin-cli /usr/bin/bitcoin-cli")
+    BITCOIND_VERSION="0.10-rc2"
+    BITCOIND_DEB_VERSION="0.10.0-2"
+    runcmd("sudo apt-get -y remove bitcoin.addrindex", abort_on_failure=False) #remove old version if it exists
+    runcmd("rm -rf /tmp/bitcoin-addrindex-%s" % BITCOIND_VERSION)
+    runcmd("wget -O /tmp/bitcoin-addrindex-%s.tar.gz https://github.com/btcdrak/bitcoin/archive/addrindex-%s.tar.gz"
+        % (BITCOIND_VERSION, BITCOIND_VERSION))
+    runcmd("cd /tmp && tar -zxvf /tmp/bitcoin-addrindex-%s.tar.gz" % BITCOIND_VERSION)
+    runcmd("cd /tmp/bitcoin-addrindex-%s && ./autogen.sh && ./configure --without-gui && make && sudo checkinstall -y -D --install --pkgversion=%s"
+        % (BITCOIND_VERSION, BITCOIND_DEB_VERSION))
+    runcmd("rm -rf /tmp/bitcoin-addrindex-%s" % BITCOIND_VERSION)
+    runcmd("ln -sf /usr/local/bin/bitcoind /usr/bin/bitcoind && ln -sf /usr/local/bin/bitcoin-cli /usr/bin/bitcoin-cli")
 
     #Do basic inital bitcoin config (for both testnet and mainnet)
     runcmd("mkdir -p ~%s/.bitcoin" % (USERNAME,))
@@ -333,9 +332,6 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
         if questions.with_counterblock:
             #counterblockd currently uses Python 2.7 due to gevent-socketio's lack of support for Python 3
             runcmd("apt-get -y install python python-dev python-setuptools python-pip python-sphinx python-zmq libzmq3 libzmq3-dev libxml2-dev libxslt-dev zlib1g-dev libimage-exiftool-perl libevent-dev cython")
-    
-            #REMOVE
-            return
     
             #install mongo-10gen (newer than what ubuntu has), pegged to a specific version
             MONGO_VERSION = "2.6.6"
@@ -967,9 +963,8 @@ def main():
         
         do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_password_testnet)
         
-        #REMOVE (well, uncomment)
-        #do_nginx_setup(run_as_user,
-        #    enable=questions.role not in ["counterparty-server_only", "counterblock_basic"])
+        do_nginx_setup(run_as_user,
+            enable=questions.role not in ["counterparty-server_only", "counterblock_basic"])
         
         do_armory_utxsvr_setup(run_as_user, enable=questions.role == 'counterwallet')
         
