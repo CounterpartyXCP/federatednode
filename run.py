@@ -492,9 +492,6 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
     configure_startup()
 
 def install_base_via_pip(branch="AUTO"):
-    PIP_COUNTERPARTY_LIB = "https://github.com/CounterpartyXCP/counterpartyd/archive/%s.zip" % branch
-    PIP_COUNTERPARTY_CLI = "https://github.com/CounterpartyXCP/counterparty-cli/archive/%s.zip" % branch  
-    PIP_COUNTERBLOCK = "https://github.com/CounterpartyXCP/counterblock/archive/%s.zip" % branch
     COUNTERPARTY_LIB_DIST_PATH = os.path.join(paths['dist_path'], "counterparty-lib")
     COUNTERPARTY_CLI_DIST_PATH = os.path.join(paths['dist_path'], "counterparty-cli")
     COUNTERBLOCK_DIST_PATH = os.path.join(paths['dist_path'], "counterblock")
@@ -507,7 +504,11 @@ def install_base_via_pip(branch="AUTO"):
         branch = f.read()
         f.close()
         assert branch != "AUTO"
-    
+
+    PIP_COUNTERPARTY_LIB = "https://github.com/CounterpartyXCP/counterpartyd/archive/%s.zip" % branch
+    PIP_COUNTERPARTY_CLI = "https://github.com/CounterpartyXCP/counterparty-cli/archive/%s.zip" % branch  
+    PIP_COUNTERBLOCK = "https://github.com/CounterpartyXCP/counterblock/archive/%s.zip" % branch
+
     #pip install counterparty-cli, counterparty-lib and (optionally) counterblock for the chosen branch
     #only do this if there's not a directory there (this allows people to check out the repo and put it at that path)
     do_bootstrap = not os.path.exists(COUNTERPARTY_LIB_DIST_PATH)
