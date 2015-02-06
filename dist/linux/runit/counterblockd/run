@@ -1,6 +1,0 @@
-#!/bin/sh
-
-USER=xcpd
-export USER_HOME=/home/xcp
-ulimit -n 32768
-exec su -s /bin/bash -c '/usr/local/bin/counterblockd --data-dir=${USER_HOME}/.config/counterblockd' ${USER}
