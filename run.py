@@ -178,7 +178,7 @@ def get_base_paths():
     #^ the dir of where counterparty source was downloaded to
     #find the location of the virtualenv command and make sure it exists
     paths['virtualenv_path'] = "/usr/bin/virtualenv"
-    paths['virtualenv_args'] = "--system-site-packages --python=python%s" % PYTHON3_VER
+    paths['virtualenv_args'] = "--python=python%s" % PYTHON3_VER
     #compose the rest of the paths...
     paths['dist_path'] = os.path.join(paths['base_path'], "dist")
     paths['env_path'] = os.path.join(paths['base_path'], "env") # home for the virtual environment
@@ -427,6 +427,11 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
         for net, backend_password, cp_password in (
             ('mainnet', backend_rpc_password, counterparty_rpc_password),
             ('testnet', backend_rpc_password_testnet, counterparty_rpc_password_testnet)):
+            # Check if the config was chosen to be replaced. Prevents accessing non-existing files.
+            if (net == 'testnet' and not questions.with_testnet) \
+               or (net == 'mainnet' and not questions.with_mainnet):
+                continue
+
             #modify the default stored bitcoind passwords in counterparty conf
             modify_cp_config(r'^backend-password=.*?$', 'backend-password=%s' % backend_password,
                 config='counterparty', net=net)
@@ -503,9 +508,9 @@ def install_base_via_pip(branch="AUTO"):
         f.close()
         assert branch != "AUTO"
 
-    PIP_COUNTERPARTY_LIB = "https://github.com/CounterpartyXCP/counterpartyd/archive/%s.zip" % branch
-    PIP_COUNTERPARTY_CLI = "https://github.com/CounterpartyXCP/counterparty-cli/archive/%s.zip" % branch  
-    PIP_COUNTERBLOCK = "https://github.com/CounterpartyXCP/counterblock/archive/%s.zip" % branch
+    PIP_COUNTERPARTY_LIB = "https://github.com/CounterpartyXCP/counterpartyd/archive/%s.zip#egg=counterpartylib" % branch
+    PIP_COUNTERPARTY_CLI = "https://github.com/CounterpartyXCP/counterparty-cli/archive/%s.zip#egg=counterpartycli" % branch  
+    PIP_COUNTERBLOCK = "https://github.com/CounterpartyXCP/counterblock/archive/%s.zip#egg=counterblock" % branch
 
     #pip install counterparty-cli, counterparty-lib and (optionally) counterblock for the chosen branch
     #only do this if there's not a directory there (this allows people to check out the repo and put it at that path)
