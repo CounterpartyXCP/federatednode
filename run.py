@@ -428,8 +428,8 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
             ('mainnet', backend_rpc_password, counterparty_rpc_password),
             ('testnet', backend_rpc_password_testnet, counterparty_rpc_password_testnet)):
             # Check if the config was chosen to be replaced. Prevents accessing non-existing files.
-            if (questions.with_testnet == False and net == 'testnet') \
-               or (questions.with_mainnet == False and net == 'mainnet'):
+            if (net == 'testnet' and not questions.with_testnet) \
+               or (net == 'mainnet' and not questions.with_mainnet):
                 continue
 
             #modify the default stored bitcoind passwords in counterparty conf
