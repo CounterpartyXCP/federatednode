@@ -352,8 +352,6 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
             runcmd("apt-get -y install redis-server")
         #install sqlite utilities (not technically required, but nice to have)
         runcmd("apt-get -y install sqlite sqlite3 libleveldb-dev")
-        #now that pip is installed, install necessary deps outside of the virtualenv (e.g. for this script)
-        runcmd("pip3 install progressbar33")
     
     def create_virtualenv():
         def create_venv(env_path, pip_path, python_path, virtualenv_args, delete_if_exists=True):
