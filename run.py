@@ -427,6 +427,11 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
         for net, backend_password, cp_password in (
             ('mainnet', backend_rpc_password, counterparty_rpc_password),
             ('testnet', backend_rpc_password_testnet, counterparty_rpc_password_testnet)):
+            # Check if the config was chosen to be replaced. Prevents accessing non-existing files.
+            if (net == 'testnet' and not questions.with_testnet) \
+               or (net == 'mainnet' and not questions.with_mainnet):
+                continue
+
             #modify the default stored bitcoind passwords in counterparty conf
             modify_cp_config(r'^backend-password=.*?$', 'backend-password=%s' % backend_password,
                 config='counterparty', net=net)
