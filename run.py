@@ -327,11 +327,11 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
     def install_dependencies():
         runcmd("apt-get -y update")
         runcmd("apt-get -y install runit software-properties-common python-software-properties git-core wget \
-        python3 python3-setuptools python3-dev python3-pip build-essential python3-sphinx python-virtualenv libsqlite3-dev python3-apsw python3-zmq")
+        python3 python3-setuptools python3-dev python3-pip build-essential python3-sphinx python3-appdirs python-virtualenv libsqlite3-dev python3-apsw python3-zmq")
         
         if questions.with_counterblock:
             #counterblockd currently uses Python 2.7 due to gevent-socketio's lack of support for Python 3
-            runcmd("apt-get -y install python python-dev python-setuptools python-pip python-sphinx python-zmq libzmq3 libzmq3-dev libxml2-dev libxslt-dev zlib1g-dev libimage-exiftool-perl libevent-dev cython")
+            runcmd("apt-get -y install python python-dev python-setuptools python-pip python-sphinx python-zmq libzmq3 libzmq3-dev libxml2-dev libxslt-dev zlib1g-dev libimage-exiftool-perl libevent-dev cython gfortran gfortran-4.8")
     
             #install mongo-10gen (newer than what ubuntu has), pegged to a specific version
             MONGO_VERSION = "2.6.6"
