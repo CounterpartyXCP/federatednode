@@ -344,8 +344,9 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
             for p in ('mongodb-org', 'mongodb-org-server', 'mongodb-org-shell', 'mongodb-org-mongos', 'mongodb-org-tools'):
                 runcmd("echo \"%s hold\" | sudo dpkg --set-selections" % p)
             #replace use of mongo init script with our runit version
-            runcmd("""bash -c "echo 'manual' > /etc/init/mongod.override" """)
-            runcmd("service mongod stop", abort_on_failure=False)
+            if os.path.exists("/etc/init.d/mongod"):
+                runcmd("""bash -c "echo 'manual' > /etc/init/mongod.override" """)
+                runcmd("service mongod stop", abort_on_failure=False)
             config_runit_for_service(paths['dist_path'], "mongod", manual_control=False)
     
             #also install redis
@@ -462,7 +463,7 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
     def configure_startup():
         #link over counterparty and counterblock script
         runcmd("ln -sf %s/bin/counterparty-server /usr/local/bin/counterparty-server" % paths['env_path'])
-        runcmd("ln -sf %s/bin/counterparty-cli /usr/local/bin/counterparty-cli" % paths['env_path'])
+        runcmd("ln -sf %s/bin/counterparty-client /usr/local/bin/counterparty-client" % paths['env_path'])
         if questions.with_counterblock:
             runcmd("ln -sf %s/bin/counterblock /usr/local/bin/counterblock" % paths['env_path.counterblock'])
     
@@ -536,7 +537,9 @@ def install_base_via_pip(branch="AUTO"):
 
     #install bootstrap
     if do_bootstrap:
-        runcmd("bash -c '%s bootstrap' %s" % (os.path.join(paths['env_path'], "bin", "counterparty-server"), DAEMON_USERNAME))
+        xcp_user_data_dir = os.path.join(USER_HOMEDIR, ".local/share")
+        runcmd("bash -c 'XDG_DATA_HOME=%s %s bootstrap' %s"
+            % (xcp_user_data_dir, os.path.join(paths['env_path'], "bin", "counterparty-server"), DAEMON_USERNAME))
         
     if found_counterblock:
         if not os.path.exists(COUNTERBLOCK_DIST_PATH) or os.path.islink(COUNTERBLOCK_DIST_PATH):
