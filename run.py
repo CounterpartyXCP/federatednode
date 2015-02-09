@@ -344,7 +344,7 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
             for p in ('mongodb-org', 'mongodb-org-server', 'mongodb-org-shell', 'mongodb-org-mongos', 'mongodb-org-tools'):
                 runcmd("echo \"%s hold\" | sudo dpkg --set-selections" % p)
             #replace use of mongo init script with our runit version
-            if.os.path.exists("/etc/init.d/mongod"):
+            if os.path.exists("/etc/init.d/mongod"):
                 runcmd("""bash -c "echo 'manual' > /etc/init/mongod.override" """)
                 runcmd("service mongod stop", abort_on_failure=False)
             config_runit_for_service(paths['dist_path'], "mongod", manual_control=False)
