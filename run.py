@@ -537,7 +537,9 @@ def install_base_via_pip(branch="AUTO"):
 
     #install bootstrap
     if do_bootstrap:
-        runcmd("bash -c '%s bootstrap' %s" % (os.path.join(paths['env_path'], "bin", "counterparty-server"), DAEMON_USERNAME))
+        xcp_user_data_dir = os.path.join(USER_HOMEDIR, ".local/share")
+        runcmd("bash -c 'XDG_DATA_HOME=%s %s bootstrap' %s"
+            % (xcp_user_data_dir, os.path.join(paths['env_path'], "bin", "counterparty-server"), DAEMON_USERNAME))
         
     if found_counterblock:
         if not os.path.exists(COUNTERBLOCK_DIST_PATH) or os.path.islink(COUNTERBLOCK_DIST_PATH):
