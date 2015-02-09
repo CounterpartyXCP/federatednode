@@ -463,7 +463,7 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
     def configure_startup():
         #link over counterparty and counterblock script
         runcmd("ln -sf %s/bin/counterparty-server /usr/local/bin/counterparty-server" % paths['env_path'])
-        runcmd("ln -sf %s/bin/counterparty-cli /usr/local/bin/counterparty-cli" % paths['env_path'])
+        runcmd("ln -sf %s/bin/counterparty-client /usr/local/bin/counterparty-client" % paths['env_path'])
         if questions.with_counterblock:
             runcmd("ln -sf %s/bin/counterblock /usr/local/bin/counterblock" % paths['env_path.counterblock'])
     
