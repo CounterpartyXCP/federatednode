@@ -220,7 +220,7 @@ def do_base_setup(run_as_user):
     runcmd("ln -sf /usr/share/zoneinfo/UTC /etc/localtime")
 
     #install some necessary base deps
-    runcmd("apt-get update")
+    runcmd("apt-key update && apt-get update")
     runcmd("apt-get -y install git-core software-properties-common python-software-properties build-essential ssl-cert ntp runit curl")
     
     #install node-js
@@ -264,30 +264,54 @@ def do_base_setup(run_as_user):
 
 def do_backend_rpc_setup():
     """Installs and configures bitcoind"""
+    
+    def install_from_source():
+        #Install bitcoind (btcbrak's 0.10.0 addrindex branch)
+        BITCOIND_VERSION="0.10-rc2"
+        BITCOIND_DEB_VERSION="0.10.0-2"
+
+        #Install deps (see https://help.ubuntu.com/community/bitcoin)
+        runcmd("apt-get -y install build-essential libtool autotools-dev autoconf pkg-config libssl-dev libboost-dev libboost-all-dev software-properties-common checkinstall")
+        runcmd("add-apt-repository -y ppa:bitcoin/bitcoin")
+        runcmd("apt-get update")
+        runcmd("apt-get -y install libdb4.8-dev libdb4.8++-dev")
+        
+        runcmd("apt-get -y remove bitcoin.addrindex", abort_on_failure=False) #remove old version if it exists
+        
+        runcmd("rm -rf /tmp/bitcoin-addrindex-%s" % BITCOIND_VERSION)
+        runcmd("wget -O /tmp/bitcoin-addrindex-%s.tar.gz https://github.com/btcdrak/bitcoin/archive/addrindex-%s.tar.gz"
+            % (BITCOIND_VERSION, BITCOIND_VERSION))
+        runcmd("cd /tmp && tar -zxvf /tmp/bitcoin-addrindex-%s.tar.gz" % BITCOIND_VERSION)
+        runcmd("cd /tmp/bitcoin-addrindex-%s && ./autogen.sh && ./configure --without-gui && make && checkinstall -y -D --install --pkgversion=%s"
+            % (BITCOIND_VERSION, BITCOIND_DEB_VERSION))
+        runcmd("rm -rf /tmp/bitcoin-addrindex-%s" % BITCOIND_VERSION)
+        runcmd("ln -sf /usr/local/bin/bitcoind /usr/bin/bitcoind && ln -sf /usr/local/bin/bitcoin-cli /usr/bin/bitcoin-cli")
+    
+    def install_binaries():
+        BITCOIND_URL="https://github.com/btcdrak/bitcoin/releases/download/addrindex-0.10-rc2/bitcoin-addrindex-0.10.0-rc2-linux64.tar.gz"
+        BITCOIND_FILENAME="bitcoin-addrindex-0.10.0-rc2-linux64.tar.gz"
+        BITCOIND_DIRNAME="bitcoin-0.10.0"
+        BITCOIND_SHA256_HASH="6ec320e8c8514bc76a538afd299f2f0a3b8dd13075a73220e8f4dfb04eeaadbf"
+
+        runcmd("apt-get -y remove bitcoin.addrindex bitcoin-addrindex-0.10", abort_on_failure=False) #remove old versions
+        
+        if not os.path.exists("/tmp/%s" % BITCOIND_DIRNAME):
+            runcmd("wget -O /tmp/%s %s" % (BITCOIND_FILENAME, BITCOIND_URL))
+            runcmd('bash -c "echo \"%s /tmp/%s\" | sha256sum -c"' % (BITCOIND_SHA256_HASH, BITCOIND_FILENAME))
+            runcmd("tar -C /tmp -zxvf /tmp/%s" % BITCOIND_FILENAME)
+        #dont install libbitcoinconsensus.so for now on the system...not needed
+        runcmd("install -C --backup=off -m 755 -o root -g root /tmp/%s/bin/* /usr/local/bin/" % BITCOIND_DIRNAME)
+        runcmd("ln -sf /usr/local/bin/bitcoind /usr/bin/bitcoind && ln -sf /usr/local/bin/bitcoin-cli /usr/bin/bitcoin-cli")
+    
     DEFAULT_CONFIG = "rpcuser=rpc\nrpcpassword=%s\nserver=1\ndaemon=1\nrpcthreads=1000\nrpctimeout=300\ntxindex=1\naddrindex=1"
     DEFAULT_CONFIG_TESTNET = DEFAULT_CONFIG + "\ntestnet=1"
-    
     backend_rpc_password = pass_generator()
     backend_rpc_password_testnet = pass_generator()
 
-    #Install deps (see https://help.ubuntu.com/community/bitcoin)
-    runcmd("apt-get -y install build-essential libtool autotools-dev autoconf pkg-config libssl-dev libboost-dev libboost-all-dev software-properties-common checkinstall")
-    runcmd("add-apt-repository -y ppa:bitcoin/bitcoin")
-    runcmd("apt-get update")
-    runcmd("apt-get -y install libdb4.8-dev libdb4.8++-dev")
-    
-    #Install bitcoind (btcbrak's 0.10.0 addrindex branch)
-    BITCOIND_VERSION="0.10-rc2"
-    BITCOIND_DEB_VERSION="0.10.0-2"
-    runcmd("sudo apt-get -y remove bitcoin.addrindex", abort_on_failure=False) #remove old version if it exists
-    runcmd("rm -rf /tmp/bitcoin-addrindex-%s" % BITCOIND_VERSION)
-    runcmd("wget -O /tmp/bitcoin-addrindex-%s.tar.gz https://github.com/btcdrak/bitcoin/archive/addrindex-%s.tar.gz"
-        % (BITCOIND_VERSION, BITCOIND_VERSION))
-    runcmd("cd /tmp && tar -zxvf /tmp/bitcoin-addrindex-%s.tar.gz" % BITCOIND_VERSION)
-    runcmd("cd /tmp/bitcoin-addrindex-%s && ./autogen.sh && ./configure --without-gui && make && sudo checkinstall -y -D --install --pkgversion=%s"
-        % (BITCOIND_VERSION, BITCOIND_DEB_VERSION))
-    runcmd("rm -rf /tmp/bitcoin-addrindex-%s" % BITCOIND_VERSION)
-    runcmd("ln -sf /usr/local/bin/bitcoind /usr/bin/bitcoind && ln -sf /usr/local/bin/bitcoin-cli /usr/bin/bitcoin-cli")
+    #would prefer to compile from source, but there are issues with openssl version in use
+    # on ubuntu 14.04 that cause issues with bitcoind. using binaries is more deterministic
+    # for now...
+    install_binaries()
 
     #Do basic inital bitcoin config (for both testnet and mainnet)
     runcmd("mkdir -p ~%s/.bitcoin" % (USERNAME,))
@@ -421,10 +445,10 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
 
     def alter_config():
         #modify out configuration values as necessary
-        counterparty_rpc_password = '1234' if questions.role == 'counterparty-server_only' \
-            and questions.counterparty_server_public == 'y' else pass_generator()
-        counterparty_rpc_password_testnet = '1234' if questions.role == 'counterparty-server_only' \
-            and questions.counterparty_server_public == 'y' else pass_generator()
+        counterparty_rpc_password = '1234' if questions.role in ['counterparty-server_only', 'counterblock_basic'] \
+            and questions.server_public == 'y' else pass_generator()
+        counterparty_rpc_password_testnet = '1234' if questions.role in ['counterparty-server_only', 'counterblock_basic'] \
+            and questions.server_public == 'y' else pass_generator()
         for net, backend_password, cp_password in (
             ('mainnet', backend_rpc_password, counterparty_rpc_password),
             ('testnet', backend_rpc_password_testnet, counterparty_rpc_password_testnet)):
@@ -443,7 +467,7 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
             modify_cp_config(r'^backend\-name=.*?$', 'backend-name=addrindex',
                 config='counterparty', net=net)
     
-            if questions.role == 'counterparty-server_only' and questions.counterparty_server_public == 'y':
+            if questions.role in ['counterparty-server_only', 'counterblock_basic'] and questions.server_public == 'y':
                 modify_cp_config(r'^rpc\-host=.*?$', 'rpc-host=0.0.0.0', config='counterparty', net=net)
                 
             if questions.with_counterblock:
@@ -459,6 +483,9 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
                 if questions.role == 'counterwallet':
                     modify_cp_config(r'^support\-email=.*?$',
                         'support-email=%s' % questions.counterwallet_support_email, config='counterblock') #may be blank string
+
+                if questions.role == 'counterblock_basic' and questions.server_public == 'y':
+                    modify_cp_config(r'^rpc\-host=.*?$', 'rpc-host=0.0.0.0', config='counterblock', net=net)
 
     def configure_startup():
         #link over counterparty and counterblock script
@@ -540,6 +567,7 @@ def install_base_via_pip(branch="AUTO"):
         xcp_user_data_dir = os.path.join(USER_HOMEDIR, ".local/share")
         runcmd("bash -c 'XDG_DATA_HOME=%s %s bootstrap' %s"
             % (xcp_user_data_dir, os.path.join(paths['env_path'], "bin", "counterparty-server"), DAEMON_USERNAME))
+    runcmd("chown -R %s:%s %s" % (DAEMON_USERNAME, USERNAME, os.path.join(xcp_user_data_dir, "counterparty")))
         
     if found_counterblock:
         if not os.path.exists(COUNTERBLOCK_DIST_PATH) or os.path.islink(COUNTERBLOCK_DIST_PATH):
@@ -779,7 +807,7 @@ class BuildQuestions:
         "branch": ('master', 'develop'),
         "net": ('t', 'm', 'b'),
         "security_hardening": ('y', 'n'),
-        "counterparty_server_public": ('y', 'n'),
+        "server_public": ('y', 'n'),
         "counterwallet_support_email": None,
         "autostart_services": ('y', 'n'),
     })
@@ -790,7 +818,7 @@ class BuildQuestions:
         self.branch = None
         self.net = None
         self.security_hardening = None
-        self.counterparty_server_public = None
+        self.server_public = None
         self.counterwallet_support_email = None
         self.autostart_services = None
         
@@ -834,16 +862,16 @@ class BuildQuestions:
                 else ('mainnet' if self.net.lower() == 'm' else 'testnet and mainnet')))
         assert self.net in self.VALID['net']
     
-        if self.role == 'counterparty-server_only':
-            if not self.counterparty_server_public and noninteractive:
-                self.counterparty_server_public = 'y' 
-            elif not self.counterparty_server_public:
-                self.counterparty_server_public = ask_question(
-                    "Enable public Counterpartyd setup (listen on all network interfaces w/ rpc/1234 user) (Y/n)", ('y', 'n'), 'y')
+        if self.role in ['counterparty-server_only', 'counterblock_basic']:
+            if not self.server_public and noninteractive:
+                self.server_public = 'y' 
+            elif not self.server_public:
+                self.server_public = ask_question(
+                    "Enable public setup (listen on all network interfaces) (Y/n)", ('y', 'n'), 'y')
             else:
-                self.counterparty_server_public = getattr(self, 'counterparty_server_public', 'n') #does not apply
-            assert self.counterparty_server_public in self.VALID['counterparty_server_public']
-        else: self.counterparty_server_public = None
+                self.server_public = getattr(self, 'server_public', 'n') #does not apply
+            assert self.server_public in self.VALID['server_public']
+        else: self.server_public = None
     
         if self.role == 'counterwallet':
             counterwallet_support_email = None
