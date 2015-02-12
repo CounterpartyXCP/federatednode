@@ -298,7 +298,7 @@ def do_backend_rpc_setup():
         if not os.path.exists("/tmp/%s" % BITCOIND_DIRNAME):
             runcmd("wget -O /tmp/%s %s" % (BITCOIND_FILENAME, BITCOIND_URL))
             runcmd('bash -c "echo \"%s /tmp/%s\" | sha256sum -c"' % (BITCOIND_SHA256_HASH, BITCOIND_FILENAME))
-            runcmd("tar -C /tmp -zxvf /tmp/%s" % BITCOIND_FILENAME)
+            runcmd("tar -C /tmp --no-overwrite-dir -zxvf /tmp/%s" % BITCOIND_FILENAME)
         #dont install libbitcoinconsensus.so for now on the system...not needed
         runcmd("install -C --backup=off -m 755 -o root -g root /tmp/%s/bin/* /usr/local/bin/" % BITCOIND_DIRNAME)
         runcmd("ln -sf /usr/local/bin/bitcoind /usr/bin/bitcoind && ln -sf /usr/local/bin/bitcoin-cli /usr/bin/bitcoin-cli")
@@ -433,7 +433,7 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
                 logging.info("%s config file already exists at: '%s'" % (dir_base, cfg_path))
             #set/reset proper file ownership and mode
             os.chown(cfg_path, daemon_username_uid, username_gid)
-            os.chmod(cfg_path, 0o660)
+            os.chmod(cfg_path, 0o600)
                 
         create_config('counterparty', 'server.conf', DEFAULT_CONFIG)
         if questions.with_testnet:
