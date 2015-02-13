@@ -288,10 +288,10 @@ def do_backend_rpc_setup():
         runcmd("ln -sf /usr/local/bin/bitcoind /usr/bin/bitcoind && ln -sf /usr/local/bin/bitcoin-cli /usr/bin/bitcoin-cli")
     
     def install_binaries():
-        BITCOIND_URL="https://github.com/btcdrak/bitcoin/releases/download/addrindex-0.10-rc2/bitcoin-addrindex-0.10.0-rc2-linux64.tar.gz"
-        BITCOIND_FILENAME="bitcoin-addrindex-0.10.0-rc2-linux64.tar.gz"
+        BITCOIND_URL="https://github.com/btcdrak/bitcoin/releases/download/addrindex-0.10.0/bitcoin-addrindex-0.10.0-linux64.tar.gz"
+        BITCOIND_FILENAME="bitcoin-addrindex-0.10.0-linux64.tar.gz"
         BITCOIND_DIRNAME="bitcoin-0.10.0"
-        BITCOIND_SHA256_HASH="6ec320e8c8514bc76a538afd299f2f0a3b8dd13075a73220e8f4dfb04eeaadbf"
+        BITCOIND_SHA256_HASH="f315cbe27e06c72c595bfa0921644bf3570dc5ce2f56758a9c7995c76886efc4"
 
         runcmd("apt-get -y remove bitcoin.addrindex bitcoin-addrindex-0.10", abort_on_failure=False) #remove old versions
         
