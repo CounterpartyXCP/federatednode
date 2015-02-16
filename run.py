@@ -547,7 +547,7 @@ def install_base_via_pip(branch="AUTO"):
         runcmd("sudo su -s /bin/bash -c '%s install --upgrade %s' %s"
             % (paths['pip_path'], PIP_COUNTERPARTY_LIB, USERNAME))
         runcmd("ln -sf %s %s" % ( #create symlink
-            os.path.join(paths['env_path'], "lib", "python" + PYTHON3_VER, "site-packages", "counterpartylib"),
+            os.path.join(paths['env_path'], "lib/python" + PYTHON3_VER, "site-packages/counterparty_lib-*.egg/counterpartylib"),
             COUNTERPARTY_LIB_DIST_PATH))
     else:
         assert os.path.exists(os.path.join(COUNTERPARTY_LIB_DIST_PATH, "setup.py"))
@@ -556,7 +556,7 @@ def install_base_via_pip(branch="AUTO"):
     if not os.path.exists(COUNTERPARTY_CLI_DIST_PATH) or os.path.islink(COUNTERPARTY_CLI_DIST_PATH):
         runcmd("sudo su -s /bin/bash -c '%s install --upgrade %s' %s" % (paths['pip_path'], PIP_COUNTERPARTY_CLI, USERNAME))
         runcmd("ln -sf %s %s" % ( #create symlink
-            os.path.join(paths['env_path'], "lib", "python" + PYTHON3_VER, "site-packages", "counterpartycli"),
+            os.path.join(paths['env_path'], "lib/python" + PYTHON3_VER, "site-packages/counterparty_cli-*.egg/counterpartycli"),
             COUNTERPARTY_CLI_DIST_PATH))
     else:
         assert os.path.exists(os.path.join(COUNTERPARTY_CLI_DIST_PATH, "setup.py"))
