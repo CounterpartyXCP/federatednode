@@ -542,7 +542,7 @@ def install_base_via_pip(branch="AUTO"):
 
     #pip install counterparty-cli, counterparty-lib and (optionally) counterblock for the chosen branch
     #only do this if there's not a directory there (this allows people to check out the repo and put it at that path)
-    do_bootstrap = not os.path.exists(COUNTERPARTY_LIB_DIST_PATH)
+    do_bootstrap = not os.path.exists(paths['data_path.template'] % "counterparty")
     if not os.path.exists(COUNTERPARTY_LIB_DIST_PATH) or os.path.islink(COUNTERPARTY_LIB_DIST_PATH):
         runcmd("sudo su -s /bin/bash -c '%s install --upgrade %s' %s"
             % (paths['pip_path'], PIP_COUNTERPARTY_LIB, USERNAME))
@@ -564,10 +564,9 @@ def install_base_via_pip(branch="AUTO"):
 
     #install bootstrap
     if do_bootstrap:
-        xcp_user_data_dir = os.path.join(USER_HOMEDIR, ".local/share")
         runcmd("bash -c 'XDG_DATA_HOME=%s %s bootstrap' %s"
             % (xcp_user_data_dir, os.path.join(paths['env_path'], "bin", "counterparty-server"), DAEMON_USERNAME))
-    runcmd("chown -R %s:%s %s" % (DAEMON_USERNAME, USERNAME, os.path.join(xcp_user_data_dir, "counterparty")))
+    runcmd("chown -R %s:%s %s" % (DAEMON_USERNAME, USERNAME, paths['data_path.template'] % "counterparty"))
         
     if found_counterblock:
         if not os.path.exists(COUNTERBLOCK_DIST_PATH) or os.path.islink(COUNTERBLOCK_DIST_PATH):
