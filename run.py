@@ -1008,12 +1008,13 @@ def main():
         
         do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_password_testnet)
         
-        do_nginx_setup(run_as_user, enable=questions.role not in ["counterparty-server_only", "counterblock_basic"])
-        
-        if questions.role == 'counterwallet':
-            do_counterwallet_setup(run_as_user, questions.branch)
+        do_nginx_setup(run_as_user,
+            enable=questions.role not in ["counterparty-server_only", "counterblock_basic"])
         
         do_armory_utxsvr_setup(run_as_user, enable=questions.role == 'counterwallet')
+
+        if questions.role == 'counterwallet':
+            do_counterwallet_setup(run_as_user, questions.branch)
         
         do_security_setup(run_as_user, questions.branch, enable=questions.security_hardening == 'y')
         
