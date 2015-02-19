@@ -807,7 +807,7 @@ def command_services(command, prompt=False):
 
 class BuildQuestions:
     VALID = collections.OrderedDict({
-        "op": ('u', 'r'),
+        "op": ('u', 'r', 'restart', 'stop'),
         "role": ('counterwallet', 'counterparty-server_only', 'counterblock_basic'),
         "branch": ('master', 'develop'),
         "net": ('t', 'm', 'b'),
@@ -966,6 +966,13 @@ def main():
     except:
         questions.op = 'r' #do a build
     else: #setup has already been run at least once
+        if questions.op == 'restart':
+            command_services("restart", prompt=False)
+            sys.exit(0)
+        if questions.op == 'stop':
+            command_services("stop", prompt=False)
+            sys.exit(0)
+                    
         if questions.op not in BuildQuestions.VALID['op']:
             questions.op = ask_question(
                 "It appears this setup has been run already or has another instance of counterpartyd or Federated Node. (r)ebuild node, or just (U)pdate from git? (r/U)",
