@@ -954,7 +954,7 @@ def main():
             sys.exit()
         elif o == "--noninteractive":
             noninteractive = True
-        elif o in ['--%s' % q for q in QUESTION_FLAGS.keys()]: #process flags for non-interactivity
+        elif o in ['--%s' % q for q in BuildQuestions.VALID.keys()]: #process flags for non-interactivity
             setattr(questions, o.lstrip('-'), a)
         else:
             assert False, "Unhandled or unimplemented switch or option"
