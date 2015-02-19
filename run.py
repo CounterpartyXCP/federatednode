@@ -721,14 +721,9 @@ def do_counterwallet_setup(run_as_user, branch, updateOnly=False):
     runcmd("chown -R %s:%s ~%s/counterwallet" % (USERNAME, USERNAME, USERNAME)) #just in case
     runcmd("chmod -R u+rw,g+rw,o+r,o-w ~%s/counterwallet" % USERNAME) #just in case
     
-def do_security_setup(run_as_user, branch, enable=True):
+def do_security_setup(run_as_user, branch):
     """Some helpful security-related tasks, to tighten up the box"""
-    
-    if not enable:
-        #disable security setup if enabled
-        runcmd("apt-get -y remove unattended-upgrades fail2ban psad rkhunter chkrootkit logwatch apparmor auditd iwatch")
-        return
-    
+
     #modify host.conf
     modify_config(r'^nospoof on$', 'nospoof on', '/etc/host.conf')
     
@@ -1016,7 +1011,8 @@ def main():
         if questions.role == 'counterwallet':
             do_counterwallet_setup(run_as_user, questions.branch)
         
-        do_security_setup(run_as_user, questions.branch, enable=questions.security_hardening == 'y')
+        if questions.security_hardening == 'y':
+            do_security_setup(run_as_user, questions.branch)
         
         logging.info("Counterblock Federated Node Build Complete (whew).")
         
