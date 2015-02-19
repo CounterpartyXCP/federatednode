@@ -149,6 +149,9 @@ def config_runit_for_service(dist_path, service_name, enabled=True, manual_contr
 def config_runit_disable_manual_control(service_name):
     runcmd("rm -f /etc/service/%s/down" % service_name)
 
+def remove_runit(service_name):
+    runcmd("rm -f /etc/service/%s" % service_name)
+    runcmd("rm -rf /etc/sv/%s" % service_name)
 
 ###
 ### PRIMARY FUNCTIONS
@@ -207,9 +210,6 @@ def remove_old():
     #remove any insight stuff...
     runcmd("rm -rf /etc/sv/insight /etc/sv/insight-testnet /etc/service/insight /etc/service/insight-testnet")
     #runit entries
-    def remove_runit(service_name):
-        runcmd("rm -f /etc/service/%s" % service_name)
-        runcmd("rm -rf /etc/sv/%s" % service_name)
     for service_name in ("bitcoind", "bitcoind-testnet",
     "counterpartyd", "counterpartyd-testnet", "counterblockd", "counterblockd-testnet"):
         remove_runit(service_name)
@@ -590,6 +590,7 @@ def install_base_via_pip(branch="AUTO"):
 def do_nginx_setup(run_as_user, enable=True):
     if not enable:
         runcmd("apt-get -y remove nginx-openresty", abort_on_failure=False)
+        remove_runit("nginx")
         return
     
     #Build and install nginx (openresty) on Ubuntu
@@ -679,6 +680,13 @@ etc usr var''' % (OPENRESTY_VER, OPENRESTY_VER))
     runcmd("ln -sf /etc/sv/nginx /etc/service/")
 
 def do_armory_utxsvr_setup(run_as_user, enable=True):
+    if not enable:
+        remove_runit("armory_utxsvr")
+        remove_runit("armory_utxsvr-testnet")
+        runcmd("apt-get -y remove armory", abort_on_failure=False)
+        runcmd("rm -f /usr/local/bin/armory_utxsvr")
+        return
+    
     runcmd("apt-get -y install xvfb python-qt4 python-twisted python-psutil xdg-utils hicolor-icon-theme")
     ARMORY_VERSION = "0.92.3_ubuntu-64bit"
     if not os.path.exists("/tmp/armory_%s.deb" % ARMORY_VERSION):
@@ -698,8 +706,8 @@ def do_armory_utxsvr_setup(run_as_user, enable=True):
     runcmd("chmod +x /usr/local/bin/armory_utxsvr")
     
     #Set up upstart scripts (will be disabled later from autostarting on system startup if necessary)
-    config_runit_for_service(paths['dist_path'], "armory_utxsvr", enabled=enable and questions.with_mainnet)
-    config_runit_for_service(paths['dist_path'], "armory_utxsvr-testnet", enabled=enable and questions.with_testnet)
+    config_runit_for_service(paths['dist_path'], "armory_utxsvr", enabled=questions.with_mainnet)
+    config_runit_for_service(paths['dist_path'], "armory_utxsvr-testnet", enabled=questions.with_testnet)
 
 def do_counterwallet_setup(run_as_user, branch, updateOnly=False):
     #check out counterwallet from git
@@ -1000,13 +1008,12 @@ def main():
         
         do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_password_testnet)
         
-        do_nginx_setup(run_as_user,
-            enable=questions.role not in ["counterparty-server_only", "counterblock_basic"])
-        
-        do_armory_utxsvr_setup(run_as_user, enable=questions.role == 'counterwallet')
+        do_nginx_setup(run_as_user, enable=questions.role not in ["counterparty-server_only", "counterblock_basic"])
         
         if questions.role == 'counterwallet':
             do_counterwallet_setup(run_as_user, questions.branch)
+        
+        do_armory_utxsvr_setup(run_as_user, enable=questions.role == 'counterwallet')
         
         do_security_setup(run_as_user, questions.branch, enable=questions.security_hardening == 'y')
         
