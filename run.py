@@ -595,7 +595,7 @@ def do_nginx_setup(run_as_user, enable=True):
     
     #Build and install nginx (openresty) on Ubuntu
     #Most of these build commands from http://brian.akins.org/blog/2013/03/19/building-openresty-on-ubuntu/
-    OPENRESTY_VER = "1.7.7.1"
+    OPENRESTY_VER = "1.7.10.1"
 
     #uninstall nginx if already present
     runcmd("apt-get -y remove nginx")
