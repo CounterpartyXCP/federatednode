@@ -73,21 +73,18 @@ def modify_config(param_re, content_to_add, filenames, replace_if_exists=True, d
         f.write(content)
         f.close()
 
-def modify_cp_config(param_re, content_to_add, replace_if_exists=True, config='counterpartyd', net='both'):
-    assert config in ('counterparty', 'counterblock', 'both')
-    assert net in ('mainnet', 'testnet', 'both')
-    cfg_filenames = []
-    if config in ('counterparty', 'both'):
-        if net in ('mainnet', 'both'):
-            cfg_filenames.append(os.path.join(paths['config_path.template'] % "counterparty", "server.conf"))
-        if net in ('testnet', 'both'):
-            cfg_filenames.append(os.path.join(paths['config_path.template'] % "counterparty", "server.testnet.conf"))
-    if config in ('counterblock', 'both'):
-        if net in ('mainnet', 'both'):
-            cfg_filenames.append(os.path.join(paths['config_path.template'] % "counterblock", "server.conf"))
-        if net in ('testnet', 'both'):
-            cfg_filenames.append(os.path.join(paths['config_path.template'] % "counterblock", "server.testnet.conf"))
-    modify_config(param_re, content_to_add, cfg_filenames, replace_if_exists=replace_if_exists)
+def modify_cp_config(param_re, content_to_add, config, net, replace_if_exists=True):
+    assert net in ('mainnet', 'testnet')
+    net_path_part = '.testnet' if net == 'testnet' else ''
+    cfg_filebase = {
+        'counterparty': {'path': "counterparty", 'file': "server%s.conf" % net_path_part},
+        'counterblock': {'path': "counterblock", 'file': "server%s.conf" % net_path_part},
+        'counterblock-modules': {'path': "counterblock", 'file': "modules%s.conf" % net_path_part},
+        'counterblock-counterwallet': {'path': "counterblock", 'file': "counterwallet%s.conf" % net_path_part}
+    }
+    assert config in cfg_filebase.keys()
+    cfg_filename = os.path.join(paths['config_path.template'] % cfg_filebase[config]['path'], cfg_filebase[config]['file'])
+    modify_config(param_re, content_to_add, cfg_filename, replace_if_exists=replace_if_exists)
 
 def ask_question(question, options, default_option):
     assert isinstance(options, (list, tuple))
@@ -416,13 +413,36 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
     def create_default_config():
         DEFAULT_CONFIG = "[Default]\nbackend-user=rpc\nbackend-password=1234\nrpc-password=xcppw1234\n"
         DEFAULT_CONFIG_TESTNET = DEFAULT_CONFIG + "\ntestnet=1\n"
+        
         DEFAULT_CONFIG_COUNTERBLOCK = "[Default]\nbackend-user=rpc\nbackend-password=1234\ncounterparty-password=xcppw1234\nrpc-host=0.0.0.0\nsocketio-host=0.0.0.0\nsocketio-chat-host=0.0.0.0\nredis-enable-apicache=0\n"
         DEFAULT_CONFIG_COUNTERBLOCK_TESTNET = DEFAULT_CONFIG_COUNTERBLOCK + "\ntestnet=1\n"
+        
+        #defaut modules installed for non-counterwallet build
+        DEFAULT_CONFIG_COUNTERBLOCK_NONCW_MODULES = """[LoadModule]
+lib/modules/assets = True
+lib/modules/dex = True
+lib/modules/transaction_stats = True"""
+        DEFAULT_CONFIG_COUNTERBLOCK_NONCW_MODULES_TESTNET = DEFAULT_CONFIG_COUNTERBLOCK_NONCW_MODULES
+
+        #modules installed for counterwallet build
+        DEFAULT_CONFIG_COUNTERBLOCK_CW_MODULES = """[LoadModule]
+lib/modules/assets = True
+lib/modules/counterwallet = True
+lib/modules/counterwallet_iofeeds = True
+lib/modules/dex = True
+lib/modules/transaction_stats = True
+lib/modules/betting = True"""
+        DEFAULT_CONFIG_COUNTERBLOCK_CW_MODULES_TESTNET = DEFAULT_CONFIG_COUNTERBLOCK_CW_MODULES
+        
+        DEFAULT_CONFIG_COUNTERBLOCK_CW_CONF = "[Default]\nsupport-email="
+        DEFAULT_CONFIG_COUNTERBLOCK_CW_CONF_TESTNET = DEFAULT_CONFIG_COUNTERBLOCK_CW_CONF
 
         def create_config(dir_base, cfg_name, default_config):
+            created = False
             cfg_path = os.path.join(paths['config_path.template'] % dir_base, cfg_name)
             cfg_missing = not os.path.exists(cfg_path)
             if not os.path.exists(cfg_path):
+                created = True
                 logging.info("Creating new configuration file at: %s" % cfg_path)
                 #create a default config file
                 cfg = open(cfg_path, 'w')
@@ -434,7 +454,9 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
             #set/reset proper file ownership and mode
             os.chown(cfg_path, daemon_username_uid, username_gid)
             os.chmod(cfg_path, 0o600)
-                
+            return created
+        
+        #base counterparty and counterblock config        
         create_config('counterparty', 'server.conf', DEFAULT_CONFIG)
         if questions.with_testnet:
             create_config('counterparty', 'server.testnet.conf', DEFAULT_CONFIG_TESTNET)
@@ -442,6 +464,17 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
             create_config('counterblock', 'server.conf', DEFAULT_CONFIG_COUNTERBLOCK)
             if questions.with_testnet:
                 create_config('counterblock', 'server.testnet.conf', DEFAULT_CONFIG_COUNTERBLOCK_TESTNET)
+        #modules config
+        create_config('counterblock', 'modules.conf',
+            DEFAULT_CONFIG_COUNTERBLOCK_CW_MODULES if questions.role == 'counterwallet' else DEFAULT_CONFIG_COUNTERBLOCK_NONCW_MODULES)
+        if questions.with_testnet:
+            create_config('counterblock', 'modules.testnet.conf',
+                DEFAULT_CONFIG_COUNTERBLOCK_CW_MODULES_TESTNET if questions.role == 'counterwallet' else DEFAULT_CONFIG_COUNTERBLOCK_NONCW_MODULES_TESTNET)
+        #counterwallet conf file
+        if questions.role == 'counterwallet':
+            create_config('counterblock', 'counterwallet.conf', DEFAULT_CONFIG_COUNTERBLOCK_CW_CONF)
+            if questions.with_testnet:
+                create_config('counterblock', 'counterwallet.testnet.conf', DEFAULT_CONFIG_COUNTERBLOCK_CW_CONF_TESTNET)
 
     def alter_config():
         #modify out configuration values as necessary
@@ -478,11 +511,9 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
                     'counterparty-password=%s' % cp_password, config='counterblock', net=net)
             
                 #role-specific counterblockd.conf values
-                modify_cp_config(r'^armory\-utxsvr\-enable=.*?$', 'armory-utxsvr-enable=%s' % 
-                    ('1' if questions.role == 'counterwallet' else '0'), config='counterblock')
                 if questions.role == 'counterwallet':
                     modify_cp_config(r'^support\-email=.*?$',
-                        'support-email=%s' % questions.counterwallet_support_email, config='counterblock') #may be blank string
+                        'support-email=%s' % questions.counterwallet_support_email, config='counterblock-counterwallet', net=net) #may be blank string
 
                 if questions.role == 'counterblock_basic' and questions.server_public == 'y':
                     modify_cp_config(r'^rpc\-host=.*?$', 'rpc-host=0.0.0.0', config='counterblock', net=net)
@@ -595,7 +626,7 @@ def do_nginx_setup(run_as_user, enable=True):
     
     #Build and install nginx (openresty) on Ubuntu
     #Most of these build commands from http://brian.akins.org/blog/2013/03/19/building-openresty-on-ubuntu/
-    OPENRESTY_VER = "1.7.7.1"
+    OPENRESTY_VER = "1.7.10.1"
 
     #uninstall nginx if already present
     runcmd("apt-get -y remove nginx")
@@ -720,6 +751,10 @@ def do_counterwallet_setup(run_as_user, branch, updateOnly=False):
     runcmd("cd ~%s/counterwallet && grunt build --force" % USERNAME) #will generate the minified site
     runcmd("chown -R %s:%s ~%s/counterwallet" % (USERNAME, USERNAME, USERNAME)) #just in case
     runcmd("chmod -R u+rw,g+rw,o+r,o-w ~%s/counterwallet" % USERNAME) #just in case
+    
+    #copy over the default config to the initial config if it doesn't exist
+    if not os.path.exists(os.path.join(USER_HOMEDIR, "counterwallet", "counterwallet.conf.json")):
+        runcmd("cp -a ~%s/counterwallet/counterwallet.conf.json.example ~%s/counterwallet/counterwallet.conf.json" % (USERNAME, USERNAME))
     
 def do_security_setup(run_as_user, branch):
     """Some helpful security-related tasks, to tighten up the box"""
