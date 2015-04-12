@@ -577,7 +577,7 @@ def install_base_via_pip(branch="AUTO"):
     if not os.path.exists(COUNTERPARTY_LIB_DIST_PATH) or os.path.islink(COUNTERPARTY_LIB_DIST_PATH):
         runcmd("sudo su -s /bin/bash -c '%s install --upgrade %s' %s"
             % (paths['pip_path'], PIP_COUNTERPARTY_LIB, USERNAME))
-        if not os.path.islink(COUNTERPARTY_LIB_DIST_PATH):
+        if not os.path.islink(COUNTERPARTY_LIB_DIST_PATH) or not os.path.exists(os.readlink(COUNTERPARTY_LIB_DIST_PATH)):
             runcmd("ln -sf %s %s" % ( #create symlink
                 os.path.join(paths['env_path'], "lib/python" + PYTHON3_VER, "site-packages/counterparty_lib-*.egg/counterpartylib"),
                 COUNTERPARTY_LIB_DIST_PATH))
@@ -587,7 +587,7 @@ def install_base_via_pip(branch="AUTO"):
 
     if not os.path.exists(COUNTERPARTY_CLI_DIST_PATH) or os.path.islink(COUNTERPARTY_CLI_DIST_PATH):
         runcmd("sudo su -s /bin/bash -c '%s install --upgrade %s' %s" % (paths['pip_path'], PIP_COUNTERPARTY_CLI, USERNAME))
-        if not os.path.islink(COUNTERPARTY_CLI_DIST_PATH):
+        if not os.path.islink(COUNTERPARTY_CLI_DIST_PATH) or not os.path.exists(os.readlink(COUNTERPARTY_CLI_DIST_PATH)):
             runcmd("ln -sf %s %s" % ( #create symlink
                 os.path.join(paths['env_path'], "lib/python" + PYTHON3_VER, "site-packages/counterparty_cli-*.egg/counterpartycli"),
                 COUNTERPARTY_CLI_DIST_PATH))
@@ -605,7 +605,7 @@ def install_base_via_pip(branch="AUTO"):
         if not os.path.exists(COUNTERBLOCK_DIST_PATH) or os.path.islink(COUNTERBLOCK_DIST_PATH):
             runcmd("sudo su -s /bin/bash -c '%s install --upgrade %s' %s"
                 % (paths['pip_path.counterblock'], PIP_COUNTERBLOCK, USERNAME))
-            if not os.path.islink(COUNTERPARTY_LIB_DIST_PATH):
+            if not os.path.islink(COUNTERBLOCK_DIST_PATH) or not os.path.exists(os.readlink(COUNTERBLOCK_DIST_PATH)):
                 runcmd("ln -sf %s %s" % (
                     os.path.join(paths['env_path.counterblock'], "lib/python" + PYTHON2_VER, "site-packages/counterblock"),
                     COUNTERBLOCK_DIST_PATH))
