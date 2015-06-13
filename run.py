@@ -719,7 +719,7 @@ def do_armory_utxsvr_setup(run_as_user, enable=True):
         return
     
     runcmd("apt-get -y install xvfb python-qt4 python-twisted python-psutil xdg-utils hicolor-icon-theme")
-    ARMORY_VERSION = "0.92.3_ubuntu-64bit"
+    ARMORY_VERSION = "0.93.2_ubuntu-64bit"
     if not os.path.exists("/tmp/armory_%s.deb" % ARMORY_VERSION):
         runcmd("wget -O /tmp/armory_%s.deb https://s3.amazonaws.com/bitcoinarmory-releases/armory_%s.deb"
             % (ARMORY_VERSION, ARMORY_VERSION))
