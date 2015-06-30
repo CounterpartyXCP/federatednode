@@ -263,9 +263,9 @@ def do_backend_rpc_setup():
     """Installs and configures bitcoind"""
     
     def install_from_source():
-        #Install bitcoind (btcbrak's 0.10.1 addrindex branch)
-        BITCOIND_VERSION="0.10-1"
-        BITCOIND_DEB_VERSION="0.10.1"
+        #Install bitcoind (btcbrak's 0.10.2 addrindex branch)
+        BITCOIND_VERSION="0.10-2"
+        BITCOIND_DEB_VERSION="0.10.2"
 
         #Install deps (see https://help.ubuntu.com/community/bitcoin)
         runcmd("apt-get -y install build-essential libtool autotools-dev autoconf pkg-config libssl-dev libboost-dev libboost-all-dev software-properties-common checkinstall")
@@ -285,9 +285,9 @@ def do_backend_rpc_setup():
         runcmd("ln -sf /usr/local/bin/bitcoind /usr/bin/bitcoind && ln -sf /usr/local/bin/bitcoin-cli /usr/bin/bitcoin-cli")
     
     def install_binaries():
-        BITCOIND_URL="https://github.com/btcdrak/bitcoin/releases/download/addrindex-0.10.1/bitcoin-addrindex-0.10.1-linux64.tar.gz"
-        BITCOIND_FILENAME="bitcoin-addrindex-0.10.1-linux64.tar.gz"
-        BITCOIND_DIRNAME="bitcoin-0.10.1"
+        BITCOIND_URL="https://github.com/btcdrak/bitcoin/releases/download/addrindex-0.10.2/bitcoin-addrindex-0.10.2-linux64.tar.gz"
+        BITCOIND_FILENAME="bitcoin-addrindex-0.10.2-linux64.tar.gz"
+        BITCOIND_DIRNAME="bitcoin-0.10.2"
         BITCOIND_SHA256_HASH="69068c4e04ec42d26e2b53bf79a682aaa180d06047daa0b30903ad1638d73dc5"
 
         runcmd("apt-get -y remove bitcoin.addrindex bitcoin-addrindex-0.10", abort_on_failure=False) #remove old versions
