@@ -288,7 +288,7 @@ def do_backend_rpc_setup():
         BITCOIND_URL="https://github.com/btcdrak/bitcoin/releases/download/addrindex-0.10.2/bitcoin-addrindex-0.10.2-linux64.tar.gz"
         BITCOIND_FILENAME="bitcoin-addrindex-0.10.2-linux64.tar.gz"
         BITCOIND_DIRNAME="bitcoin-0.10.2"
-        BITCOIND_SHA256_HASH="69068c4e04ec42d26e2b53bf79a682aaa180d06047daa0b30903ad1638d73dc5"
+        BITCOIND_SHA256_HASH="6bc70acabde58c01bb2496c33a31a0e710112806a56818bfb3b2b96b11d44be9"
 
         runcmd("apt-get -y remove bitcoin.addrindex bitcoin-addrindex-0.10", abort_on_failure=False) #remove old versions
         
