@@ -218,7 +218,7 @@ def do_base_setup(run_as_user):
 
     #install some necessary base deps
     runcmd("apt-key update && apt-get update")
-    runcmd("apt-get -y install git-core software-properties-common python-software-properties build-essential ssl-cert ntp runit curl")
+    runcmd("apt-get -y install git-core software-properties-common python-software-properties build-essential ssl-cert ntp runit curl libjpeg8-dev")
     
     #install node-js
     #node-gyp building has ...issues out of the box on Ubuntu... use Chris Lea's nodejs build instead, which is newer
@@ -263,7 +263,7 @@ def do_backend_rpc_setup():
     """Installs and configures bitcoind"""
     
     def install_from_source():
-        #Install bitcoind (btcbrak's 0.10.2 addrindex branch)
+        #Install bitcoind (btcbrak's 0.11.1 addrindex branch)
         BITCOIND_VERSION="0.11-1"
         BITCOIND_DEB_VERSION="0.11.1"
 
@@ -355,7 +355,7 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
             runcmd("apt-get -y install python python-dev python-setuptools python-pip python-sphinx python-zmq libzmq3 libzmq3-dev libxml2-dev libxslt-dev zlib1g-dev libimage-exiftool-perl libevent-dev cython")
     
             #install mongo-10gen (newer than what ubuntu has), pegged to a specific version
-            MONGO_VERSION = "2.6.6"
+            MONGO_VERSION = "2.6.11"
             runcmd("apt-get -y remove mongodb mongodb-server") #remove ubuntu stock packages, if installed
             runcmd("apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10")
             runcmd("/bin/bash -c \"echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | sudo tee /etc/apt/sources.list.d/mongodb.list\"")
@@ -626,7 +626,7 @@ def do_nginx_setup(run_as_user, enable=True):
     
     #Build and install nginx (openresty) on Ubuntu
     #Most of these build commands from http://brian.akins.org/blog/2013/03/19/building-openresty-on-ubuntu/
-    OPENRESTY_VER = "1.7.10.1"
+    OPENRESTY_VER = "1.7.10.2"
 
     #uninstall nginx if already present
     runcmd("apt-get -y remove nginx")
