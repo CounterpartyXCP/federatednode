@@ -354,11 +354,11 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
             #counterblockd currently uses Python 2.7 due to gevent-socketio's lack of support for Python 3
             runcmd("apt-get -y install python python-dev python-setuptools python-pip python-sphinx python-zmq libzmq3 libzmq3-dev libxml2-dev libxslt-dev zlib1g-dev libimage-exiftool-perl libevent-dev cython")
     
-            #install mongo-10gen (newer than what ubuntu has), pegged to a specific version
-            MONGO_VERSION = "2.6.11"
+            #install mongodb
+            MONGO_VERSION = "3.0.7"
             runcmd("apt-get -y remove mongodb mongodb-server") #remove ubuntu stock packages, if installed
             runcmd("apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10")
-            runcmd("/bin/bash -c \"echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | sudo tee /etc/apt/sources.list.d/mongodb.list\"")
+            runcmd("/bin/bash -c \"echo 'deb http://repo.mongodb.org/apt/ubuntu trusty/mongodb-org/3.0 multiverse' | sudo tee /etc/apt/sources.list.d/mongodb.list\"")
             runcmd("apt-get update")
             runcmd("apt-get -y --force-yes install mongodb-org=%s mongodb-org-server=%s mongodb-org-shell=%s mongodb-org-mongos=%s mongodb-org-tools=%s" % (
                 MONGO_VERSION, MONGO_VERSION, MONGO_VERSION, MONGO_VERSION, MONGO_VERSION))
