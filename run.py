@@ -218,7 +218,7 @@ def do_base_setup(run_as_user):
 
     #install some necessary base deps
     runcmd("apt-key update && apt-get update")
-    runcmd("apt-get -y install git-core software-properties-common python-software-properties build-essential ssl-cert ntp runit curl")
+    runcmd("apt-get -y install git-core software-properties-common python-software-properties build-essential ssl-cert ntp runit curl libjpeg8-dev libgmp-dev")
     
     #install node-js
     #node-gyp building has ...issues out of the box on Ubuntu... use Chris Lea's nodejs build instead, which is newer
@@ -263,9 +263,9 @@ def do_backend_rpc_setup():
     """Installs and configures bitcoind"""
     
     def install_from_source():
-        #Install bitcoind (btcbrak's 0.10.2 addrindex branch)
-        BITCOIND_VERSION="0.10-2"
-        BITCOIND_DEB_VERSION="0.10.2"
+        #Install bitcoind (btcbrak's 0.11.2 addrindex branch)
+        BITCOIND_VERSION="0.11-2"
+        BITCOIND_DEB_VERSION="0.11.2"
 
         #Install deps (see https://help.ubuntu.com/community/bitcoin)
         runcmd("apt-get -y install build-essential libtool autotools-dev autoconf pkg-config libssl-dev libboost-dev libboost-all-dev software-properties-common checkinstall")
@@ -285,10 +285,10 @@ def do_backend_rpc_setup():
         runcmd("ln -sf /usr/local/bin/bitcoind /usr/bin/bitcoind && ln -sf /usr/local/bin/bitcoin-cli /usr/bin/bitcoin-cli")
     
     def install_binaries():
-        BITCOIND_URL="https://github.com/btcdrak/bitcoin/releases/download/addrindex-0.10.2/bitcoin-addrindex-0.10.2-linux64.tar.gz"
-        BITCOIND_FILENAME="bitcoin-addrindex-0.10.2-linux64.tar.gz"
-        BITCOIND_DIRNAME="bitcoin-0.10.2"
-        BITCOIND_SHA256_HASH="69068c4e04ec42d26e2b53bf79a682aaa180d06047daa0b30903ad1638d73dc5"
+        BITCOIND_URL="https://github.com/btcdrak/bitcoin/releases/download/v0.11.2-addrindex/bitcoin-0.11.2-addrindex-linux64.tar.gz"
+        BITCOIND_FILENAME="bitcoin-0.11.2-addrindex-linux64.tar.gz"
+        BITCOIND_DIRNAME="bitcoin-0.11.2"
+        BITCOIND_SHA256_HASH="9682ec10b54bfe1368dbac2d9c19a010708c5ea8e6ff962455bb760975772c73"
 
         runcmd("apt-get -y remove bitcoin.addrindex bitcoin-addrindex-0.10", abort_on_failure=False) #remove old versions
         
@@ -354,11 +354,11 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
             #counterblockd currently uses Python 2.7 due to gevent-socketio's lack of support for Python 3
             runcmd("apt-get -y install python python-dev python-setuptools python-pip python-sphinx python-zmq libzmq3 libzmq3-dev libxml2-dev libxslt-dev zlib1g-dev libimage-exiftool-perl libevent-dev cython")
     
-            #install mongo-10gen (newer than what ubuntu has), pegged to a specific version
-            MONGO_VERSION = "2.6.6"
+            #install mongodb
+            MONGO_VERSION = "3.0.7"
             runcmd("apt-get -y remove mongodb mongodb-server") #remove ubuntu stock packages, if installed
             runcmd("apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10")
-            runcmd("/bin/bash -c \"echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | sudo tee /etc/apt/sources.list.d/mongodb.list\"")
+            runcmd("/bin/bash -c \"echo 'deb http://repo.mongodb.org/apt/ubuntu trusty/mongodb-org/3.0 multiverse' | sudo tee /etc/apt/sources.list.d/mongodb.list\"")
             runcmd("apt-get update")
             runcmd("apt-get -y --force-yes install mongodb-org=%s mongodb-org-server=%s mongodb-org-shell=%s mongodb-org-mongos=%s mongodb-org-tools=%s" % (
                 MONGO_VERSION, MONGO_VERSION, MONGO_VERSION, MONGO_VERSION, MONGO_VERSION))
@@ -626,7 +626,7 @@ def do_nginx_setup(run_as_user, enable=True):
     
     #Build and install nginx (openresty) on Ubuntu
     #Most of these build commands from http://brian.akins.org/blog/2013/03/19/building-openresty-on-ubuntu/
-    OPENRESTY_VER = "1.7.10.1"
+    OPENRESTY_VER = "1.7.10.2"
 
     #uninstall nginx if already present
     runcmd("apt-get -y remove nginx")
