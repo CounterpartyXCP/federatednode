@@ -355,7 +355,7 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
             runcmd("apt-get -y install python python-dev python-setuptools python-pip python-sphinx python-zmq libzmq3 libzmq3-dev libxml2-dev libxslt-dev zlib1g-dev libimage-exiftool-perl libevent-dev cython")
     
             #install mongodb
-            MONGO_VERSION = "3.0.7"
+            MONGO_VERSION = "3.2.3"
             runcmd("apt-get -y remove mongodb mongodb-server") #remove ubuntu stock packages, if installed
             runcmd("apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10")
             runcmd("/bin/bash -c \"echo 'deb http://repo.mongodb.org/apt/ubuntu trusty/mongodb-org/3.0 multiverse' | sudo tee /etc/apt/sources.list.d/mongodb.list\"")
