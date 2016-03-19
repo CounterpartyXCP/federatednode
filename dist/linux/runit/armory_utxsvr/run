@@ -3,7 +3,10 @@
 USER=xcpd
 export USER_HOME=/home/xcp
 
-#sv start bitcoind || exit 1
+CONFIG_FILE="${USER_HOME}/.config/counterblock/server.conf"
+BITCOIND_PASS=`python -c "import ConfigParser; config = ConfigParser.ConfigParser(); config.read('${CONFIG_FILE}'); print config.get('Default', 'backend-password');"`
+export BITCOIND_URL=http://rpc:${BITCOIND_PASS}@localhost:8332
+
 exec 2>&1
-exec su -s /bin/bash -c 'cd ${USER_HOME} && /usr/local/bin/armory_utxsvr' ${USER}
+exec su -s /bin/bash -c 'cd ${USER_HOME} && /usr/local/bin/armory_utxsvr "${BITCOIND_URL}"' ${USER}
 
