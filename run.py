@@ -299,7 +299,7 @@ def do_backend_rpc_setup():
         runcmd("install -C --backup=off -m 755 -o root -g root /tmp/%s/bin/* /usr/local/bin/" % BITCOIND_DIRNAME)
         runcmd("ln -sf /usr/local/bin/bitcoind /usr/bin/bitcoind && ln -sf /usr/local/bin/bitcoin-cli /usr/bin/bitcoin-cli")
     
-    DEFAULT_CONFIG = "rpcuser=rpc\nrpcpassword=%s\nserver=1\ndaemon=1\nrpcthreads=1000\nrpctimeout=300\ntxindex=1\naddrindex=1\nminrelaytxfee=0.00005\nlimitfreerelay=0"
+    DEFAULT_CONFIG = "rpcuser=rpc\nrpcpassword=%s\nserver=1\ndaemon=1\nrpcthreads=100\nrpctimeout=300\ntxindex=1\naddrindex=1"
     DEFAULT_CONFIG_TESTNET = DEFAULT_CONFIG + "\ntestnet=1"
     backend_rpc_password = pass_generator()
     backend_rpc_password_testnet = pass_generator()
