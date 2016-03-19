@@ -327,6 +327,7 @@ def do_backend_rpc_setup():
             % USERNAME, shell=True).strip().decode('utf-8')
     #set permissions
     runcmd("chown -R %s:%s ~%s/.bitcoin" % (DAEMON_USERNAME, USERNAME, USERNAME,))
+    runcmd("chmod -R u+rw,g-rwx,o-rwx ~%s/.bitcoin" % USERNAME)
     
     #install logrotate file
     runcmd("cp -dRf --preserve=mode %s/linux/logrotate/bitcoind /etc/logrotate.d/bitcoind" % paths['dist_path'])
