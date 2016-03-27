@@ -357,8 +357,8 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
             #install mongodb
             MONGO_VERSION = "3.2.3"
             runcmd("apt-get -y remove mongodb mongodb-server") #remove ubuntu stock packages, if installed
-            runcmd("apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10")
-            runcmd("/bin/bash -c \"echo 'deb http://repo.mongodb.org/apt/ubuntu trusty/mongodb-org/3.0 multiverse' | sudo tee /etc/apt/sources.list.d/mongodb.list\"")
+            runcmd("apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv EA312927")
+            runcmd("/bin/bash -c \"echo 'deb http://repo.mongodb.org/apt/ubuntu trusty/mongodb-org/3.2 multiverse' | sudo tee /etc/apt/sources.list.d/mongodb-org-3.2.list\"")
             runcmd("apt-get update")
             runcmd("apt-get -y --force-yes install mongodb-org=%s mongodb-org-server=%s mongodb-org-shell=%s mongodb-org-mongos=%s mongodb-org-tools=%s" % (
                 MONGO_VERSION, MONGO_VERSION, MONGO_VERSION, MONGO_VERSION, MONGO_VERSION))
@@ -626,7 +626,7 @@ def do_nginx_setup(run_as_user, enable=True):
     
     #Build and install nginx (openresty) on Ubuntu
     #Most of these build commands from http://brian.akins.org/blog/2013/03/19/building-openresty-on-ubuntu/
-    OPENRESTY_VER = "1.9.7.3"
+    OPENRESTY_VER = "1.9.7.4"
 
     #uninstall nginx if already present
     runcmd("apt-get -y remove nginx")
@@ -634,9 +634,9 @@ def do_nginx_setup(run_as_user, enable=True):
     runcmd("apt-get -y install make ruby1.9.1 ruby1.9.1-dev git-core libpcre3-dev libxslt1-dev libgd2-xpm-dev libgeoip-dev unzip zip build-essential libssl-dev")
     runcmd("gem install fpm")
     #grab openresty and compile
-    runcmd("rm -rf /tmp/openresty /tmp/ngx_openresty-* /tmp/nginx-openresty.tar.gz /tmp/nginx-openresty*.deb")
-    runcmd('''wget -O /tmp/nginx-openresty.tar.gz http://openresty.org/download/ngx_openresty-%s.tar.gz''' % OPENRESTY_VER)
-    runcmd("tar -C /tmp -zxvf /tmp/nginx-openresty.tar.gz")
+    runcmd("rm -rf /tmp/openresty /tmp/ngx_openresty-* /tmp/nginx-openresty.tar.gz /tmp/nginx-openresty*.deb /tmp/ngx_openresty*")
+    runcmd('''wget -O /tmp/nginx-openresty.tar.gz http://openresty.org/download/openresty-%s.tar.gz''' % OPENRESTY_VER)
+    runcmd('''mkdir -p /tmp/ngx_openresty-%s && tar xfzv /tmp/nginx-openresty.tar.gz -C /tmp/ngx_openresty-%s --strip-components 1''' % (OPENRESTY_VER, OPENRESTY_VER))
     runcmd('''cd /tmp/ngx_openresty-%s && ./configure \
 --with-luajit \
 --sbin-path=/usr/sbin/nginx \
@@ -661,7 +661,7 @@ def do_nginx_setup(run_as_user, enable=True):
 --with-md5=/usr/include/openssl \
 --with-http_stub_status_module \
 --with-http_secure_link_module \
---with-http_sub_module && make''' % OPENRESTY_VER)
+--with-http_sub_module && make -j2''' % OPENRESTY_VER)
     #set up the build environment
     runcmd('''cd /tmp/ngx_openresty-%s && make install DESTDIR=/tmp/openresty \
 && mkdir -p /tmp/openresty/var/lib/nginx \
