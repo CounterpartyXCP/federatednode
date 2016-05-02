@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 """
-Sets up an Ubuntu 14.04 x64 server to be a Counterblock Federated Node.
+Sets up an Ubuntu 14.04 or 16.04 x86_64 server to be a Counterblock Federated Node.
 
 NOTE: The system should be properly secured before running this script.
 
@@ -36,8 +36,8 @@ REPO_URL = "https://github.com/CounterpartyXCP/federatednode_build.git"
 USERNAME = "xcp"
 DAEMON_USERNAME = "xcpd"
 USER_HOMEDIR = "/home/xcp"
-PYTHON2_VER = "2.7" #Ubuntu 14.04 uses python2.7
-PYTHON3_VER = "3.4" #Ubuntu 14.04 uses python3.4
+PYTHON2_VER = "2.7"
+PYTHON3_VER = "3"
 paths = None
 questions = None
 
@@ -154,13 +154,18 @@ def remove_runit(service_name):
 ### PRIMARY FUNCTIONS
 ###
 def do_federated_node_prerun_checks(require_sudo=True):
+    global ubuntu_release
     #make sure this is running on a supported OS
     if os.name != "posix" or platform.dist()[0] != "Ubuntu" or platform.architecture()[0] != '64bit':
         logging.error("Only 64bit Ubuntu Linux is supported at this time")
         sys.exit(1)
     ubuntu_release = platform.linux_distribution()[1]
-    if ubuntu_release != "14.04":
-        logging.error("Only Ubuntu 14.04 supported for Counterblock Federated Node install.")
+    if ubuntu_release == "14.04":
+        logging.info("Ubuntu 14.04 detected")
+    elif ubuntu_release == "16.04":
+        logging.info("Ubuntu 16.04 detected")
+    else:
+        logging.error("Sorry, only Ubuntu 14.04 and 16.04 x86_64 are supported for Counterblock Federated Node install.")
         sys.exit(1)
     #script must be run as root
     if os.geteuid() != 0:
@@ -218,12 +223,11 @@ def do_base_setup(run_as_user):
 
     #install some necessary base deps
     runcmd("apt-key update && apt-get update")
-    runcmd("apt-get -y install git-core software-properties-common python-software-properties build-essential ssl-cert ntp runit curl libjpeg8-dev libgmp-dev")
+    runcmd("apt-get -y install git-core software-properties-common build-essential ssl-cert ntp runit curl libjpeg8-dev libgmp-dev")
     
     #install node-js
-    #node-gyp building has ...issues out of the box on Ubuntu... use Chris Lea's nodejs build instead, which is newer
     runcmd("apt-get -y remove nodejs npm gyp")
-    runcmd("add-apt-repository -y ppa:chris-lea/node.js")
+    runcmd("curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -")
     runcmd("apt-get update")
     runcmd("apt-get -y install nodejs") #includes npm
     gypdir = None
@@ -352,7 +356,7 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
         
         if questions.with_counterblock:
             #counterblockd currently uses Python 2.7 due to gevent-socketio's lack of support for Python 3
-            runcmd("apt-get -y install python python-dev python-setuptools python-pip python-sphinx python-zmq libzmq3 libzmq3-dev libxml2-dev libxslt-dev zlib1g-dev libimage-exiftool-perl libevent-dev cython")
+            runcmd("apt-get -y install python python-dev python-setuptools python-pip python-sphinx python-zmq libzmq3-dev libxml2-dev libxslt-dev zlib1g-dev libimage-exiftool-perl libevent-dev cython")
     
             #install mongodb
             MONGO_VERSION = "3.2.3"
@@ -567,8 +571,8 @@ def install_base_via_pip(branch="AUTO"):
         f.close()
         assert branch != "AUTO"
 
-    PIP_COUNTERPARTY_LIB = "https://github.com/CounterpartyXCP/counterpartyd/archive/%s.zip#egg=counterpartylib" % branch
-    PIP_COUNTERPARTY_CLI = "https://github.com/CounterpartyXCP/counterparty-cli/archive/%s.zip#egg=counterpartycli" % branch  
+    PIP_COUNTERPARTY_LIB = "https://github.com/CounterpartyXCP/counterpartyd/archive/%s.zip#egg=counterparty-lib" % branch
+    PIP_COUNTERPARTY_CLI = "https://github.com/CounterpartyXCP/counterparty-cli/archive/%s.zip#egg=counterparty-cli" % branch  
     PIP_COUNTERBLOCK = "https://github.com/CounterpartyXCP/counterblock/archive/%s.zip#egg=counterblock" % branch
 
     #pip install counterparty-cli, counterparty-lib and (optionally) counterblock for the chosen branch
@@ -630,8 +634,8 @@ def do_nginx_setup(run_as_user, enable=True):
 
     #uninstall nginx if already present
     runcmd("apt-get -y remove nginx")
-    #install deps
-    runcmd("apt-get -y install make ruby1.9.1 ruby1.9.1-dev git-core libpcre3-dev libxslt1-dev libgd2-xpm-dev libgeoip-dev unzip zip build-essential libssl-dev")
+    #install other deps (U14.04 will install ruby1.9.1, U16.04 ruby2.3)
+    runcmd("apt-get -y install make git-core libpcre3-dev libxslt1-dev libgd2-xpm-dev libgeoip-dev unzip zip build-essential libssl-dev ruby ruby-dev")
     runcmd("gem install fpm")
     #grab openresty and compile
     runcmd("rm -rf /tmp/openresty /tmp/ngx_openresty-* /tmp/nginx-openresty.tar.gz /tmp/nginx-openresty*.deb /tmp/ngx_openresty*")
@@ -1017,7 +1021,7 @@ def main():
     if os.path.exists("/etc/init.d/iwatch"):
         runcmd("service iwatch stop", abort_on_failure=False)
 
-    if questions.op == 'u': #just refresh counterpartyd, counterblockd, and counterwallet, etc. from github
+    if questions.op == 'u': #just refresh counterparty-lib, counterparty-server, counterblockd, counterwallet, etc. from github
         #refresh this repo
         git_repo_clone(REPO_NAME, REPO_URL, paths['base_path'], for_user=USERNAME)        
         
