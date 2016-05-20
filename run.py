@@ -351,9 +351,12 @@ def do_counterparty_setup(run_as_user, backend_rpc_password, backend_rpc_passwor
     
     def install_dependencies():
         runcmd("apt-get -y update")
-        runcmd("apt-get -y install runit build-essential software-properties-common python-software-properties \
-        git-core wget python3 python3-setuptools python3-dev python3-pip python3-pytest python3-sphinx \
-        python3-zmq  python3-apsw python-virtualenv libsqlite3-dev libgmp-dev libleveldb-dev")
+        runcmd("apt-get -y install runit build-essential \
+        software-properties-common python-software-properties \
+        git-core wget python3 python3-setuptools python3-dev \
+        python3-pip python3-pytest python3-sphinx \
+        python3-zmq  python3-apsw python-virtualenv \
+        libsqlite3-dev libgmp-dev libleveldb-dev")
         
         if questions.with_counterblock:
             #counterblockd currently uses Python 2.7 due to gevent-socketio's lack of support for Python 3
