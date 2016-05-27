@@ -1,0 +1,15 @@
+[submodule "src/counterparty-lib"]
+	path = src/counterparty-lib
+	url = git@github.com:CounterpartyXCP/counterparty-lib.git
+[submodule "src/counterparty-cli"]
+	path = src/counterparty-cli
+	url = git@github.com:CounterpartyXCP/counterparty-cli.git
+[submodule "src/counterblock"]
+	path = src/counterblock
+	url = git@github.com:CounterpartyXCP/counterblock.git
+[submodule "src/armory_utxsvr"]
+	path = src/armory_utxsvr
+	url = git@github.com:CounterpartyXCP/armory_utxsvr.git
+[submodule "src/counterwallet"]
+	path = src/counterwallet
+	url = git@github.com:CounterpartyXCP/counterwallet.git
