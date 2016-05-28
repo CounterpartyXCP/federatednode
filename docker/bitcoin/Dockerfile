@@ -1,4 +1,4 @@
-FROM counterparty/base:develop
+FROM counterparty/base
 
 MAINTAINER Counterparty Development Team <dev@counterparty.io>
 
