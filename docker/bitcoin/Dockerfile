@@ -1,6 +1,6 @@
 FROM counterparty/base
 
-MAINTAINER Counterparty Development Team <dev@counterparty.io>
+MAINTAINER Counterparty Developers <dev@counterparty.io>
 
 # install bitcoin-addrindex
 ENV BITCOIN_VER="0.12.1"
