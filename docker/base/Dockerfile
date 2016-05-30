@@ -5,7 +5,7 @@ MAINTAINER Counterparty Developers <dev@counterparty.io>
 # Install common dependencies
 RUN apt-get update && apt-get install -y apt-utils ca-certificates wget curl git mercurial \
     python3 python3-dev python3-pip python3-setuptools python3-appdirs \
-    build-essential vim unzip software-properties-common sudo
+    build-essential vim unzip software-properties-common sudo gettext-base
 
 # Set locale
 RUN dpkg-reconfigure locales && \
