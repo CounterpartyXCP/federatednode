@@ -1,0 +1,88 @@
+version: '2'
+
+services:
+  bitcoin:
+    extends:
+      file: docker-compose.base.yml
+      service: bitcoin
+
+  counterparty:
+    extends:
+      file: docker-compose.base.yml
+      service: counterparty
+
+  bitcoin-testnet:
+    extends:
+      file: docker-compose.base.yml
+      service: bitcoin-testnet
+
+  counterparty-testnet:
+    extends:
+      file: docker-compose.base.yml
+      service: counterparty-testnet
+
+  mongodb:
+    extends:
+      file: docker-compose.counterblock.yml
+      service: mongodb
+
+  redis:
+    extends:
+      file: docker-compose.counterblock.yml
+      service: redis
+
+  armory-utxsvr:
+    extends:
+      file: docker-compose.tmpl.yml
+      service: armory-utxsvr-base
+    links:
+      - bitcoin
+
+  armory-utxsvr-testnet:
+    extends:
+      file: docker-compose.tmpl.yml
+      service: armory-utxsvr-base
+    links:
+      - bitcoin-testnet
+    environment:
+      - TESTNET=1     
+
+  counterblock:
+    extends:
+      file: docker-compose.tmpl.yml
+      service: counterblock-base
+    links:
+      - bitcoin
+      - counterparty
+      - mongodb
+      - redis
+      - armory-utxsvr
+    ports:
+      - "4100:4100"
+
+  counterblock-testnet:
+    extends:
+      file: docker-compose.tmpl.yml
+      service: counterblock-base
+    links:
+      - bitcoin-testnet
+      - counterparty-testnet
+      - mongodb
+      - redis
+      - armory-utxsvr-tesnet
+    ports:
+      - "14100:14100"
+    environment:
+      - TESTNET=1     
+
+  counterwallet:
+    image: counterparty/counterwallet:${FEDNODE_RELEASE_TAG}
+    volumes:
+      - ./data/counterblock:/counterblock_data
+    links:
+      - redis
+      - counterblock
+      - counterblock-testnet
+    ports:
+      - "80:80"
+      - "443:443"

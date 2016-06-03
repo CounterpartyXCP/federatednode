@@ -1,0 +1,23 @@
+version: '2'
+
+services:
+  bitcoin-base:
+    image: counterparty/bitcoin:${FEDNODE_RELEASE_TAG}
+    volumes:
+      - ./data/bitcoin:/bitcoin_data
+
+  counterparty-base:
+    image: counterparty/counterparty-server:${FEDNODE_RELEASE_TAG}
+    volumes:
+      - ./data/counterparty:/root/.local/share/counterparty
+
+  counterblock-base:
+    image: counterparty/counterblock:${FEDNODE_RELEASE_TAG}
+    volumes:
+      - ./data/counterblock:/root/.local/share/counterblock
+
+  armory-utxsvr-base:
+    image: counterparty/armory_utxsvr:${FEDNODE_RELEASE_TAG}
+    volumes:
+      - ./data/armory_utxsvr:/root/.armory
+      - ./data/bitcoin:/bitcoin_data

@@ -1,0 +1,38 @@
+version: '2'
+
+services:
+  bitcoin:
+    extends:
+      file: docker-compose.tmpl.yml
+      service: bitcoin-base
+    ports:
+      - "8332:8332"
+
+  bitcoin-testnet:
+    extends:
+      file: docker-compose.tmpl.yml
+      service: bitcoin-base
+    ports:
+      - "18332:18332"
+    environment:
+      - TESTNET=1     
+
+  counterparty:
+    extends:
+      file: docker-compose.tmpl.yml
+      service: counterparty-base
+    links:
+      - bitcoin
+    ports:
+      - "4000:4000"
+
+  counterparty-testnet:
+    extends:
+      file: docker-compose.tmpl.yml
+      service: counterparty-base
+    links:
+      - bitcoin-testnet
+    ports:
+      - "14000:14000"
+    environment:
+      - TESTNET=1     
