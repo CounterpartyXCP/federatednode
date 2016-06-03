@@ -4,7 +4,7 @@ services:
   bitcoin-base:
     image: counterparty/bitcoin:${FEDNODE_RELEASE_TAG}
     volumes:
-      - ./data/bitcoin:/bitcoin_data
+      - ./data/bitcoin:/root/.bitcoin
 
   counterparty-base:
     image: counterparty/counterparty-server:${FEDNODE_RELEASE_TAG}

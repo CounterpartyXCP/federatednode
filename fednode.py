@@ -32,18 +32,21 @@ def parse_args():
     parser_uninstall.add_argument("--force", help="Force uninstall (no prompting)")
 
     parser_start = subparsers.add_parser('start', help="start fednode services")
-    parser_start.add_argument("service", nargs='?', default=None, help="The name of the service to start (or blank to start all services)")
+    parser_start.add_argument("service", nargs='?', default='', help="The name of the service to start (or blank to start all services)")
 
     parser_stop = subparsers.add_parser('stop', help="stop fednode services")
-    parser_stop.add_argument("service", nargs='?', default=None, help="The name of the service to stop (or blank to stop all services)")
+    parser_stop.add_argument("service", nargs='?', default='', help="The name of the service to stop (or blank to stop all services)")
 
     parser_restart = subparsers.add_parser('restart', help="restart fednode services")
-    parser_restart.add_argument("service", nargs='?', default=None, help="The name of the service to restart (or blank to restart all services)")
+    parser_restart.add_argument("service", nargs='?', default='', help="The name of the service to restart (or blank to restart all services)")
 
     parser_ps = subparsers.add_parser('ps', help="list installed services")
 
     parser_tail = subparsers.add_parser('tail', help="tail fednode logs")
-    parser_tail.add_argument("service", nargs='?', default=None, help="The name of the service whose logs to tail (or blank to tail all services)")
+    parser_tail.add_argument("service", nargs='?', default='', help="The name of the service whose logs to tail (or blank to tail all services)")
+
+    parser_logs = subparsers.add_parser('logs', help="tail fednode logs")
+    parser_logs.add_argument("service", nargs='?', default='', help="The name of the service whose logs to view (or blank to view all services)")
 
     parser_exec = subparsers.add_parser('exec', help="execute a command on a specific container")
     parser_exec.add_argument("service", help="The name of the service to execute the command on")
@@ -52,11 +55,11 @@ def parse_args():
     parser_shell.add_argument("service", help="The name of the service to shell into")
 
     parser_update = subparsers.add_parser('update', help="upgrade fednode services (i.e. update source code and restart the container, but don't update the container')")
-    parser_update.add_argument("service", nargs='?', default=None, choices=UPDATE_CHOICES, help="The name of the service to update (or blank to update all applicable services)")
+    parser_update.add_argument("service", nargs='?', default='', choices=UPDATE_CHOICES, help="The name of the service to update (or blank to update all applicable services)")
     parser_update.add_argument("--no-restart", help="Don't restart the container after updating the code'")
 
     parser_rebuild = subparsers.add_parser('rebuild', help="rebuild fednode services (i.e. remove and refetch/install docker containers)")
-    parser_rebuild.add_argument("service", nargs='?', default=None, help="The name of the service to rebuild (or blank to rebuild all services)")
+    parser_rebuild.add_argument("service", nargs='?', default='', help="The name of the service to rebuild (or blank to rebuild all services)")
 
     return parser.parse_known_args()
 
@@ -68,7 +71,7 @@ def write_config(config):
 
 
 def run_compose_cmd(docker_config_path, cmd):
-    return os.system("docker-compose -f {} {}".format(docker_config_file, cmd))
+    return os.system("docker-compose -f {} {}".format(docker_config_path, cmd))
 
 
 def main():
@@ -118,6 +121,8 @@ def main():
         run_compose_cmd(docker_config_path, "restart {}".format(args.service))
     elif args.command == 'tail':
         run_compose_cmd(docker_config_path, "logs -f {}".format(args.service))
+    elif args.command == 'logs':
+        run_compose_cmd(docker_config_path, "logs {}".format(args.service))
     elif args.command == 'ps':
         run_compose_cmd(docker_config_path, "ps")
     elif args.command == 'exec':

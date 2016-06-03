@@ -11,7 +11,7 @@ RUN install -C -m 755 -o root -g root --backup=off bitcoin-${BITCOIN_VER}/bin/* 
 RUN rm bitcoin-addrindex.tar.gz && rm -rf bitcoin-${BITCOIN_VER}
 
 # Set up bitcoind dirs and files
-RUN mkdir /root/.bitcoin/ /bitcoin_data/
+RUN mkdir /root/.bitcoin/
 COPY bitcoin.conf /root/.bitcoin/bitcoin.conf
 COPY start.sh /usr/local/bin/start.sh
 RUN chmod a+x /usr/local/bin/start.sh
