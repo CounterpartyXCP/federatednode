@@ -138,7 +138,7 @@ def main():
             repo_url = REPO_BASE.format(repo)
             repo_dir = os.path.join(SCRIPTDIR, "src", repo)
             if not os.path.exists(repo_dir):
-                os.system("git clone -b {} {} {}".format(build_config, repo_url, repo_dir))
+                os.system("git clone -b {} {} {}".format(repo_branch, repo_url, repo_dir))
         run_compose_cmd(docker_config_path, "up -d")
     elif args.command == 'uninstall':
         run_compose_cmd(docker_config_path, "down")
