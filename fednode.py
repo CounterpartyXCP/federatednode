@@ -113,6 +113,7 @@ def main():
         run_compose_cmd(docker_config_path, "up -d")
     elif args.command == 'uninstall':
         run_compose_cmd(docker_config_path, "down")
+        os.remove(FEDNODE_CONFIG_PATH)
     elif args.command == 'start':
         run_compose_cmd(docker_config_path, "start {}".format(args.service))
     elif args.command == 'stop':

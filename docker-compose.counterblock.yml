@@ -3,54 +3,54 @@ version: '2'
 services:
   bitcoin:
     extends:
-      file: docker-compose.base.yml
-      service: bitcoin
-
-  counterparty:
-    extends:
-      file: docker-compose.base.yml
-      service: counterparty
+      file: docker-compose.tmpl.yml
+      service: bitcoin-base-mainnet
 
   bitcoin-testnet:
     extends:
-      file: docker-compose.base.yml
-      service: bitcoin-testnet
+      file: docker-compose.tmpl.yml
+      service: bitcoin-base-testnet
+
+  counterparty:
+    extends:
+      file: docker-compose.tmpl.yml
+      service: counterparty-base-mainnet
+    links:
+      - bitcoin
 
   counterparty-testnet:
     extends:
-      file: docker-compose.base.yml
-      service: counterparty-testnet
+      file: docker-compose.tmpl.yml
+      service: counterparty-base-testnet
+    links:
+      - bitcoin-testnet
 
   mongodb:
-    image: mongo:3.2
-    volumes:
-      - ./data/mongodb:/data/db
+    extends:
+      file: docker-compose.tmpl.yml
+      service: mongodb-base
 
   redis:
-    image: redis:3.2
+    extends:
+      file: docker-compose.tmpl.yml
+      service: redis-base
 
   counterblock:
     extends:
       file: docker-compose.tmpl.yml
-      service: counterblock-base
+      service: counterblock-base-mainnet
     links:
       - bitcoin
       - counterparty
       - mongodb
       - redis
-    ports:
-      - "4100:4100"
 
   counterblock-testnet:
     extends:
       file: docker-compose.tmpl.yml
-      service: counterblock-base
+      service: counterblock-base-testnet
     links:
       - bitcoin-testnet
       - counterparty-testnet
       - mongodb
       - redis
-    ports:
-      - "14100:14100"
-    environment:
-      - TESTNET=1     
