@@ -69,6 +69,8 @@ def parse_args():
     parser_rebuild = subparsers.add_parser('rebuild', help="rebuild fednode services (i.e. remove and refetch/install docker containers)")
     parser_rebuild.add_argument("service", nargs='?', default='', help="The name of the service to rebuild (or blank to rebuild all services)")
 
+    parser_docker_clean = subparsers.add_parser('docker_clean', help="remove ALL docker containers and cached images (use with caution!)")
+
     return parser.parse_known_args()
 
 
@@ -97,6 +99,21 @@ def main():
     # parse command line arguments
     args, extra_args = parse_args()
 
+    # run utility commands (docker_clean) if specified
+    if args.command == 'docker_clean':
+        docker_containers = subprocess.check_output("docker ps -a -q", shell=True).decode("utf-8").split('\n')
+        docker_images = subprocess.check_output("docker images -q", shell=True).decode("utf-8").split('\n')
+        for container in docker_containers:
+            if not container:
+                continue
+            os.system("docker rm {}".format(container))
+        for image in docker_images:
+            if not image:
+                continue
+            os.system("docker rmi {}".format(image))
+        sys.exit(1)
+
+    # for all other commands
     # if config doesn't exist, only the 'install' command may be run
     config_existed = os.path.exists(FEDNODE_CONFIG_PATH)
     config = configparser.SafeConfigParser()
