@@ -9,12 +9,20 @@ import argparse
 import copy
 import subprocess
 import configparser
+import socket
 
 CURDIR = os.getcwd()
 SCRIPTDIR = os.path.dirname(os.path.realpath(__file__))
 FEDNODE_CONFIG_FILE = ".fednode.config"
 FEDNODE_CONFIG_PATH = os.path.join(SCRIPTDIR, FEDNODE_CONFIG_FILE)
 
+REPO_BASE = "https://github.com/CounterpartyXCP/{}.git"
+REPOS = ['counterparty-lib', 'counterparty-cli', 'counterblock', 'counterwallet', 'armory_utxsvr']
+HOST_PORTS_USED = {
+    'base': [8332, 18332, 4000, 14000],
+    'counterblock': [8332, 18332, 4000, 14000, 4100, 14100],
+    'full': [8332, 18332, 4000, 14000, 4100, 14100, 80, 443]
+}
 UPDATE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock', 'counterblock-testnet', 'counterwallet', 'armory_utxsvr', 'armory_utxsvr-testnet']
 
 def parse_args():
@@ -74,6 +82,13 @@ def run_compose_cmd(docker_config_path, cmd):
     return os.system("docker-compose -f {} {}".format(docker_config_path, cmd))
 
 
+def is_port_open(port):
+    # TCP ports only
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    result = sock.connect_ex(('127.0.0.1', port))
+    return result == 0  # returns True if the port is open
+
+
 def main():
     if os.name != 'nt' and not os.geteuid() == 0:
         print("Please run this script as root")
@@ -99,8 +114,10 @@ def main():
     # load and read config
     assert os.path.exists(FEDNODE_CONFIG_PATH)
     config.read(FEDNODE_CONFIG_PATH)
-    docker_config_file = "docker-compose.{}.yml".format(config.get('Default', 'config'))
+    build_config = config.get('Default', 'config')
+    docker_config_file = "docker-compose.{}.yml".format(build_config)
     docker_config_path = os.path.join(SCRIPTDIR, docker_config_file)
+    repo_branch = config.get('Default', 'branch')
     os.environ['FEDNODE_RELEASE_TAG'] = config.get('Default', 'branch')
     assert os.environ['FEDNODE_RELEASE_TAG']
 
@@ -109,7 +126,19 @@ def main():
         if config_existed:
             print("Cannot install, as it appears a configuration already exists. Please run the 'uninstall' command first")
             sys.exit(1)
-        os.system("cd {}; git submodule init && git submodule update; cd {}".format(SCRIPTDIR, CURDIR))
+
+        # check port usage
+        for port in HOST_PORTS_USED[build_config]:
+            if is_port_open(port):
+                print("Cannot install, as it appears a process is already listening on host port {}".format(port))
+                sys.exit(1)
+
+        # check out the necessary source trees (don't use submodules due to detached HEAD and other problems)
+        for repo in REPOS:
+            repo_url = REPO_BASE.format(repo)
+            repo_dir = os.path.join(SCRIPTDIR, "src", repo)
+            if not os.path.exists(repo_dir):
+                os.system("git clone -b {} {} {}".format(build_config, repo_url, repo_dir))
         run_compose_cmd(docker_config_path, "up -d")
     elif args.command == 'uninstall':
         run_compose_cmd(docker_config_path, "down")
