@@ -23,6 +23,8 @@ services:
   counterparty-base:
     image: counterparty/counterparty-server:${FEDNODE_RELEASE_TAG}
     volumes:
+      - ./src/counterparty-lib:/counterparty-lib
+      - ./src/counterparty-cli:/counterparty-cli
       - ./data/counterparty:/root/.local/share/counterparty
 
   counterparty-base-mainnet:
@@ -42,6 +44,7 @@ services:
   counterblock-base:
     image: counterparty/counterblock:${FEDNODE_RELEASE_TAG}
     volumes:
+      - ./src/counterblock:/counterblock
       - ./data/counterblock:/root/.local/share/counterblock
 
   counterblock-base-mainnet:
@@ -61,6 +64,7 @@ services:
   armory-utxsvr-base:
     image: counterparty/armory_utxsvr:${FEDNODE_RELEASE_TAG}
     volumes:
+      - ./src/armory_utxsvr:/armory_utxsvr
       - ./data/armory_utxsvr:/root/.armory
       - ./data/bitcoin:/bitcoin_data
 
@@ -77,6 +81,7 @@ services:
   counterwallet-base:
     image: counterparty/counterwallet:${FEDNODE_RELEASE_TAG}
     volumes:
+      - ./src/counterwallet:/counterwallet
       - ./data/counterblock:/counterblock_data
     ports:
       - "80:80"

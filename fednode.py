@@ -25,6 +25,7 @@ HOST_PORTS_USED = {
     'full': [8332, 18332, 4000, 14000, 4100, 14100, 80, 443]
 }
 UPDATE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock', 'counterblock-testnet', 'counterwallet', 'armory_utxsvr', 'armory_utxsvr-testnet']
+REPARSE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock', 'counterblock-testnet']
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -48,6 +49,9 @@ def parse_args():
 
     parser_restart = subparsers.add_parser('restart', help="restart fednode services")
     parser_restart.add_argument("service", nargs='?', default='', help="The name of the service to restart (or blank to restart all services)")
+
+    parser_reparse = subparsers.add_parser('reparse', help="reparse a counterparty-server or counterblock service")
+    parser_reparse.add_argument("service", choices=REPARSE_CHOICES, help="The name of the service for which to kick off a reparse")
 
     parser_ps = subparsers.add_parser('ps', help="list installed services")
 
@@ -171,6 +175,12 @@ def main():
         run_compose_cmd(docker_config_path, "stop {}".format(args.service))
     elif args.command == 'restart':
         run_compose_cmd(docker_config_path, "restart {}".format(args.service))
+    elif args.command == 'reparse':
+        run_compose_cmd(docker_config_path, "stop {}".format(args.service))
+        if args.service in ['counterparty', 'counterparty-testnet']:
+            run_compose_cmd(docker_config_path, "run -e COMMAND=reparse {}".format(args.service))
+        elif args.service in ['counterblock', 'counterblock-testnet']:
+            run_compose_cmd(docker_config_path, "run -e EXTRA_PARAMS=\"--reparse\" {}".format(args.service))
     elif args.command == 'tail':
         run_compose_cmd(docker_config_path, "logs -f {}".format(args.service))
     elif args.command == 'logs':
