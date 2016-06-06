@@ -16,6 +16,7 @@ SCRIPTDIR = os.path.dirname(os.path.realpath(__file__))
 FEDNODE_CONFIG_FILE = ".fednode.config"
 FEDNODE_CONFIG_PATH = os.path.join(SCRIPTDIR, FEDNODE_CONFIG_FILE)
 
+PROJECT_NAME = "federatednode"
 REPO_BASE = "https://github.com/CounterpartyXCP/{}.git"
 REPOS = ['counterparty-lib', 'counterparty-cli', 'counterblock', 'counterwallet', 'armory_utxsvr']
 HOST_PORTS_USED = {
@@ -81,14 +82,13 @@ def write_config(config):
 
 
 def run_compose_cmd(docker_config_path, cmd):
-    return os.system("docker-compose -f {} {}".format(docker_config_path, cmd))
+    return os.system("docker-compose -f {} -p {} {}".format(docker_config_path, PROJECT_NAME, cmd))
 
 
 def is_port_open(port):
     # TCP ports only
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    result = sock.connect_ex(('127.0.0.1', port))
-    return result == 0  # returns True if the port is open
+    return sock.connect_ex(('127.0.0.1', port)) == 0  # returns True if the port is open
 
 
 def main():
@@ -138,7 +138,7 @@ def main():
     os.environ['FEDNODE_RELEASE_TAG'] = config.get('Default', 'branch')
     assert os.environ['FEDNODE_RELEASE_TAG']
 
-    # do what we need to do...
+    # perform action for the specified command
     if args.command == 'install':
         if config_existed:
             print("Cannot install, as it appears a configuration already exists. Please run the 'uninstall' command first")
@@ -156,6 +156,11 @@ def main():
             repo_dir = os.path.join(SCRIPTDIR, "src", repo)
             if not os.path.exists(repo_dir):
                 os.system("git clone -b {} {} {}".format(repo_branch, repo_url, repo_dir))
+
+        # make sure we have the newest image for each service
+        run_compose_cmd(docker_config_path, "pull --ignore-pull-failures")
+
+        # launch
         run_compose_cmd(docker_config_path, "up -d")
     elif args.command == 'uninstall':
         run_compose_cmd(docker_config_path, "down")
