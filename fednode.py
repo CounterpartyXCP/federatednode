@@ -190,7 +190,10 @@ def main():
     elif args.command == 'exec':
         os.system("docker exec -i -t federatednode_{}_1 {}".format(args.service, extra_args))
     elif args.command == 'shell':
-        os.system("docker exec -i -t federatednode_{}_1 bash".format(args.service))
+        exec_result = os.system("docker exec -i -t federatednode_{}_1 bash".format(args.service))
+        if exec_result != 0:
+            print("Container is not running -- starting it with a 'bash' shell entrypoint...")
+            run_compose_cmd(docker_config_path, "run --entrypoint bash {}".format(args.service))
     elif args.command == 'update':
         services_to_update = copy.copy(UPDATE_CHOICES) if not args.service.strip() else [args.service, ]
         while services_to_update:
