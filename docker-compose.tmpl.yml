@@ -62,10 +62,10 @@ services:
       - TESTNET=1
 
   armory-utxsvr-base:
-    image: counterparty/armory_utxsvr:${FEDNODE_RELEASE_TAG}
+    image: counterparty/armory-utxsvr:${FEDNODE_RELEASE_TAG}
     volumes:
-      - ./src/armory_utxsvr:/armory_utxsvr
-      - ./data/armory_utxsvr:/root/.armory
+      - ./src/armory-utxsvr:/armory-utxsvr
+      - ./data/armory-utxsvr:/root/.armory
       - ./data/bitcoin:/bitcoin_data
 
   armory-utxsvr-base-mainnet:

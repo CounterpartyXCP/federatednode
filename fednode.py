@@ -18,13 +18,13 @@ FEDNODE_CONFIG_PATH = os.path.join(SCRIPTDIR, FEDNODE_CONFIG_FILE)
 
 PROJECT_NAME = "federatednode"
 REPO_BASE = "https://github.com/CounterpartyXCP/{}.git"
-REPOS = ['counterparty-lib', 'counterparty-cli', 'counterblock', 'counterwallet', 'armory_utxsvr']
+REPOS = ['counterparty-lib', 'counterparty-cli', 'counterblock', 'counterwallet', 'armory-utxsvr']
 HOST_PORTS_USED = {
     'base': [8332, 18332, 4000, 14000],
     'counterblock': [8332, 18332, 4000, 14000, 4100, 14100],
     'full': [8332, 18332, 4000, 14000, 4100, 14100, 80, 443]
 }
-UPDATE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock', 'counterblock-testnet', 'counterwallet', 'armory_utxsvr', 'armory_utxsvr-testnet']
+UPDATE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock', 'counterblock-testnet', 'counterwallet', 'armory-utxsvr', 'armory-utxsvr-testnet']
 REPARSE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock', 'counterblock-testnet']
 
 def parse_args():
@@ -99,6 +99,10 @@ def main():
     if os.name != 'nt' and not os.geteuid() == 0:
         print("Please run this script as root")
         sys.exit(1)
+    if os.name != 'nt':
+        SESSION_USER = subprocess.check_output("logname", shell=True).decode("utf-8").strip()
+    else:
+        SESSION_USER = None
 
     # parse command line arguments
     args, extra_args = parse_args()
@@ -159,7 +163,11 @@ def main():
             repo_url = REPO_BASE.format(repo)
             repo_dir = os.path.join(SCRIPTDIR, "src", repo)
             if not os.path.exists(repo_dir):
-                os.system("git clone -b {} {} {}".format(repo_branch, repo_url, repo_dir))
+                git_cmd = "git clone -b {} {} {}".format(repo_branch, repo_url, repo_dir)
+                if SESSION_USER:  # check out the code as the original user, so the permissions are right
+                    os.system("su -c '{}' {}".format(git_cmd, SESSION_USER))
+                else:
+                    os.system(git_cmd)
 
         # make sure we have the newest image for each service
         run_compose_cmd(docker_config_path, "pull --ignore-pull-failures")
@@ -196,19 +204,30 @@ def main():
             run_compose_cmd(docker_config_path, "run --no-deps --entrypoint bash {}".format(args.service))
     elif args.command == 'update':
         services_to_update = copy.copy(UPDATE_CHOICES) if not args.service.strip() else [args.service, ]
+        git_has_updated = []
         while services_to_update:
             service = services_to_update.pop(0)
-            #update source code
-            service_dir = service.replace('-testnet', '')
-            service_branch = subprocess.check_output("cd {};git symbolic-ref --short -q HEAD;cd {}".format(SCRIPTDIR, CURDIR), shell=True)
-            if not service_branch:
-                print("Unknown service git branch name, or repo in detached state")
-                sys.exit(1)
 
-            os.system("cd {}; git pull origin {}; cd {}".format(SCRIPTDIR, service_branch, CURDIR))
+            #update source code and restart container
+            service_dir = service.replace('-testnet', '')
+            if service_dir not in git_has_updated:
+                git_has_updated.append(service_dir)
+                service_dir_path = os.path.join(SCRIPTDIR, "src", service_dir)
+                service_branch = subprocess.check_output("cd {};git symbolic-ref --short -q HEAD;cd {}".format(service_dir_path, CURDIR), shell=True).decode("utf-8").strip()
+                if not service_branch:
+                    print("Unknown service git branch name, or repo in detached state")
+                    sys.exit(1)
+
+                git_cmd = "cd {}; git pull origin {}; cd {}".format(service_dir_path, service_branch, CURDIR)
+                if SESSION_USER:  # update the code as the original user, so the permissions are right
+                    os.system("su -c '{}' {}".format(git_cmd, SESSION_USER))
+                else:
+                    os.system(git_cmd)
+
             run_compose_cmd(docker_config_path, "restart {}".format(service))
     elif args.command == 'rebuild':
-        run_compose_cmd(docker_config_path, "up -d --build --no-deps {}".format(args.service))
+        run_compose_cmd(docker_config_path, "pull --ignore-pull-failures {}".format(args.service))
+        run_compose_cmd(docker_config_path, "up -d --build --force-recreate --no-deps {}".format(args.service))
 
 
 if __name__ == '__main__':
