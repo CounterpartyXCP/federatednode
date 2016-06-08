@@ -63,6 +63,7 @@ def parse_args():
 
     parser_exec = subparsers.add_parser('exec', help="execute a command on a specific container")
     parser_exec.add_argument("service", help="The name of the service to execute the command on")
+    parser_exec.add_argument("cmd", nargs=argparse.REMAINDER, help="The shell command to execute")
 
     parser_shell = subparsers.add_parser('shell', help="get a shell on a specific service container")
     parser_shell.add_argument("service", help="The name of the service to shell into")
@@ -76,7 +77,7 @@ def parse_args():
 
     parser_docker_clean = subparsers.add_parser('docker_clean', help="remove ALL docker containers and cached images (use with caution!)")
 
-    return parser.parse_known_args()
+    return parser.parse_args()
 
 
 def write_config(config):
@@ -105,7 +106,7 @@ def main():
         SESSION_USER = None
 
     # parse command line arguments
-    args, extra_args = parse_args()
+    args = parse_args()
 
     # run utility commands (docker_clean) if specified
     if args.command == 'docker_clean':
@@ -196,7 +197,7 @@ def main():
     elif args.command == 'ps':
         run_compose_cmd(docker_config_path, "ps")
     elif args.command == 'exec':
-        os.system("docker exec -i -t federatednode_{}_1 {}".format(args.service, extra_args))
+        os.system("docker exec -i -t federatednode_{}_1 {}".format(args.service, ' '.join(args.cmd)))
     elif args.command == 'shell':
         exec_result = os.system("docker exec -i -t federatednode_{}_1 bash".format(args.service))
         if exec_result != 0:
