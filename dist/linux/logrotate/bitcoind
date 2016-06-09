@@ -1,7 +1,0 @@
-/home/xcp/.bitcoin/debug.log /home/xcp/.bitcoin-testnet/testnet3/debug.log {
-    weekly
-    sharedscripts
-    postrotate
-        killall -HUP bitcoind
-    endscript
-}

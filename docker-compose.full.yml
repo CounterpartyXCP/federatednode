@@ -1,0 +1,81 @@
+version: '2'
+
+services:
+  bitcoin:
+    extends:
+      file: docker-compose.tmpl.yml
+      service: bitcoin-base-mainnet
+
+  bitcoin-testnet:
+    extends:
+      file: docker-compose.tmpl.yml
+      service: bitcoin-base-testnet
+
+  counterparty:
+    extends:
+      file: docker-compose.tmpl.yml
+      service: counterparty-base-mainnet
+    links:
+      - bitcoin
+
+  counterparty-testnet:
+    extends:
+      file: docker-compose.tmpl.yml
+      service: counterparty-base-testnet
+    links:
+      - bitcoin-testnet
+
+  mongodb:
+    extends:
+      file: docker-compose.tmpl.yml
+      service: mongodb-base
+
+  redis:
+    extends:
+      file: docker-compose.tmpl.yml
+      service: redis-base
+
+  armory-utxsvr:
+    extends:
+      file: docker-compose.tmpl.yml
+      service: armory-utxsvr-base-mainnet
+    links:
+      - bitcoin
+
+  armory-utxsvr-testnet:
+    extends:
+      file: docker-compose.tmpl.yml
+      service: armory-utxsvr-base-testnet
+    links:
+      - bitcoin-testnet
+
+  counterblock:
+    extends:
+      file: docker-compose.tmpl.yml
+      service: counterblock-base-mainnet
+    links:
+      - bitcoin
+      - counterparty
+      - mongodb
+      - redis
+      - armory-utxsvr
+
+  counterblock-testnet:
+    extends:
+      file: docker-compose.tmpl.yml
+      service: counterblock-base-testnet
+    links:
+      - bitcoin-testnet
+      - counterparty-testnet
+      - mongodb
+      - redis
+      - armory-utxsvr-testnet
+
+  counterwallet:
+    extends:
+      file: docker-compose.tmpl.yml
+      service: counterwallet-base
+    links:
+      - redis
+      - counterblock
+      - counterblock-testnet

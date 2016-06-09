@@ -1,11 +1,4 @@
 *.py[cod]
-env
-env.cwalletd
-env.counterblockd
-docs/_build/*
-dist/counterpartyd
-dist/counterblockd
-dist/counterwalletd
 bin
 npm-debug.log
 
@@ -41,3 +34,6 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
+
+# Fednode config
+.fednode.config
