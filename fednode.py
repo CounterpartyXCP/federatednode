@@ -87,6 +87,7 @@ def write_config(config):
 
 
 def run_compose_cmd(docker_config_path, cmd):
+    assert os.environ['FEDNODE_RELEASE_TAG']
     return os.system("docker-compose -f {} -p {} {}".format(docker_config_path, PROJECT_NAME, cmd))
 
 
@@ -191,7 +192,7 @@ def main():
         elif args.service in ['counterblock', 'counterblock-testnet']:
             run_compose_cmd(docker_config_path, "run -e EXTRA_PARAMS=\"--reparse\" {}".format(args.service))
     elif args.command == 'tail':
-        run_compose_cmd(docker_config_path, "logs -f {}".format(args.service))
+        run_compose_cmd(docker_config_path, "logs -f --tail=50 {}".format(args.service))
     elif args.command == 'logs':
         run_compose_cmd(docker_config_path, "logs {}".format(args.service))
     elif args.command == 'ps':
