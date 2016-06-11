@@ -1,6 +1,7 @@
 *.py[cod]
 bin
 npm-debug.log
+._*
 
 # C extensions
 *.so
