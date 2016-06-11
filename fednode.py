@@ -38,7 +38,7 @@ def parse_args():
     parser_install = subparsers.add_parser('install', help="install fednode services")
     parser_install.add_argument("config", choices=['base', 'counterblock', 'full'], help="The name of the service configuration to utilize")
     parser_install.add_argument("branch", choices=['master', 'develop'], help="The name of the git branch to utilize for the build")
-    parser_uninstall.add_argument("--use-ssh-uris", action="store_true", help="Use SSH URIs for source checkouts from Github, instead of HTTPS URIs")
+    parser_install.add_argument("--use-ssh-uris", action="store_true", help="Use SSH URIs for source checkouts from Github, instead of HTTPS URIs")
 
     parser_uninstall = subparsers.add_parser('uninstall', help="uninstall fednode services")
 
@@ -168,7 +168,7 @@ def main():
             if not os.path.exists(repo_dir):
                 git_cmd = "git clone -b {} {} {}".format(repo_branch, repo_url, repo_dir)
                 if SESSION_USER:  # check out the code as the original user, so the permissions are right
-                    os.system("su -c '{}' {}".format(git_cmd, SESSION_USER))
+                    os.system("sudo -u {} {}".format(SESSION_USER, git_cmd))
                 else:
                     os.system(git_cmd)
 
@@ -223,7 +223,7 @@ def main():
 
                 git_cmd = "cd {}; git pull origin {}; cd {}".format(service_dir_path, service_branch, CURDIR)
                 if SESSION_USER:  # update the code as the original user, so the permissions are right
-                    os.system("su -c '{}' {}".format(git_cmd, SESSION_USER))
+                    os.system("sudo -u {} {}".format(SESSION_USER, git_cmd))
                 else:
                     os.system(git_cmd)
 
