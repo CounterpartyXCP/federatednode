@@ -17,7 +17,8 @@ FEDNODE_CONFIG_FILE = ".fednode.config"
 FEDNODE_CONFIG_PATH = os.path.join(SCRIPTDIR, FEDNODE_CONFIG_FILE)
 
 PROJECT_NAME = "federatednode"
-REPO_BASE = "https://github.com/CounterpartyXCP/{}.git"
+REPO_BASE_HTTPS = "https://github.com/CounterpartyXCP/{}.git"
+REPO_BASE_SSH = "git@github.com:CounterpartyXCP/{}.git"
 REPOS = ['counterparty-lib', 'counterparty-cli', 'counterblock', 'counterwallet', 'armory-utxsvr']
 HOST_PORTS_USED = {
     'base': [8332, 18332, 4000, 14000],
@@ -37,9 +38,9 @@ def parse_args():
     parser_install = subparsers.add_parser('install', help="install fednode services")
     parser_install.add_argument("config", choices=['base', 'counterblock', 'full'], help="The name of the service configuration to utilize")
     parser_install.add_argument("branch", choices=['master', 'develop'], help="The name of the git branch to utilize for the build")
+    parser_uninstall.add_argument("--use-ssh-uris", action="store_true", help="Use SSH URIs for source checkouts from Github, instead of HTTPS URIs")
 
     parser_uninstall = subparsers.add_parser('uninstall', help="uninstall fednode services")
-    parser_uninstall.add_argument("--force", help="Force uninstall (no prompting)")
 
     parser_start = subparsers.add_parser('start', help="start fednode services")
     parser_start.add_argument("service", nargs='?', default='', help="The name of the service to start (or blank to start all services)")
@@ -70,7 +71,7 @@ def parse_args():
 
     parser_update = subparsers.add_parser('update', help="upgrade fednode services (i.e. update source code and restart the container, but don't update the container')")
     parser_update.add_argument("service", nargs='?', default='', choices=UPDATE_CHOICES, help="The name of the service to update (or blank to update all applicable services)")
-    parser_update.add_argument("--no-restart", help="Don't restart the container after updating the code'")
+    parser_update.add_argument("--no-restart", action="store_true", help="Don't restart the container after updating the code'")
 
     parser_rebuild = subparsers.add_parser('rebuild', help="rebuild fednode services (i.e. remove and refetch/install docker containers)")
     parser_rebuild.add_argument("service", nargs='?', default='', help="The name of the service to rebuild (or blank to rebuild all services)")
@@ -162,7 +163,7 @@ def main():
 
         # check out the necessary source trees (don't use submodules due to detached HEAD and other problems)
         for repo in REPOS:
-            repo_url = REPO_BASE.format(repo)
+            repo_url = REPO_BASE_SSH.format(repo) if args.use_ssh_uris else REPO_BASE_HTTPS.format(repo)
             repo_dir = os.path.join(SCRIPTDIR, "src", repo)
             if not os.path.exists(repo_dir):
                 git_cmd = "git clone -b {} {} {}".format(repo_branch, repo_url, repo_dir)
@@ -226,7 +227,8 @@ def main():
                 else:
                     os.system(git_cmd)
 
-            run_compose_cmd(docker_config_path, "restart {}".format(service))
+            if not args.no_restart:
+                run_compose_cmd(docker_config_path, "restart {}".format(service))
     elif args.command == 'rebuild':
         run_compose_cmd(docker_config_path, "pull --ignore-pull-failures {}".format(args.service))
         run_compose_cmd(docker_config_path, "up -d --build --force-recreate --no-deps {}".format(args.service))
