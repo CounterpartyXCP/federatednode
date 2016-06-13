@@ -1,4 +1,8 @@
 ## Versions ##
+* v2.0.0 (2016-06-13)
+  * COMPATIBLE WITH: `counterparty-lib` 9.54.0 and `counterblock` 1.3.1
+  * Total revamp to use Docker and Docker Compose
+  * No upgrade path: Please rebuild your nodes using the instructions available at [here](http://counterparty.io/docs/federated_node/)
 * v1.1.3 (2016-01-18)
   * COMPATIBLE WITH: `counterparty-lib` 9.53.0 and `counterblock` 1.3.1
   * Updated `bitcoin` core to 0.11.2

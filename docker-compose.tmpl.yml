@@ -1,0 +1,96 @@
+version: '2'
+
+services:
+  bitcoin-base:
+    image: counterparty/bitcoin:${FEDNODE_RELEASE_TAG}
+    volumes:
+      - ./data/bitcoin:/root/.bitcoin
+
+  bitcoin-base-mainnet:
+    extends:
+      service: bitcoin-base
+    ports:
+      - "8332:8332"
+
+  bitcoin-base-testnet:
+    extends:
+      service: bitcoin-base
+    ports:
+      - "18332:18332"
+    environment:
+      - TESTNET=1
+
+  counterparty-base:
+    image: counterparty/counterparty-server:${FEDNODE_RELEASE_TAG}
+    volumes:
+      - ./src/counterparty-lib:/counterparty-lib
+      - ./src/counterparty-cli:/counterparty-cli
+      - ./data/counterparty:/root/.local/share/counterparty
+
+  counterparty-base-mainnet:
+    extends:
+      service: counterparty-base
+    ports:
+      - "4000:4000"
+
+  counterparty-base-testnet:
+    extends:
+      service: counterparty-base
+    ports:
+      - "14000:14000"
+    environment:
+      - TESTNET=1
+
+  counterblock-base:
+    image: counterparty/counterblock:${FEDNODE_RELEASE_TAG}
+    volumes:
+      - ./src/counterblock:/counterblock
+      - ./data/counterblock:/root/.local/share/counterblock
+
+  counterblock-base-mainnet:
+    extends:
+      service: counterblock-base
+    ports:
+      - "4100:4100"
+
+  counterblock-base-testnet:
+    extends:
+      service: counterblock-base
+    ports:
+      - "14100:14100"
+    environment:
+      - TESTNET=1
+
+  armory-utxsvr-base:
+    image: counterparty/armory-utxsvr:${FEDNODE_RELEASE_TAG}
+    volumes:
+      - ./src/armory-utxsvr:/armory-utxsvr
+      - ./data/armory-utxsvr:/root/.armory
+      - ./data/bitcoin:/bitcoin_data
+
+  armory-utxsvr-base-mainnet:
+    extends:
+      service: armory-utxsvr-base
+
+  armory-utxsvr-base-testnet:
+    extends:
+      service: armory-utxsvr-base
+    environment:
+      - TESTNET=1
+
+  counterwallet-base:
+    image: counterparty/counterwallet:${FEDNODE_RELEASE_TAG}
+    volumes:
+      - ./src/counterwallet:/counterwallet
+      - ./data/counterblock:/counterblock_data
+    ports:
+      - "80:80"
+      - "443:443"
+
+  mongodb-base:
+    image: mongo:3.2
+    volumes:
+      - ./data/mongodb:/data/db
+
+  redis-base:
+    image: redis:3.2

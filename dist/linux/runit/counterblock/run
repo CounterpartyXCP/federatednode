@@ -1,7 +1,0 @@
-#!/bin/sh
-
-USER=xcpd
-export USER_HOME=/home/xcp
-ulimit -n 32768
-sleep 2 #prevent cpu maxing out if cbd has a crashing problem
-exec su -s /bin/bash -c 'PYTHON_EGG_CACHE=/tmp/counterblock.eggs /usr/local/bin/counterblock' ${USER}
