@@ -5,6 +5,7 @@ fednode.py: script to manage a Counterparty federated node
 
 import sys
 import os
+import re
 import argparse
 import copy
 import subprocess
@@ -204,7 +205,11 @@ def main():
     elif args.command == 'ps':
         run_compose_cmd(docker_config_path, "ps")
     elif args.command == 'exec':
-        os.system("docker exec -i -t federatednode_{}_1 {}".format(args.service, ' '.join(args.cmd)))
+        if len(args.cmd) == 1 and re.match("['\"].*?['\"]", args.cmd[0]):
+            cmd = args.cmd
+        else:
+            cmd = '"{}"'.format(' '.join(args.cmd).replace('"', '\\"'))
+        os.system("docker exec -i -t federatednode_{}_1 bash -c {}".format(args.service, cmd))
     elif args.command == 'shell':
         exec_result = os.system("docker exec -i -t federatednode_{}_1 bash".format(args.service))
         if exec_result != 0:
