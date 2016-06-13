@@ -17,9 +17,13 @@ FEDNODE_CONFIG_FILE = ".fednode.config"
 FEDNODE_CONFIG_PATH = os.path.join(SCRIPTDIR, FEDNODE_CONFIG_FILE)
 
 PROJECT_NAME = "federatednode"
+
 REPO_BASE_HTTPS = "https://github.com/CounterpartyXCP/{}.git"
 REPO_BASE_SSH = "git@github.com:CounterpartyXCP/{}.git"
-REPOS = ['counterparty-lib', 'counterparty-cli', 'counterblock', 'counterwallet', 'armory-utxsvr']
+REPOS_BASE = ['counterparty-lib', 'counterparty-cli']
+REPOS_COUNTERBLOCK = REPOS_BASE + ['counterblock', ]
+REPOS_FULL = REPOS_COUNTERBLOCK + ['counterwallet', 'armory-utxsvr']
+
 HOST_PORTS_USED = {
     'base': [8332, 18332, 4000, 14000],
     'counterblock': [8332, 18332, 4000, 14000, 4100, 14100],
@@ -162,6 +166,7 @@ def main():
                 sys.exit(1)
 
         # check out the necessary source trees (don't use submodules due to detached HEAD and other problems)
+        REPOS = REPOS_BASE if build_config == 'base' else (REPOS_COUNTERBLOCK if build_config == 'counterblock' else REPOS_FULL)
         for repo in REPOS:
             repo_url = REPO_BASE_SSH.format(repo) if args.use_ssh_uris else REPO_BASE_HTTPS.format(repo)
             repo_dir = os.path.join(SCRIPTDIR, "src", repo)
