@@ -95,6 +95,7 @@ services:
     volumes:
       - ./src/counterwallet:/counterwallet
       - ./data/counterblock:/counterblock_data
+      - ./config/counterwallet/ssl:/ssl_config
     ports:
       - "80:80"
       - "443:443"
