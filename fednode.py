@@ -176,7 +176,7 @@ def main():
             if not os.path.exists(repo_dir):
                 git_cmd = "git clone -b {} {} {}".format(repo_branch, repo_url, repo_dir)
                 if SESSION_USER:  # check out the code as the original user, so the permissions are right
-                    os.system("sudo -u {} bash -c {}".format(SESSION_USER, git_cmd))
+                    os.system("sudo -u {} bash -c \"{}\"".format(SESSION_USER, git_cmd))
                 else:
                     os.system(git_cmd)
 
@@ -230,24 +230,28 @@ def main():
         services_to_update = copy.copy(UPDATE_CHOICES) if not args.service.strip() else [args.service, ]
         git_has_updated = []
         while services_to_update:
+            # update source code
             service = services_to_update.pop(0)
-
-            #update source code and restart container
-            service_dir = service.replace('-testnet', '')
-            if service_dir not in git_has_updated:
-                git_has_updated.append(service_dir)
-                service_dir_path = os.path.join(SCRIPTDIR, "src", service_dir)
-                service_branch = subprocess.check_output("cd {};git symbolic-ref --short -q HEAD;cd {}".format(service_dir_path, CURDIR), shell=True).decode("utf-8").strip()
-                if not service_branch:
-                    print("Unknown service git branch name, or repo in detached state")
-                    sys.exit(1)
-
-                git_cmd = "cd {}; git pull origin {}; cd {}".format(service_dir_path, service_branch, CURDIR)
-                if SESSION_USER:  # update the code as the original user, so the permissions are right
-                    os.system("sudo -u {} bash -c {}".format(SESSION_USER, git_cmd))
+            service_base = service.replace('-testnet', '')
+            if service_base not in git_has_updated:
+                git_has_updated.append(service_base)
+                if service_base == 'counterparty':  # special case
+                    service_dirs = [os.path.join(SCRIPTDIR, "src", "counterparty-lib"), os.path.join(SCRIPTDIR, "src", "counterparty-cli")]
                 else:
-                    os.system(git_cmd)
+                    service_dirs = [service_base,]
+                for service_dir in service_dirs:
+                    service_dir_path = os.path.join(SCRIPTDIR, "src", service_dir)
+                    service_branch = subprocess.check_output("cd {};git symbolic-ref --short -q HEAD;cd {}".format(service_dir_path, CURDIR), shell=True).decode("utf-8").strip()
+                    if not service_branch:
+                        print("Unknown service git branch name, or repo in detached state")
+                        sys.exit(1)
+                    git_cmd = "cd {}; git pull origin {}; cd {}".format(service_dir_path, service_branch, CURDIR)
+                    if SESSION_USER:  # update the code as the original user, so the permissions are right
+                        os.system("sudo -u {} bash -c \"{}\"".format(SESSION_USER, git_cmd))
+                    else:
+                        os.system(git_cmd)
 
+            # and restart container
             if not args.no_restart:
                 run_compose_cmd(docker_config_path, "restart {}".format(service))
     elif args.command == 'rebuild':
