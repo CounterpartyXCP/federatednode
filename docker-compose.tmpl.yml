@@ -13,7 +13,7 @@ services:
     ports:
       - "8332:8332"
     environment:
-      - PARAMS="-conf /root/.bitcoin-config/bitcoin.conf"
+      - PARAMS=-conf=/root/.bitcoin-config/bitcoin.conf
 
   bitcoin-base-testnet:
     extends:
@@ -21,7 +21,7 @@ services:
     ports:
       - "18332:18332"
     environment:
-      - PARAMS="-conf /root/.bitcoin-config/bitcoin.testnet.conf"
+      - PARAMS=-conf=/root/.bitcoin-config/bitcoin.testnet.conf
 
   counterparty-base:
     image: counterparty/counterparty-server:${FEDNODE_RELEASE_TAG}
@@ -37,7 +37,7 @@ services:
     ports:
       - "4000:4000"
     environment:
-      - PARAMS="--config-file /root/.config/counterparty/server.conf"
+      - PARAMS=--config-file=/root/.config/counterparty/server.conf
 
   counterparty-base-testnet:
     extends:
@@ -45,7 +45,7 @@ services:
     ports:
       - "14000:14000"
     environment:
-      - PARAMS="--config-file /root/.config/counterparty/server.testnet.conf"
+      - PARAMS=--config-file=/root/.config/counterparty/server.testnet.conf
 
   counterblock-base:
     image: counterparty/counterblock:${FEDNODE_RELEASE_TAG}
@@ -60,7 +60,7 @@ services:
     ports:
       - "4100:4100"
     environment:
-      - PARAMS="--config-file /root/.config/counterblock/server.conf"
+      - PARAMS=--config-file=/root/.config/counterblock/server.conf
 
   counterblock-base-testnet:
     extends:
@@ -68,7 +68,7 @@ services:
     ports:
       - "14100:14100"
     environment:
-      - PARAMS="--config-file /root/.config/counterblock/server.testnet.conf"
+      - PARAMS=--config-file=/root/.config/counterblock/server.testnet.conf
 
   armory-utxsvr-base:
     image: counterparty/armory-utxsvr:${FEDNODE_RELEASE_TAG}
@@ -81,14 +81,14 @@ services:
     extends:
       service: armory-utxsvr-base
     environment:
-      - BITCOIND_URL="http://rpc:rpc@bitcoin:8332"
+      - BITCOIND_URL=http://rpc:rpc@bitcoin:8332
 
   armory-utxsvr-base-testnet:
     extends:
       service: armory-utxsvr-base
     environment:
-      - PARAMS="--testnet"
-      - BITCOIND_URL="http://rpc:rpc@bitcoin-testnet:18332"
+      - PARAMS=--testnet
+      - BITCOIND_URL=http://rpc:rpc@bitcoin-testnet:18332
 
   counterwallet-base:
     image: counterparty/counterwallet:${FEDNODE_RELEASE_TAG}
