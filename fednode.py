@@ -11,6 +11,8 @@ import copy
 import subprocess
 import configparser
 import socket
+import glob
+import shutil
 
 CURDIR = os.getcwd()
 SCRIPTDIR = os.path.dirname(os.path.realpath(__file__))
@@ -180,6 +182,15 @@ def main():
 
         # make sure we have the newest image for each service
         run_compose_cmd(docker_config_path, "pull --ignore-pull-failures")
+
+        # copy over the configs from .default to active versions, if they don't already exist
+        for default_config in glob.iglob(os.path.join(SCRIPTDIR, 'config', '**/*.default'), recursive=True):
+            active_config = default_config.replace('.default', '')
+            if not os.path.exists(active_config):
+                print("Generating config from defaults at {} ...".format(active_config))
+                shutil.copy2(default_config, active_config)
+                default_config_stat = os.stat(default_config)
+                os.chown(active_config, default_config_stat.st_uid, default_config_stat.st_gid)
 
         # launch
         run_compose_cmd(docker_config_path, "up -d")
