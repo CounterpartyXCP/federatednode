@@ -5,12 +5,15 @@ services:
     image: counterparty/bitcoin:${FEDNODE_RELEASE_TAG}
     volumes:
       - ./data/bitcoin:/root/.bitcoin
+      - ./config/bitcoin:/root/.bitcoin-config
 
   bitcoin-base-mainnet:
     extends:
       service: bitcoin-base
     ports:
       - "8332:8332"
+    environment:
+      - PARAMS="-conf /root/.bitcoin-config/bitcoin.conf"
 
   bitcoin-base-testnet:
     extends:
@@ -18,7 +21,7 @@ services:
     ports:
       - "18332:18332"
     environment:
-      - TESTNET=1
+      - PARAMS="-conf /root/.bitcoin-config/bitcoin.testnet.conf"
 
   counterparty-base:
     image: counterparty/counterparty-server:${FEDNODE_RELEASE_TAG}
@@ -26,12 +29,15 @@ services:
       - ./src/counterparty-lib:/counterparty-lib
       - ./src/counterparty-cli:/counterparty-cli
       - ./data/counterparty:/root/.local/share/counterparty
+      - ./config/counterparty:/root/.config/counterparty
 
   counterparty-base-mainnet:
     extends:
       service: counterparty-base
     ports:
       - "4000:4000"
+    environment:
+      - PARAMS="--config-file /root/.config/counterparty/server.conf"
 
   counterparty-base-testnet:
     extends:
@@ -39,19 +45,22 @@ services:
     ports:
       - "14000:14000"
     environment:
-      - TESTNET=1
+      - PARAMS="--config-file /root/.config/counterparty/server.testnet.conf"
 
   counterblock-base:
     image: counterparty/counterblock:${FEDNODE_RELEASE_TAG}
     volumes:
       - ./src/counterblock:/counterblock
       - ./data/counterblock:/root/.local/share/counterblock
+      - ./config/counterblock:/root/.config/counterblock
 
   counterblock-base-mainnet:
     extends:
       service: counterblock-base
     ports:
       - "4100:4100"
+    environment:
+      - PARAMS="--config-file /root/.config/counterblock/server.conf"
 
   counterblock-base-testnet:
     extends:
@@ -59,7 +68,7 @@ services:
     ports:
       - "14100:14100"
     environment:
-      - TESTNET=1
+      - PARAMS="--config-file /root/.config/counterblock/server.testnet.conf"
 
   armory-utxsvr-base:
     image: counterparty/armory-utxsvr:${FEDNODE_RELEASE_TAG}
@@ -71,12 +80,15 @@ services:
   armory-utxsvr-base-mainnet:
     extends:
       service: armory-utxsvr-base
+    environment:
+      - BITCOIND_URL="http://rpc:rpc@bitcoin:8332"
 
   armory-utxsvr-base-testnet:
     extends:
       service: armory-utxsvr-base
     environment:
-      - TESTNET=1
+      - PARAMS="--testnet"
+      - BITCOIND_URL="http://rpc:rpc@bitcoin-testnet:18332"
 
   counterwallet-base:
     image: counterparty/counterwallet:${FEDNODE_RELEASE_TAG}
