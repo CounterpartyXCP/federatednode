@@ -50,13 +50,13 @@ def parse_args():
     parser_uninstall = subparsers.add_parser('uninstall', help="uninstall fednode services")
 
     parser_start = subparsers.add_parser('start', help="start fednode services")
-    parser_start.add_argument("service", nargs='?', default='', help="The name of the service to start (or blank to start all services)")
+    parser_start.add_argument("services", nargs='*', default='', help="The service or services to start (or blank for all services)")
 
     parser_stop = subparsers.add_parser('stop', help="stop fednode services")
-    parser_stop.add_argument("service", nargs='?', default='', help="The name of the service to stop (or blank to stop all services)")
+    parser_stop.add_argument("services", nargs='*', default='', help="The service or services to stop (or blank for all services)")
 
     parser_restart = subparsers.add_parser('restart', help="restart fednode services")
-    parser_restart.add_argument("service", nargs='?', default='', help="The name of the service to restart (or blank to restart all services)")
+    parser_restart.add_argument("services", nargs='*', default='', help="The service or services to restart (or blank for all services)")
 
     parser_reparse = subparsers.add_parser('reparse', help="reparse a counterparty-server or counterblock service")
     parser_reparse.add_argument("service", choices=REPARSE_CHOICES, help="The name of the service for which to kick off a reparse")
@@ -64,10 +64,10 @@ def parse_args():
     parser_ps = subparsers.add_parser('ps', help="list installed services")
 
     parser_tail = subparsers.add_parser('tail', help="tail fednode logs")
-    parser_tail.add_argument("service", nargs='?', default='', help="The name of the service whose logs to tail (or blank to tail all services)")
+    parser_tail.add_argument("services", nargs='*', default='', help="The name of the service or services whose logs to tail (or blank for all services)")
 
     parser_logs = subparsers.add_parser('logs', help="tail fednode logs")
-    parser_logs.add_argument("service", nargs='?', default='', help="The name of the service whose logs to view (or blank to view all services)")
+    parser_logs.add_argument("services", nargs='*', default='', help="The name of the service or services whose logs to view (or blank for all services)")
 
     parser_exec = subparsers.add_parser('exec', help="execute a command on a specific container")
     parser_exec.add_argument("service", help="The name of the service to execute the command on")
@@ -76,12 +76,12 @@ def parse_args():
     parser_shell = subparsers.add_parser('shell', help="get a shell on a specific service container")
     parser_shell.add_argument("service", help="The name of the service to shell into")
 
-    parser_update = subparsers.add_parser('update', help="upgrade fednode services (i.e. update source code and restart the container, but don't update the container')")
+    parser_update = subparsers.add_parser('update', help="upgrade fednode services (i.e. update source code and restart the container, but don't update the container itself')")
     parser_update.add_argument("--no-restart", action="store_true", help="Don't restart the container after updating the code'")
-    parser_update.add_argument("service", nargs='?', default='', choices=UPDATE_CHOICES + ['',], help="The name of the service to update (or blank to update all applicable services)")
+    parser_update.add_argument("services", nargs='*', default='', help="The name of the service or services to update (or blank to for all applicable services)")
 
     parser_rebuild = subparsers.add_parser('rebuild', help="rebuild fednode services (i.e. remove and refetch/install docker containers)")
-    parser_rebuild.add_argument("service", nargs='?', default='', help="The name of the service to rebuild (or blank to rebuild all services)")
+    parser_rebuild.add_argument("services", nargs='*', default='', help="The name of the service or services to rebuild (or blank for all services)")
 
     parser_docker_clean = subparsers.add_parser('docker_clean', help="remove ALL docker containers and cached images (use with caution!)")
 
@@ -198,11 +198,11 @@ def main():
         run_compose_cmd(docker_config_path, "down")
         os.remove(FEDNODE_CONFIG_PATH)
     elif args.command == 'start':
-        run_compose_cmd(docker_config_path, "start {}".format(args.service))
+        run_compose_cmd(docker_config_path, "start {}".format(' '.join(args.services)))
     elif args.command == 'stop':
-        run_compose_cmd(docker_config_path, "stop {}".format(args.service))
+        run_compose_cmd(docker_config_path, "stop {}".format(' '.join(args.services)))
     elif args.command == 'restart':
-        run_compose_cmd(docker_config_path, "restart {}".format(args.service))
+        run_compose_cmd(docker_config_path, "restart {}".format(' '.join(args.services)))
     elif args.command == 'reparse':
         run_compose_cmd(docker_config_path, "stop {}".format(args.service))
         if args.service in ['counterparty', 'counterparty-testnet']:
@@ -210,9 +210,9 @@ def main():
         elif args.service in ['counterblock', 'counterblock-testnet']:
             run_compose_cmd(docker_config_path, "run -e EXTRA_PARAMS=\"--reparse\" {}".format(args.service))
     elif args.command == 'tail':
-        run_compose_cmd(docker_config_path, "logs -f --tail=50 {}".format(args.service))
+        run_compose_cmd(docker_config_path, "logs -f --tail=50 {}".format(' '.join(args.services)))
     elif args.command == 'logs':
-        run_compose_cmd(docker_config_path, "logs {}".format(args.service))
+        run_compose_cmd(docker_config_path, "logs {}".format(' '.join(args.services)))
     elif args.command == 'ps':
         run_compose_cmd(docker_config_path, "ps")
     elif args.command == 'exec':
@@ -227,7 +227,14 @@ def main():
             print("Container is not running -- creating a transient container with a 'bash' shell entrypoint...")
             run_compose_cmd(docker_config_path, "run --no-deps --entrypoint bash {}".format(args.service))
     elif args.command == 'update':
-        services_to_update = copy.copy(UPDATE_CHOICES) if not args.service.strip() else [args.service, ]
+        # validate
+        if args.services != ['',]:
+            for service in args.services:
+                if service not in UPDATE_CHOICES:
+                    print("Invalid service: {}".format(service))
+                    sys.exit(1)
+
+        services_to_update = copy.copy(UPDATE_CHOICES) if not len(args.services) else args.services
         git_has_updated = []
         while services_to_update:
             # update source code
@@ -255,8 +262,8 @@ def main():
             if not args.no_restart:
                 run_compose_cmd(docker_config_path, "restart {}".format(service))
     elif args.command == 'rebuild':
-        run_compose_cmd(docker_config_path, "pull --ignore-pull-failures {}".format(args.service))
-        run_compose_cmd(docker_config_path, "up -d --build --force-recreate --no-deps {}".format(args.service))
+        run_compose_cmd(docker_config_path, "pull --ignore-pull-failures {}".format(' '.join(args.services)))
+        run_compose_cmd(docker_config_path, "up -d --build --force-recreate --no-deps {}".format(' '.join(args.services)))
 
 
 if __name__ == '__main__':
