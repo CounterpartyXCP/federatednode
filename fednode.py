@@ -77,8 +77,8 @@ def parse_args():
     parser_shell.add_argument("service", help="The name of the service to shell into")
 
     parser_update = subparsers.add_parser('update', help="upgrade fednode services (i.e. update source code and restart the container, but don't update the container')")
-    parser_update.add_argument("service", nargs='?', default='', choices=UPDATE_CHOICES, help="The name of the service to update (or blank to update all applicable services)")
     parser_update.add_argument("--no-restart", action="store_true", help="Don't restart the container after updating the code'")
+    parser_update.add_argument("service", nargs='?', default='', choices=UPDATE_CHOICES + ['',], help="The name of the service to update (or blank to update all applicable services)")
 
     parser_rebuild = subparsers.add_parser('rebuild', help="rebuild fednode services (i.e. remove and refetch/install docker containers)")
     parser_rebuild.add_argument("service", nargs='?', default='', help="The name of the service to rebuild (or blank to rebuild all services)")
