@@ -1,8 +1,6 @@
 [Default]
 testnet=1
 rpc-host=0.0.0.0
-socketio-host=0.0.0.0
-socketio-chat-host=0.0.0.0
 backend-connect=bitcoin-testnet
 backend-user=rpc
 backend-password=rpc
