@@ -19,7 +19,7 @@
     <path type="recursive">/etc/iwatch</path>
   </watchlist>
 
-  <watchlist>
+  <!-- <watchlist>
   <title>Counterblock-Related</title>
   <contactpoint email="root@localhost" name="Administrator"/>
     <path type="recursive" events="modify">/etc/nginx</path>
@@ -29,5 +29,5 @@
     <path type="regexception">.*?\.swp</path>
     <path type="regexception">.*?\.swx</path>
     <path type="regexception">.*?~</path>
-  </watchlist>
+  </watchlist> -->
 </config>
