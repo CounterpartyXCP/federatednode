@@ -1,4 +1,9 @@
 ## Versions ##
+* v2.1.0 (2016-06-16)
+  * COMPATIBLE WITH: `counterparty-lib` 9.54.0 and `counterblock` 1.3.1
+  * Numerous bug fixes
+  * Tweaks to most fednode subcommands to be able to work with multiple services specified
+  * Config files for most components are now stored persistently (and editable) under the federatednode/config directory
 * v2.0.0 (2016-06-13)
   * COMPATIBLE WITH: `counterparty-lib` 9.54.0 and `counterblock` 1.3.1
   * Total revamp to use Docker and Docker Compose
