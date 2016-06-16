@@ -41,7 +41,7 @@ def modify_config(param_re, content_to_add, filenames, replace_if_exists=True, d
         f.close()
 
 
-def do_security_setup(run_as_user, branch):
+def do_security_setup():
     """Some helpful security-related tasks, to tighten up the box"""
 
     # modify host.conf
