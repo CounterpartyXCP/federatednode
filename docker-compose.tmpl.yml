@@ -64,6 +64,8 @@ services:
       service: counterblock-base
     ports:
       - "4100:4100"
+      - "4101:4101"
+      - "4102:4102"
     environment:
       - PARAMS=--config-file=/root/.config/counterblock/server.conf
 
@@ -73,6 +75,8 @@ services:
       service: counterblock-base
     ports:
       - "14100:14100"
+      - "14101:14101"
+      - "14102:14102"
     environment:
       - PARAMS=--config-file=/root/.config/counterblock/server.testnet.conf
 
