@@ -1,0 +1,11 @@
+[Default]
+testnet=1
+rpc-host=0.0.0.0
+backend-connect=bitcoin-testnet
+backend-user=rpc
+backend-password=rpc
+counterparty-connect=counterparty-testnet
+counterparty-user=rpc
+counterparty-password=rpc
+mongodb-connect=mongodb
+redis-connect=redis

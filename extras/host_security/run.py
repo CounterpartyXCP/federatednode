@@ -41,7 +41,7 @@ def modify_config(param_re, content_to_add, filenames, replace_if_exists=True, d
         f.close()
 
 
-def do_security_setup(run_as_user, branch):
+def do_security_setup():
     """Some helpful security-related tasks, to tighten up the box"""
 
     # modify host.conf
@@ -53,11 +53,11 @@ def do_security_setup(run_as_user, branch):
     runcmd("dpkg-reconfigure -fnoninteractive -plow unattended-upgrades")
 
     # sysctl
-    runcmd("install -m 0644 -o root -g root -D %s/linux/other/sysctl_rules.conf /etc/sysctl.d/60-tweaks.conf" % DIST_PATH)
+    runcmd("install -m 0644 -o root -g root -D %s/sysctl_rules.conf /etc/sysctl.d/60-tweaks.conf" % DIST_PATH)
 
     # set up fail2ban
     runcmd("apt-get -y install fail2ban")
-    runcmd("install -m 0644 -o root -g root -D %s/linux/other/fail2ban.jail.conf /etc/fail2ban/jail.d/counterblock.conf" % DIST_PATH)
+    runcmd("install -m 0644 -o root -g root -D %s/fail2ban.jail.conf /etc/fail2ban/jail.d/counterblock.conf" % DIST_PATH)
     runcmd("service fail2ban restart")
 
     # set up psad (this will install postfix, which will prompt the user)
@@ -89,14 +89,14 @@ def do_security_setup(run_as_user, branch):
     # auditd
     # note that auditd will need a reboot to fully apply the rules, due to it operating in "immutable mode" by default
     runcmd("apt-get -y install auditd audispd-plugins")
-    runcmd("install -m 0640 -o root -g root -D %s/linux/other/audit.rules /etc/audit/rules.d/counterblock.rules" % DIST_PATH)
+    runcmd("install -m 0640 -o root -g root -D %s/audit.rules /etc/audit/rules.d/counterblock.rules" % DIST_PATH)
     modify_config(r'^USE_AUGENRULES=.*?$', 'USE_AUGENRULES="yes"', '/etc/default/auditd')
     runcmd("service auditd restart")
 
     # iwatch
     runcmd("apt-get -y install iwatch")
     modify_config(r'^START_DAEMON=.*?$', 'START_DAEMON=true', '/etc/default/iwatch')
-    runcmd("install -m 0644 -o root -g root -D %s/linux/other/iwatch.xml /etc/iwatch/iwatch.xml" % DIST_PATH)
+    runcmd("install -m 0644 -o root -g root -D %s/iwatch.xml /etc/iwatch/iwatch.xml" % DIST_PATH)
     modify_config(r'guard email="root@localhost"', 'guard email="noreply@%s"' % socket.gethostname(), '/etc/iwatch/iwatch.xml')
     runcmd("service iwatch restart")
 

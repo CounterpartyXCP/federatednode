@@ -5,20 +5,25 @@ services:
     image: counterparty/bitcoin:${FEDNODE_RELEASE_TAG}
     volumes:
       - ./data/bitcoin:/root/.bitcoin
+      - ./config/bitcoin:/root/.bitcoin-config
 
   bitcoin-base-mainnet:
+    hostname: ${HOSTNAME_BASE}-bc
     extends:
       service: bitcoin-base
     ports:
       - "8332:8332"
+    environment:
+      - PARAMS=-conf=/root/.bitcoin-config/bitcoin.conf
 
   bitcoin-base-testnet:
+    hostname: ${HOSTNAME_BASE}-bc_t
     extends:
       service: bitcoin-base
     ports:
       - "18332:18332"
     environment:
-      - TESTNET=1
+      - PARAMS=-conf=/root/.bitcoin-config/bitcoin.testnet.conf
 
   counterparty-base:
     image: counterparty/counterparty-server:${FEDNODE_RELEASE_TAG}
@@ -26,40 +31,52 @@ services:
       - ./src/counterparty-lib:/counterparty-lib
       - ./src/counterparty-cli:/counterparty-cli
       - ./data/counterparty:/root/.local/share/counterparty
+      - ./config/counterparty:/root/.config/counterparty
 
   counterparty-base-mainnet:
+    hostname: ${HOSTNAME_BASE}-cp
     extends:
       service: counterparty-base
     ports:
       - "4000:4000"
+    environment:
+      - PARAMS=--config-file=/root/.config/counterparty/server.conf
 
   counterparty-base-testnet:
+    hostname: ${HOSTNAME_BASE}-cp-t
     extends:
       service: counterparty-base
     ports:
       - "14000:14000"
     environment:
-      - TESTNET=1
+      - PARAMS=--config-file=/root/.config/counterparty/server.testnet.conf
 
   counterblock-base:
     image: counterparty/counterblock:${FEDNODE_RELEASE_TAG}
     volumes:
       - ./src/counterblock:/counterblock
       - ./data/counterblock:/root/.local/share/counterblock
+      - ./config/counterblock:/root/.config/counterblock
 
   counterblock-base-mainnet:
+    hostname: ${HOSTNAME_BASE}-cb
     extends:
       service: counterblock-base
     ports:
       - "4100:4100"
+    environment:
+      - PARAMS=--config-file=/root/.config/counterblock/server.conf
 
   counterblock-base-testnet:
+    hostname: ${HOSTNAME_BASE}-cb-t
     extends:
       service: counterblock-base
     ports:
       - "14100:14100"
+      - "14101:14101"
+      - "14102:14102"
     environment:
-      - TESTNET=1
+      - PARAMS=--config-file=/root/.config/counterblock/server.testnet.conf
 
   armory-utxsvr-base:
     image: counterparty/armory-utxsvr:${FEDNODE_RELEASE_TAG}
@@ -69,20 +86,27 @@ services:
       - ./data/bitcoin:/bitcoin_data
 
   armory-utxsvr-base-mainnet:
-    extends:
-      service: armory-utxsvr-base
-
-  armory-utxsvr-base-testnet:
+    hostname: ${HOSTNAME_BASE}-amry
     extends:
       service: armory-utxsvr-base
     environment:
-      - TESTNET=1
+      - BITCOIND_URL=http://rpc:rpc@bitcoin:8332
+
+  armory-utxsvr-base-testnet:
+    hostname: ${HOSTNAME_BASE}-amry-t
+    extends:
+      service: armory-utxsvr-base
+    environment:
+      - PARAMS=--testnet
+      - BITCOIND_URL=http://rpc:rpc@bitcoin-testnet:18332
 
   counterwallet-base:
+    hostname: ${HOSTNAME_BASE}-cw
     image: counterparty/counterwallet:${FEDNODE_RELEASE_TAG}
     volumes:
       - ./src/counterwallet:/counterwallet
       - ./data/counterblock:/counterblock_data
+      - ./config/counterwallet/ssl:/ssl_config
     ports:
       - "80:80"
       - "443:443"
