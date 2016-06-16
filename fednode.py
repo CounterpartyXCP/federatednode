@@ -154,7 +154,7 @@ def main():
     docker_config_path = os.path.join(SCRIPTDIR, docker_config_file)
     repo_branch = config.get('Default', 'branch')
     os.environ['FEDNODE_RELEASE_TAG'] = config.get('Default', 'branch')
-    assert os.environ['FEDNODE_RELEASE_TAG']
+    os.environ['HOSTNAME_BASE'] = socket.gethostname()
 
     # perform action for the specified command
     if args.command == 'install':

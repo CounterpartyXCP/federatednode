@@ -8,6 +8,7 @@ services:
       - ./config/bitcoin:/root/.bitcoin-config
 
   bitcoin-base-mainnet:
+    hostname: ${HOSTNAME_BASE}-bc
     extends:
       service: bitcoin-base
     ports:
@@ -16,6 +17,7 @@ services:
       - PARAMS=-conf=/root/.bitcoin-config/bitcoin.conf
 
   bitcoin-base-testnet:
+    hostname: ${HOSTNAME_BASE}-bc_t
     extends:
       service: bitcoin-base
     ports:
@@ -32,6 +34,7 @@ services:
       - ./config/counterparty:/root/.config/counterparty
 
   counterparty-base-mainnet:
+    hostname: ${HOSTNAME_BASE}-cp
     extends:
       service: counterparty-base
     ports:
@@ -40,6 +43,7 @@ services:
       - PARAMS=--config-file=/root/.config/counterparty/server.conf
 
   counterparty-base-testnet:
+    hostname: ${HOSTNAME_BASE}-cp-t
     extends:
       service: counterparty-base
     ports:
@@ -55,6 +59,7 @@ services:
       - ./config/counterblock:/root/.config/counterblock
 
   counterblock-base-mainnet:
+    hostname: ${HOSTNAME_BASE}-cb
     extends:
       service: counterblock-base
     ports:
@@ -63,6 +68,7 @@ services:
       - PARAMS=--config-file=/root/.config/counterblock/server.conf
 
   counterblock-base-testnet:
+    hostname: ${HOSTNAME_BASE}-cb-t
     extends:
       service: counterblock-base
     ports:
@@ -78,12 +84,14 @@ services:
       - ./data/bitcoin:/bitcoin_data
 
   armory-utxsvr-base-mainnet:
+    hostname: ${HOSTNAME_BASE}-amry
     extends:
       service: armory-utxsvr-base
     environment:
       - BITCOIND_URL=http://rpc:rpc@bitcoin:8332
 
   armory-utxsvr-base-testnet:
+    hostname: ${HOSTNAME_BASE}-amry-t
     extends:
       service: armory-utxsvr-base
     environment:
@@ -91,6 +99,7 @@ services:
       - BITCOIND_URL=http://rpc:rpc@bitcoin-testnet:18332
 
   counterwallet-base:
+    hostname: ${HOSTNAME_BASE}-cw
     image: counterparty/counterwallet:${FEDNODE_RELEASE_TAG}
     volumes:
       - ./src/counterwallet:/counterwallet
