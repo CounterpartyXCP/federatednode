@@ -34,6 +34,7 @@ HOST_PORTS_USED = {
 }
 UPDATE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock', 'counterblock-testnet', 'counterwallet', 'armory-utxsvr', 'armory-utxsvr-testnet']
 REPARSE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock', 'counterblock-testnet']
+SHELL_CHOICES = UPDATE_CHOICES + ['mongodb', 'redis']
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -70,11 +71,11 @@ def parse_args():
     parser_logs.add_argument("services", nargs='*', default='', help="The name of the service or services whose logs to view (or blank for all services)")
 
     parser_exec = subparsers.add_parser('exec', help="execute a command on a specific container")
-    parser_exec.add_argument("service", help="The name of the service to execute the command on")
+    parser_exec.add_argument("service", choices=SHELL_CHOICES, help="The name of the service to execute the command on")
     parser_exec.add_argument("cmd", nargs=argparse.REMAINDER, help="The shell command to execute")
 
     parser_shell = subparsers.add_parser('shell', help="get a shell on a specific service container")
-    parser_shell.add_argument("service", help="The name of the service to shell into")
+    parser_shell.add_argument("service", choices=SHELL_CHOICES, help="The name of the service to shell into")
 
     parser_update = subparsers.add_parser('update', help="upgrade fednode services (i.e. update source code and restart the container, but don't update the container itself')")
     parser_update.add_argument("--no-restart", action="store_true", help="Don't restart the container after updating the code'")
@@ -222,8 +223,14 @@ def main():
             cmd = '"{}"'.format(' '.join(args.cmd).replace('"', '\\"'))
         os.system("docker exec -i -t federatednode_{}_1 bash -c {}".format(args.service, cmd))
     elif args.command == 'shell':
-        exec_result = os.system("docker exec -i -t federatednode_{}_1 bash".format(args.service))
-        if exec_result != 0:
+        try:
+            container_running = subprocess.check_output('docker inspect --format="{{ .State.Running }}" federatednode_{}_1'.format(args.service), shell=True).decode("utf-8").strip()
+        except subprocess.CalledProcessError:
+            print("Container {} doesn't seem to exist'".format(args.service))
+            sys.exit(1)
+        if container_running:
+            os.system("docker exec -i -t federatednode_{}_1 bash".format(args.service))
+        else:
             print("Container is not running -- creating a transient container with a 'bash' shell entrypoint...")
             run_compose_cmd(docker_config_path, "run --no-deps --entrypoint bash {}".format(args.service))
     elif args.command == 'update':
