@@ -224,7 +224,7 @@ def main():
         os.system("docker exec -i -t federatednode_{}_1 bash -c {}".format(args.service, cmd))
     elif args.command == 'shell':
         try:
-            container_running = subprocess.check_output('docker inspect --format="{{ .State.Running }}" federatednode_{}_1'.format(args.service), shell=True).decode("utf-8").strip()
+            container_running = subprocess.check_output('docker inspect --format="{{{{ .State.Running }}}}" federatednode_{}_1'.format(args.service), shell=True).decode("utf-8").strip()
             container_running = container_running == 'true'
         except subprocess.CalledProcessError:
             print("Container {} doesn't seem to exist'".format(args.service))
