@@ -233,7 +233,7 @@ def main():
             os.system("docker exec -i -t federatednode_{}_1 bash".format(args.service))
         else:
             print("Container is not running -- creating a transient container with a 'bash' shell entrypoint...")
-            run_compose_cmd(docker_config_path, "run --no-deps --entrypoint bash {}".format(args.service))
+            run_compose_cmd(docker_config_path, "run --no-deps --rm --entrypoint bash {}".format(args.service))
     elif args.command == 'update':
         # validate
         if args.services != ['',]:
