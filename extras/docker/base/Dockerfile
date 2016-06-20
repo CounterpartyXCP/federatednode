@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y apt-utils ca-certificates wget curl git
     net-tools iputils-ping telnet lynx
 
 # Set locale
-RUN dpkg-reconfigure locales && \
+RUN dpkg-reconfigure -f noninteractive locales && \
     locale-gen en_US.UTF-8 && \
     /usr/sbin/update-locale LANG=en_US.UTF-8
 ENV LC_ALL en_US.UTF-8
