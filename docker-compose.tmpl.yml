@@ -91,14 +91,16 @@ services:
       service: armory-utxsvr-base
     environment:
       - BITCOIND_URL=http://rpc:rpc@bitcoin:8332
+      - RPC_HOST=0.0.0.0
 
   armory-utxsvr-base-testnet:
     hostname: ${HOSTNAME_BASE}-amry-t
     extends:
       service: armory-utxsvr-base
     environment:
-      - PARAMS=--testnet
       - BITCOIND_URL=http://rpc:rpc@bitcoin-testnet:18332
+      - RPC_HOST=0.0.0.0
+      - PARAMS=--testnet
 
   counterwallet-base:
     hostname: ${HOSTNAME_BASE}-cw
