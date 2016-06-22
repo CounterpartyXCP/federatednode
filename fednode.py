@@ -16,10 +16,10 @@ import shutil
 
 CURDIR = os.getcwd()
 SCRIPTDIR = os.path.dirname(os.path.realpath(__file__))
-FEDNODE_CONFIG_FILE = ".fednode.config"
-FEDNODE_CONFIG_PATH = os.path.join(SCRIPTDIR, FEDNODE_CONFIG_FILE)
 
 PROJECT_NAME = "federatednode"
+FEDNODE_CONFIG_FILE = ".fednode.config"
+FEDNODE_CONFIG_PATH = os.path.join(SCRIPTDIR, FEDNODE_CONFIG_FILE)
 
 REPO_BASE_HTTPS = "https://github.com/CounterpartyXCP/{}.git"
 REPO_BASE_SSH = "git@github.com:CounterpartyXCP/{}.git"
@@ -35,6 +35,11 @@ HOST_PORTS_USED = {
 UPDATE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock', 'counterblock-testnet', 'counterwallet', 'armory-utxsvr', 'armory-utxsvr-testnet']
 REPARSE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock', 'counterblock-testnet']
 SHELL_CHOICES = UPDATE_CHOICES + ['mongodb', 'redis']
+
+# set in setup_env()
+SESSION_USER = None
+SUDO_CMD = None
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -97,7 +102,7 @@ def write_config(config):
 
 def run_compose_cmd(docker_config_path, cmd):
     assert os.environ['FEDNODE_RELEASE_TAG']
-    return os.system("docker-compose -f {} -p {} {}".format(docker_config_path, PROJECT_NAME, cmd))
+    return os.system("{} docker-compose -f {} -p {} {}".format(SUDO_CMD, docker_config_path, PROJECT_NAME, cmd))
 
 
 def is_port_open(port):
@@ -106,30 +111,39 @@ def is_port_open(port):
     return sock.connect_ex(('127.0.0.1', port)) == 0  # returns True if the port is open
 
 
-def main():
-    if os.name != 'nt' and not os.geteuid() == 0:
-        print("Please run this script as root")
-        sys.exit(1)
+def setup_env():
+    global SESSION_USER
+    global SUDO_CMD
     if os.name != 'nt':
         SESSION_USER = subprocess.check_output("logname", shell=True).decode("utf-8").strip()
+        SUDO_CMD = "sudo -E"
+        IS_SUDO_ACTIVE = subprocess.check_output('sudo -n uptime 2>&1|grep "load"|wc -l', shell=True).decode("utf-8").strip() == "1"
     else:
         SESSION_USER = None
+        SUDO_CMD = ''
+        IS_SUDO_ACTIVE = True
 
-    # parse command line arguments
+    if not IS_SUDO_ACTIVE:
+        print("This script requires root access (via sudo) to run. Please enter your sudo password below.")
+        os.system("bash -c 'sudo whoami > /dev/null'")
+
+
+def main():
+    setup_env()
     args = parse_args()
 
     # run utility commands (docker_clean) if specified
     if args.command == 'docker_clean':
-        docker_containers = subprocess.check_output("docker ps -a -q", shell=True).decode("utf-8").split('\n')
-        docker_images = subprocess.check_output("docker images -q", shell=True).decode("utf-8").split('\n')
+        docker_containers = subprocess.check_output("{} docker ps -a -q".format(SUDO_CMD), shell=True).decode("utf-8").split('\n')
+        docker_images = subprocess.check_output("{} docker images -q".format(SUDO_CMD), shell=True).decode("utf-8").split('\n')
         for container in docker_containers:
             if not container:
                 continue
-            os.system("docker rm {}".format(container))
+            os.system("{} docker rm {}".format(SUDO_CMD, container))
         for image in docker_images:
             if not image:
                 continue
-            os.system("docker rmi {}".format(image))
+            os.system("{} docker rmi {}".format(SUDO_CMD, image))
         sys.exit(1)
 
     # for all other commands
@@ -137,7 +151,7 @@ def main():
     config_existed = os.path.exists(FEDNODE_CONFIG_PATH)
     config = configparser.SafeConfigParser()
     if not config_existed:
-        if args.command != 'install': 
+        if args.command != 'install':
             print("config file {} does not exist. Please run the 'install' command first".format(FEDNODE_CONFIG_FILE))
             sys.exit(1)
 
@@ -176,8 +190,8 @@ def main():
             repo_dir = os.path.join(SCRIPTDIR, "src", repo)
             if not os.path.exists(repo_dir):
                 git_cmd = "git clone -b {} {} {}".format(repo_branch, repo_url, repo_dir)
-                if SESSION_USER:  # check out the code as the original user, so the permissions are right
-                    os.system("sudo -u {} bash -c \"{}\"".format(SESSION_USER, git_cmd))
+                if SESSION_USER:  # make sure to check out the code as the original user, so the permissions are right
+                    os.system("{} -u {} bash -c \"{}\"".format(SUDO_CMD, SESSION_USER, git_cmd))
                 else:
                     os.system(git_cmd)
 
@@ -221,22 +235,22 @@ def main():
             cmd = args.cmd
         else:
             cmd = '"{}"'.format(' '.join(args.cmd).replace('"', '\\"'))
-        os.system("docker exec -i -t federatednode_{}_1 bash -c {}".format(args.service, cmd))
+        os.system("{} docker exec -i -t federatednode_{}_1 bash -c {}".format(SUDO_CMD, args.service, cmd))
     elif args.command == 'shell':
         try:
-            container_running = subprocess.check_output('docker inspect --format="{{{{ .State.Running }}}}" federatednode_{}_1'.format(args.service), shell=True).decode("utf-8").strip()
+            container_running = subprocess.check_output('{} docker inspect --format="{{{{ .State.Running }}}}" federatednode_{}_1'.format(SUDO_CMD, args.service), shell=True).decode("utf-8").strip()
             container_running = container_running == 'true'
         except subprocess.CalledProcessError:
             print("Container {} doesn't seem to exist'".format(args.service))
             sys.exit(1)
         if container_running:
-            os.system("docker exec -i -t federatednode_{}_1 bash".format(args.service))
+            os.system("{} docker exec -i -t federatednode_{}_1 bash".format(SUDO_CMD, args.service))
         else:
             print("Container is not running -- creating a transient container with a 'bash' shell entrypoint...")
             run_compose_cmd(docker_config_path, "run --no-deps --rm --entrypoint bash {}".format(args.service))
     elif args.command == 'update':
         # validate
-        if args.services != ['',]:
+        if args.services != ['', ]:
             for service in args.services:
                 if service not in UPDATE_CHOICES:
                     print("Invalid service: {}".format(service))
@@ -261,8 +275,8 @@ def main():
                         print("Unknown service git branch name, or repo in detached state")
                         sys.exit(1)
                     git_cmd = "cd {}; git pull origin {}; cd {}".format(service_dir_path, service_branch, CURDIR)
-                    if SESSION_USER:  # update the code as the original user, so the permissions are right
-                        os.system("sudo -u {} bash -c \"{}\"".format(SESSION_USER, git_cmd))
+                    if SESSION_USER:  # make sure to update the code as the original user, so the permissions are right
+                        os.system("{} -u {} bash -c \"{}\"".format(SUDO_CMD, SESSION_USER, git_cmd))
                     else:
                         os.system(git_cmd)
 
