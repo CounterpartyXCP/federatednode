@@ -12,7 +12,7 @@ services:
     image: counterparty/bitcoin:${FEDNODE_RELEASE_TAG}
     volumes:
       - ./config/bitcoin:/root/.bitcoin-config
-      - bitcoin-data:/root/.bitcoin
+      - bitcoin-data:/root/.bitcoin/
 
   bitcoin-base-mainnet:
     hostname: ${HOSTNAME_BASE}-bc
