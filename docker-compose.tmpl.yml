@@ -1,11 +1,18 @@
 version: '2'
 
+# Data volumes defined in these services (which must be defined in child templates):
+# bitcoin-data
+# counterparty-data
+# counterblock-data
+# armory-data
+# mongodb-data
+
 services:
   bitcoin-base:
     image: counterparty/bitcoin:${FEDNODE_RELEASE_TAG}
     volumes:
-      - ./data/bitcoin:/root/.bitcoin
       - ./config/bitcoin:/root/.bitcoin-config
+      - bitcoin-data:/root/.bitcoin
 
   bitcoin-base-mainnet:
     hostname: ${HOSTNAME_BASE}-bc
@@ -17,7 +24,7 @@ services:
       - PARAMS=-conf=/root/.bitcoin-config/bitcoin.conf
 
   bitcoin-base-testnet:
-    hostname: ${HOSTNAME_BASE}-bc_t
+    hostname: ${HOSTNAME_BASE}-bc-t
     extends:
       service: bitcoin-base
     ports:
@@ -30,8 +37,8 @@ services:
     volumes:
       - ./src/counterparty-lib:/counterparty-lib
       - ./src/counterparty-cli:/counterparty-cli
-      - ./data/counterparty:/root/.local/share/counterparty
       - ./config/counterparty:/root/.config/counterparty
+      - counterparty-data:/root/.local/share/counterparty
 
   counterparty-base-mainnet:
     hostname: ${HOSTNAME_BASE}-cp
@@ -55,8 +62,8 @@ services:
     image: counterparty/counterblock:${FEDNODE_RELEASE_TAG}
     volumes:
       - ./src/counterblock:/counterblock
-      - ./data/counterblock:/root/.local/share/counterblock
       - ./config/counterblock:/root/.config/counterblock
+      - counterblock-data:/root/.local/share/counterblock
 
   counterblock-base-mainnet:
     hostname: ${HOSTNAME_BASE}-cb
@@ -82,8 +89,8 @@ services:
     image: counterparty/armory-utxsvr:${FEDNODE_RELEASE_TAG}
     volumes:
       - ./src/armory-utxsvr:/armory-utxsvr
-      - ./data/armory-utxsvr:/root/.armory
-      - ./data/bitcoin:/bitcoin_data
+      - armory-data:/root/.armory
+      - bitcoin-data:/bitcoin_data
 
   armory-utxsvr-base-mainnet:
     hostname: ${HOSTNAME_BASE}-amry
@@ -107,8 +114,8 @@ services:
     image: counterparty/counterwallet:${FEDNODE_RELEASE_TAG}
     volumes:
       - ./src/counterwallet:/counterwallet
-      - ./data/counterblock:/counterblock_data
       - ./config/counterwallet/ssl:/ssl_config
+      - counterblock-data:/counterblock_data
     ports:
       - "80:80"
       - "443:443"
@@ -116,7 +123,7 @@ services:
   mongodb-base:
     image: mongo:3.2
     volumes:
-      - ./data/mongodb:/data/db
+      - mongodb-data:/data/db
 
   redis-base:
     image: redis:3.2
