@@ -3,7 +3,7 @@
 : ${PARAMS:=""}
 
 # Respond to docker stop's SIGTERM gracefully
-stopcmd="/usr/local/bin/bitcoin-cli ${PARAMS} $@ stop; exit 0"
-trap "$stopcmd" SIGTERM
+stopcmd="/usr/local/bin/bitcoin-cli ${PARAMS} stop; exit 0"
+trap "$stopcmd" SIGINT SIGTERM
 
 /usr/local/bin/bitcoind ${PARAMS} $@

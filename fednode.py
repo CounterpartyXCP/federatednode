@@ -133,6 +133,16 @@ def setup_env():
         os.system("bash -c 'sudo whoami > /dev/null'")
 
 
+def win_stop(services):
+    """bitcoind must be properly stopped on windows docker otherwise the blocks we downloaded don't seem to persist. this hack helps ensure that...."""
+    if not IS_WINDOWS:
+        return
+    if not services or 'bitcoin' in services:
+        os.system("docker exec bitcoin bitcoin-cli stop")
+    if not services or 'bitcoin-testnet' in services:
+        os.system("docker exec bitcoin-testnet bitcoin-cli -conf=/root/.bitcoin-config/bitcoin.testnet.conf stop")
+
+
 def main():
     setup_env()
     args = parse_args()
@@ -221,8 +231,10 @@ def main():
     elif args.command == 'start':
         run_compose_cmd(docker_config_path, "start {}".format(' '.join(args.services)))
     elif args.command == 'stop':
+        win_stop(args.services)
         run_compose_cmd(docker_config_path, "stop {}".format(' '.join(args.services)))
     elif args.command == 'restart':
+        win_stop(args.services)
         run_compose_cmd(docker_config_path, "restart {}".format(' '.join(args.services)))
     elif args.command == 'reparse':
         run_compose_cmd(docker_config_path, "stop {}".format(args.service))
