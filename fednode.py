@@ -40,6 +40,8 @@ SHELL_CHOICES = UPDATE_CHOICES + ['mongodb', 'redis', 'bitcoin', 'bitcoin-testne
 IS_WINDOWS = None
 SESSION_USER = None
 SUDO_CMD = None
+# set in main()
+DOCKER_CONFIG_PATH = None
 
 
 def parse_args():
@@ -101,9 +103,10 @@ def write_config(config):
     cfg_file.close()
 
 
-def run_compose_cmd(docker_config_path, cmd):
+def run_compose_cmd(cmd):
+    assert DOCKER_CONFIG_PATH
     assert os.environ['FEDNODE_RELEASE_TAG']
-    return os.system("{} docker-compose -f {} -p {} {}".format(SUDO_CMD, docker_config_path, PROJECT_NAME, cmd))
+    return os.system("{} docker-compose -f {} -p {} {}".format(SUDO_CMD, DOCKER_CONFIG_PATH, PROJECT_NAME, cmd))
 
 
 def is_port_open(port):
@@ -133,17 +136,30 @@ def setup_env():
         os.system("bash -c 'sudo whoami > /dev/null'")
 
 
+def is_container_running(service, abort_on_not_exist=True):
+    try:
+        container_running = subprocess.check_output('{} docker inspect --format="{{{{ .State.Running }}}}" federatednode_{}_1'.format(SUDO_CMD, service), shell=True).decode("utf-8").strip()
+        container_running = container_running == 'true'
+    except subprocess.CalledProcessError:
+        container_running == None
+        if abort_on_not_exist:
+            print("Container {} doesn't seem to exist'".format(service))
+            sys.exit(1)
+    return container_running
+
+
 def win_stop(services):
     """bitcoind must be properly stopped on windows docker otherwise the blocks we downloaded don't seem to persist. this hack helps ensure that...."""
     if not IS_WINDOWS:
         return
-    if not services or 'bitcoin' in services:
-        os.system("docker exec bitcoin bitcoin-cli stop")
-    if not services or 'bitcoin-testnet' in services:
-        os.system("docker exec bitcoin-testnet bitcoin-cli -conf=/root/.bitcoin-config/bitcoin.testnet.conf stop")
+    if not services or 'bitcoin' in services and is_container_running('bitcoin'):
+        os.system('docker exec -i -t federatednode_bitcoin_1 bash -c "bitcoin-cli stop &>/dev/null"')
+    if not services or 'bitcoin-testnet' in services and is_container_running('bitcoin-testnet'):
+        os.system('docker exec -i -t federatednode_bitcoin-testnet_1 bash -c "bitcoin-cli -conf=/root/.bitcoin-config/bitcoin.testnet.conf stop &>/dev/null"')
 
 
 def main():
+    global DOCKER_CONFIG_PATH
     setup_env()
     args = parse_args()
 
@@ -181,7 +197,7 @@ def main():
     config.read(FEDNODE_CONFIG_PATH)
     build_config = config.get('Default', 'config')
     docker_config_file = "docker-compose.{}.yml".format(build_config)
-    docker_config_path = os.path.join(SCRIPTDIR, docker_config_file)
+    DOCKER_CONFIG_PATH = os.path.join(SCRIPTDIR, docker_config_file)
     repo_branch = config.get('Default', 'branch')
     os.environ['FEDNODE_RELEASE_TAG'] = config.get('Default', 'branch')
     os.environ['HOSTNAME_BASE'] = socket.gethostname()
@@ -211,7 +227,7 @@ def main():
                     os.system(git_cmd)
 
         # make sure we have the newest image for each service
-        run_compose_cmd(docker_config_path, "pull --ignore-pull-failures")
+        run_compose_cmd("pull --ignore-pull-failures")
 
         # copy over the configs from .default to active versions, if they don't already exist
         for default_config in glob.iglob(os.path.join(SCRIPTDIR, 'config', '**/*.default'), recursive=True):
@@ -224,30 +240,30 @@ def main():
                     os.chown(active_config, default_config_stat.st_uid, default_config_stat.st_gid)
 
         # launch
-        run_compose_cmd(docker_config_path, "up -d")
+        run_compose_cmd("up -d")
     elif args.command == 'uninstall':
-        run_compose_cmd(docker_config_path, "down")
+        run_compose_cmd("down")
         os.remove(FEDNODE_CONFIG_PATH)
     elif args.command == 'start':
-        run_compose_cmd(docker_config_path, "start {}".format(' '.join(args.services)))
+        run_compose_cmd("start {}".format(' '.join(args.services)))
     elif args.command == 'stop':
         win_stop(args.services)
-        run_compose_cmd(docker_config_path, "stop {}".format(' '.join(args.services)))
+        run_compose_cmd("stop {}".format(' '.join(args.services)))
     elif args.command == 'restart':
         win_stop(args.services)
-        run_compose_cmd(docker_config_path, "restart {}".format(' '.join(args.services)))
+        run_compose_cmd("restart {}".format(' '.join(args.services)))
     elif args.command == 'reparse':
-        run_compose_cmd(docker_config_path, "stop {}".format(args.service))
+        run_compose_cmd("stop {}".format(args.service))
         if args.service in ['counterparty', 'counterparty-testnet']:
-            run_compose_cmd(docker_config_path, "run -e COMMAND=reparse {}".format(args.service))
+            run_compose_cmd("run -e COMMAND=reparse {}".format(args.service))
         elif args.service in ['counterblock', 'counterblock-testnet']:
-            run_compose_cmd(docker_config_path, "run -e EXTRA_PARAMS=\"--reparse\" {}".format(args.service))
+            run_compose_cmd("run -e EXTRA_PARAMS=\"--reparse\" {}".format(args.service))
     elif args.command == 'tail':
-        run_compose_cmd(docker_config_path, "logs -f --tail=50 {}".format(' '.join(args.services)))
+        run_compose_cmd("logs -f --tail=50 {}".format(' '.join(args.services)))
     elif args.command == 'logs':
-        run_compose_cmd(docker_config_path, "logs {}".format(' '.join(args.services)))
+        run_compose_cmd("logs {}".format(' '.join(args.services)))
     elif args.command == 'ps':
-        run_compose_cmd(docker_config_path, "ps")
+        run_compose_cmd("ps")
     elif args.command == 'exec':
         if len(args.cmd) == 1 and re.match("['\"].*?['\"]", args.cmd[0]):
             cmd = args.cmd
@@ -255,17 +271,12 @@ def main():
             cmd = '"{}"'.format(' '.join(args.cmd).replace('"', '\\"'))
         os.system("{} docker exec -i -t federatednode_{}_1 bash -c {}".format(SUDO_CMD, args.service, cmd))
     elif args.command == 'shell':
-        try:
-            container_running = subprocess.check_output('{} docker inspect --format="{{{{ .State.Running }}}}" federatednode_{}_1'.format(SUDO_CMD, args.service), shell=True).decode("utf-8").strip()
-            container_running = container_running == 'true'
-        except subprocess.CalledProcessError:
-            print("Container {} doesn't seem to exist'".format(args.service))
-            sys.exit(1)
+        container_running = is_container_running(args.service)
         if container_running:
             os.system("{} docker exec -i -t federatednode_{}_1 bash".format(SUDO_CMD, args.service))
         else:
             print("Container is not running -- creating a transient container with a 'bash' shell entrypoint...")
-            run_compose_cmd(docker_config_path, "run --no-deps --rm --entrypoint bash {}".format(args.service))
+            run_compose_cmd("run --no-deps --rm --entrypoint bash {}".format(args.service))
     elif args.command == 'update':
         # validate
         if args.services != ['', ]:
@@ -300,10 +311,10 @@ def main():
 
             # and restart container
             if not args.no_restart:
-                run_compose_cmd(docker_config_path, "restart {}".format(service))
+                run_compose_cmd("restart {}".format(service))
     elif args.command == 'rebuild':
-        run_compose_cmd(docker_config_path, "pull --ignore-pull-failures {}".format(' '.join(args.services)))
-        run_compose_cmd(docker_config_path, "up -d --build --force-recreate --no-deps {}".format(' '.join(args.services)))
+        run_compose_cmd("pull --ignore-pull-failures {}".format(' '.join(args.services)))
+        run_compose_cmd("up -d --build --force-recreate --no-deps {}".format(' '.join(args.services)))
 
 
 if __name__ == '__main__':
