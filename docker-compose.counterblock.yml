@@ -54,3 +54,9 @@ services:
       - counterparty-testnet
       - mongodb
       - redis
+
+volumes:
+  bitcoin-data:
+  counterparty-data:
+  counterblock-data:
+  mongodb-data:
