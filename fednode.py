@@ -34,9 +34,10 @@ HOST_PORTS_USED = {
 }
 UPDATE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock', 'counterblock-testnet', 'counterwallet', 'armory-utxsvr', 'armory-utxsvr-testnet']
 REPARSE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock', 'counterblock-testnet']
-SHELL_CHOICES = UPDATE_CHOICES + ['mongodb', 'redis']
+SHELL_CHOICES = UPDATE_CHOICES + ['mongodb', 'redis', 'bitcoin', 'bitcoin-testnet']
 
 # set in setup_env()
+IS_WINDOWS = None
 SESSION_USER = None
 SUDO_CMD = None
 
@@ -112,13 +113,17 @@ def is_port_open(port):
 
 
 def setup_env():
+    global IS_WINDOWS
     global SESSION_USER
     global SUDO_CMD
     if os.name != 'nt':
+        IS_WINDOWS = False
         SESSION_USER = subprocess.check_output("logname", shell=True).decode("utf-8").strip()
+        assert SESSION_USER
         SUDO_CMD = "sudo -E"
         IS_SUDO_ACTIVE = subprocess.check_output('sudo -n uptime 2>&1|grep "load"|wc -l', shell=True).decode("utf-8").strip() == "1"
     else:
+        IS_WINDOWS = True
         SESSION_USER = None
         SUDO_CMD = ''
         IS_SUDO_ACTIVE = True
@@ -190,7 +195,7 @@ def main():
             repo_dir = os.path.join(SCRIPTDIR, "src", repo)
             if not os.path.exists(repo_dir):
                 git_cmd = "git clone -b {} {} {}".format(repo_branch, repo_url, repo_dir)
-                if SESSION_USER:  # make sure to check out the code as the original user, so the permissions are right
+                if not IS_WINDOWS:  # make sure to check out the code as the original user, so the permissions are right
                     os.system("{} -u {} bash -c \"{}\"".format(SUDO_CMD, SESSION_USER, git_cmd))
                 else:
                     os.system(git_cmd)
@@ -205,7 +210,8 @@ def main():
                 print("Generating config from defaults at {} ...".format(active_config))
                 shutil.copy2(default_config, active_config)
                 default_config_stat = os.stat(default_config)
-                os.chown(active_config, default_config_stat.st_uid, default_config_stat.st_gid)
+                if not IS_WINDOWS:
+                    os.chown(active_config, default_config_stat.st_uid, default_config_stat.st_gid)
 
         # launch
         run_compose_cmd(docker_config_path, "up -d")
@@ -275,7 +281,7 @@ def main():
                         print("Unknown service git branch name, or repo in detached state")
                         sys.exit(1)
                     git_cmd = "cd {}; git pull origin {}; cd {}".format(service_dir_path, service_branch, CURDIR)
-                    if SESSION_USER:  # make sure to update the code as the original user, so the permissions are right
+                    if not IS_WINDOWS:  # make sure to update the code as the original user, so the permissions are right
                         os.system("{} -u {} bash -c \"{}\"".format(SUDO_CMD, SESSION_USER, git_cmd))
                     else:
                         os.system(git_cmd)

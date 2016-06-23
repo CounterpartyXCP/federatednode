@@ -24,3 +24,7 @@ services:
       service: counterparty-base-testnet
     links:
       - bitcoin-testnet
+
+volumes:
+  bitcoin-data:
+  counterparty-data:
