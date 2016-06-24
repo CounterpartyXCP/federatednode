@@ -7,5 +7,3 @@ rpcthreads=50
 rpctimeout=300
 txindex=1
 addrindex=1
-dbcache=512
-#disablewallet=1

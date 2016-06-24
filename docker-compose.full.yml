@@ -79,3 +79,10 @@ services:
       - redis
       - counterblock
       - counterblock-testnet
+
+volumes:
+  bitcoin-data:
+  counterparty-data:
+  counterblock-data:
+  mongodb-data:
+  armory-data:
