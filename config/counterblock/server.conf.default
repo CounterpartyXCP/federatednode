@@ -8,3 +8,4 @@ counterparty-user=rpc
 counterparty-password=rpc
 mongodb-connect=mongodb
 redis-connect=redis
+tx-log-file
