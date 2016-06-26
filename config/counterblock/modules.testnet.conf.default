@@ -1,0 +1,6 @@
+[LoadModule]
+lib/modules/assets = True
+lib/modules/counterwallet = True
+lib/modules/dex = True
+lib/modules/transaction_stats = True
+lib/modules/betting = True

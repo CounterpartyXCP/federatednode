@@ -14,10 +14,12 @@ import socket
 import glob
 import shutil
 
-CURDIR = os.getcwd()
-SCRIPTDIR = os.path.dirname(os.path.realpath(__file__))
+
+VERSION="2.2.1"
 
 PROJECT_NAME = "federatednode"
+CURDIR = os.getcwd()
+SCRIPTDIR = os.path.dirname(os.path.realpath(__file__))
 FEDNODE_CONFIG_FILE = ".fednode.config"
 FEDNODE_CONFIG_PATH = os.path.join(SCRIPTDIR, FEDNODE_CONFIG_FILE)
 
@@ -45,7 +47,8 @@ DOCKER_CONFIG_PATH = None
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(prog='fednode', description='fednode utility v{}'.format(VERSION))
+    parser.add_argument('--version', action='version', version='%(prog)s {}'.format(VERSION))
     parser.add_argument("--debug", action='store_true', default=False, help="increase output verbosity")
 
     subparsers = parser.add_subparsers(help='help on modes', dest='command')
@@ -148,15 +151,6 @@ def is_container_running(service, abort_on_not_exist=True):
     return container_running
 
 
-def graceful_service_shutdown(services):
-    """bitcoind must be properly stopped on windows docker otherwise the blocks we downloaded don't seem to persist. this hack helps ensure that....
-    for other OSes, it allows more graceful shutdown of bitcoind"""
-    if (not services or 'bitcoin' in services) and is_container_running('bitcoin'):
-        os.system('{} docker exec -i -t federatednode_bitcoin_1 bash -c "bitcoin-cli stop &>/dev/null"'.format(SUDO_CMD))
-    if (not services or 'bitcoin-testnet' in services) and is_container_running('bitcoin-testnet'):
-        os.system('{} docker exec -i -t federatednode_bitcoin-testnet_1 bash -c "bitcoin-cli -conf=/root/.bitcoin-config/bitcoin.testnet.conf stop &>/dev/null"'.format(SUDO_CMD))
-
-
 def main():
     global DOCKER_CONFIG_PATH
     setup_env()
@@ -246,17 +240,12 @@ def main():
     elif args.command == 'start':
         run_compose_cmd("start {}".format(' '.join(args.services)))
     elif args.command == 'stop':
-        graceful_service_shutdown(args.services)
         run_compose_cmd("stop {}".format(' '.join(args.services)))
     elif args.command == 'restart':
-        graceful_service_shutdown(args.services)
         run_compose_cmd("restart {}".format(' '.join(args.services)))
     elif args.command == 'reparse':
         run_compose_cmd("stop {}".format(args.service))
-        if args.service in ['counterparty', 'counterparty-testnet']:
-            run_compose_cmd("run -e COMMAND=reparse {}".format(args.service))
-        elif args.service in ['counterblock', 'counterblock-testnet']:
-            run_compose_cmd("run -e EXTRA_PARAMS=\"--reparse\" {}".format(args.service))
+        run_compose_cmd("run -e COMMAND=reparse {}".format(args.service))
     elif args.command == 'tail':
         run_compose_cmd("logs -f --tail=50 {}".format(' '.join(args.services)))
     elif args.command == 'logs':

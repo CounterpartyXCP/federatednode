@@ -1,6 +1,10 @@
 ## Versions ##
+* v2.2.1 (2016-06-26)
+  * COMPATIBLE WITH: `counterparty-lib` `develop` and `counterblock` 1.4.0
+  * Fixes for more graceful shutdown of services
+  * Service config tweaks
 * v2.2.0 (2016-06-23)
-  * COMPATIBLE WITH: `counterparty-lib` 9.54.0 and `counterblock` 1.3.1
+  * COMPATIBLE WITH: `counterparty-lib` `develop` and `counterblock` 1.3.1
   * Initial (BETA) support for Windows and Mac OS
   * Use named docker volumes instead of host path mapped volumes (mainly for Windows compatibility); remove "data" dir
 * v2.1.0 (2016-06-16)
