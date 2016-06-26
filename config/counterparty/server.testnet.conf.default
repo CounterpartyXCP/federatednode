@@ -8,3 +8,4 @@ backend-password=rpc
 rpc-host=0.0.0.0
 rpc-user=rpc
 rpc-password=rpc
+api-log-file
