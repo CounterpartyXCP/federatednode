@@ -14,10 +14,12 @@ import socket
 import glob
 import shutil
 
-CURDIR = os.getcwd()
-SCRIPTDIR = os.path.dirname(os.path.realpath(__file__))
+
+VERSION="2.2.1"
 
 PROJECT_NAME = "federatednode"
+CURDIR = os.getcwd()
+SCRIPTDIR = os.path.dirname(os.path.realpath(__file__))
 FEDNODE_CONFIG_FILE = ".fednode.config"
 FEDNODE_CONFIG_PATH = os.path.join(SCRIPTDIR, FEDNODE_CONFIG_FILE)
 
@@ -45,7 +47,8 @@ DOCKER_CONFIG_PATH = None
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(prog='fednode', description='fednode utility v{}'.format(VERSION))
+    parser.add_argument('--version', action='version', version='%(prog)s {}'.format(VERSION))
     parser.add_argument("--debug", action='store_true', default=False, help="increase output verbosity")
 
     subparsers = parser.add_subparsers(help='help on modes', dest='command')
