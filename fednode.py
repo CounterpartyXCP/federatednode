@@ -297,6 +297,18 @@ def main():
                     else:
                         os.system(git_cmd)
 
+                if service_base == 'counterwallet':  # special case
+                    transifex_cfg_path = os.path.join(os.path.expanduser("~"), ".transifex")
+                    if os.path.exists(transifex_cfg_path):
+                        os.system("{} docker cp {} federatednode_counterwallet_1:/root/.transifex".format(SUDO_CMD, transifex_cfg_path))
+                    os.system("{} docker exec -i -t federatednode_counterwallet_1 bash -c \"cd /counterwallet/src ".format(SUDO_CMD) +
+                              "&& bower --allow-root update && cd /counterwallet && npm update && grunt build\"")
+                    if not os.path.exists(transifex_cfg_path):
+                        print("NOTE: Did not update locales because there is no .transifex file in your home directory")
+                        print("If you want locales compiled, sign up for transifex and create this file to" +
+                              " contain 'your_transifex_username:your_transifex_password'")
+
+
             # and restart container
             if not args.no_restart:
                 run_compose_cmd("restart {}".format(service))
