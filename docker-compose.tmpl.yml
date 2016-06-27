@@ -90,7 +90,7 @@ services:
     volumes:
       - ./src/armory-utxsvr:/armory-utxsvr
       - armory-data:/root/.armory
-      - bitcoin-data:/bitcoin_data
+      - bitcoin-data:/root/.bitcoin/
 
   armory-utxsvr-base-mainnet:
     hostname: ${HOSTNAME_BASE}-amry
