@@ -125,6 +125,8 @@ services:
     image: mongo:3.2
     volumes:
       - mongodb-data:/data/db
+    ports:
+      - ${MONGODB_HOST_INTERFACE}:27017:27017
 
   redis-base:
     hostname: ${HOSTNAME_BASE}-redis

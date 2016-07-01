@@ -31,10 +31,11 @@ REPOS_FULL = REPOS_COUNTERBLOCK + ['counterwallet', 'armory-utxsvr']
 
 HOST_PORTS_USED = {
     'base': [8332, 18332, 4000, 14000],
-    'counterblock': [8332, 18332, 4000, 14000, 4100, 14100],
-    'full': [8332, 18332, 4000, 14000, 4100, 14100, 80, 443]
+    'counterblock': [8332, 18332, 4000, 14000, 4100, 14100, 27017],
+    'full': [8332, 18332, 4000, 14000, 4100, 14100, 80, 443, 27017]
 }
-UPDATE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock', 'counterblock-testnet', 'counterwallet', 'armory-utxsvr', 'armory-utxsvr-testnet']
+UPDATE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock',
+                  'counterblock-testnet', 'counterwallet', 'armory-utxsvr', 'armory-utxsvr-testnet']
 REPARSE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock', 'counterblock-testnet']
 SHELL_CHOICES = UPDATE_CHOICES + ['mongodb', 'redis', 'bitcoin', 'bitcoin-testnet']
 
@@ -58,6 +59,8 @@ def parse_args():
     parser_install.add_argument("config", choices=['base', 'counterblock', 'full'], help="The name of the service configuration to utilize")
     parser_install.add_argument("branch", choices=['master', 'develop'], help="The name of the git branch to utilize for the build")
     parser_install.add_argument("--use-ssh-uris", action="store_true", help="Use SSH URIs for source checkouts from Github, instead of HTTPS URIs")
+    parser_install.add_argument("--mongodb-interface", default="127.0.0.1",
+        help="Bind mongo to this host interface. Localhost by default, enter 0.0.0.0 for all host interfaces.")
 
     parser_uninstall = subparsers.add_parser('uninstall', help="uninstall fednode services")
 
@@ -194,6 +197,7 @@ def main():
     repo_branch = config.get('Default', 'branch')
     os.environ['FEDNODE_RELEASE_TAG'] = config.get('Default', 'branch')
     os.environ['HOSTNAME_BASE'] = socket.gethostname()
+    os.environ['MONGODB_HOST_INTERFACE'] = getattr(args, 'mongodb_interface', "127.0.0.1")
 
     # perform action for the specified command
     if args.command == 'install':
