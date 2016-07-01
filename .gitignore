@@ -38,3 +38,7 @@ nosetests.xml
 
 # Fednode config
 .fednode.config
+
+# Auto-created data dir
+data
+

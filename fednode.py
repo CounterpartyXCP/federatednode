@@ -13,6 +13,7 @@ import configparser
 import socket
 import glob
 import shutil
+import json
 
 
 VERSION="2.2.1"
@@ -147,11 +148,20 @@ def is_container_running(service, abort_on_not_exist=True):
         container_running = subprocess.check_output('{} docker inspect --format="{{{{ .State.Running }}}}" federatednode_{}_1'.format(SUDO_CMD, service), shell=True).decode("utf-8").strip()
         container_running = container_running == 'true'
     except subprocess.CalledProcessError:
-        container_running == None
+        container_running = None
         if abort_on_not_exist:
             print("Container {} doesn't seem to exist'".format(service))
             sys.exit(1)
     return container_running
+
+
+def get_docker_volume_path(volume_name):
+    try:
+        json_output = subprocess.check_output('{} docker volume inspect {}'.format(SUDO_CMD, volume_name), shell=True).decode("utf-8").strip()
+    except subprocess.CalledProcessError:
+        return None
+    volume_info = json.loads(json_output)
+    return volume_info[0]['Mountpoint']
 
 
 def main():
@@ -235,6 +245,20 @@ def main():
                 default_config_stat = os.stat(default_config)
                 if not IS_WINDOWS:
                     os.chown(active_config, default_config_stat.st_uid, default_config_stat.st_gid)
+
+        # create symlinks to the data volumes (for ease of use)
+        if not IS_WINDOWS:
+            data_dir = os.path.join(SCRIPTDIR, "data")
+            if not os.path.exists(data_dir):
+                os.mkdir(data_dir)
+
+            for volume in [ "armory", "bitcoin", "counterparty", "counterblock", "mongodb" ]:
+                symlink_path = os.path.join(data_dir, volume)
+                volume_name = "{}_{}-data".format(PROJECT_NAME, volume)
+                mountpoint_path = get_docker_volume_path(volume_name)
+                if not os.path.lexists(symlink_path):
+                    os.symlink(mountpoint_path, symlink_path)
+                    print("For convenience, symlinking {} to {}".format(mountpoint_path, symlink_path))
 
         # launch
         run_compose_cmd("up -d")
