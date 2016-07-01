@@ -98,6 +98,7 @@ def parse_args():
 
     parser_rebuild = subparsers.add_parser('rebuild', help="rebuild fednode services (i.e. remove and refetch/install docker containers)")
     parser_rebuild.add_argument("services", nargs='*', default='', help="The name of the service or services to rebuild (or blank for all services)")
+    parser_rebuild.add_argument("--mongodb-interface", default="127.0.0.1")
 
     parser_docker_clean = subparsers.add_parser('docker_clean', help="remove ALL docker containers and cached images (use with caution!)")
 
