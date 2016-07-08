@@ -13,9 +13,10 @@ import configparser
 import socket
 import glob
 import shutil
+import json
 
 
-VERSION="2.2.1"
+VERSION="2.2.2"
 
 PROJECT_NAME = "federatednode"
 CURDIR = os.getcwd()
@@ -31,10 +32,11 @@ REPOS_FULL = REPOS_COUNTERBLOCK + ['counterwallet', 'armory-utxsvr']
 
 HOST_PORTS_USED = {
     'base': [8332, 18332, 4000, 14000],
-    'counterblock': [8332, 18332, 4000, 14000, 4100, 14100],
-    'full': [8332, 18332, 4000, 14000, 4100, 14100, 80, 443]
+    'counterblock': [8332, 18332, 4000, 14000, 4100, 14100, 27017],
+    'full': [8332, 18332, 4000, 14000, 4100, 14100, 80, 443, 27017]
 }
-UPDATE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock', 'counterblock-testnet', 'counterwallet', 'armory-utxsvr', 'armory-utxsvr-testnet']
+UPDATE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock',
+                  'counterblock-testnet', 'counterwallet', 'armory-utxsvr', 'armory-utxsvr-testnet']
 REPARSE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock', 'counterblock-testnet']
 SHELL_CHOICES = UPDATE_CHOICES + ['mongodb', 'redis', 'bitcoin', 'bitcoin-testnet']
 
@@ -48,8 +50,8 @@ DOCKER_CONFIG_PATH = None
 
 def parse_args():
     parser = argparse.ArgumentParser(prog='fednode', description='fednode utility v{}'.format(VERSION))
-    parser.add_argument('--version', action='version', version='%(prog)s {}'.format(VERSION))
-    parser.add_argument("--debug", action='store_true', default=False, help="increase output verbosity")
+    parser.add_argument("-V", '--version', action='version', version='%(prog)s {}'.format(VERSION))
+    parser.add_argument("-d", "--debug", action='store_true', default=False, help="increase output verbosity")
 
     subparsers = parser.add_subparsers(help='help on modes', dest='command')
     subparsers.required = True
@@ -58,6 +60,8 @@ def parse_args():
     parser_install.add_argument("config", choices=['base', 'counterblock', 'full'], help="The name of the service configuration to utilize")
     parser_install.add_argument("branch", choices=['master', 'develop'], help="The name of the git branch to utilize for the build")
     parser_install.add_argument("--use-ssh-uris", action="store_true", help="Use SSH URIs for source checkouts from Github, instead of HTTPS URIs")
+    parser_install.add_argument("--mongodb-interface", default="127.0.0.1",
+        help="Bind mongo to this host interface. Localhost by default, enter 0.0.0.0 for all host interfaces.")
 
     parser_uninstall = subparsers.add_parser('uninstall', help="uninstall fednode services")
 
@@ -77,6 +81,7 @@ def parse_args():
 
     parser_tail = subparsers.add_parser('tail', help="tail fednode logs")
     parser_tail.add_argument("services", nargs='*', default='', help="The name of the service or services whose logs to tail (or blank for all services)")
+    parser_tail.add_argument("-n", "--num-lines", type=int, default=50, help="Number of lines to tail")
 
     parser_logs = subparsers.add_parser('logs', help="tail fednode logs")
     parser_logs.add_argument("services", nargs='*', default='', help="The name of the service or services whose logs to view (or blank for all services)")
@@ -89,11 +94,12 @@ def parse_args():
     parser_shell.add_argument("service", choices=SHELL_CHOICES, help="The name of the service to shell into")
 
     parser_update = subparsers.add_parser('update', help="upgrade fednode services (i.e. update source code and restart the container, but don't update the container itself')")
-    parser_update.add_argument("--no-restart", action="store_true", help="Don't restart the container after updating the code'")
+    parser_update.add_argument("-n", "--no-restart", action="store_true", help="Don't restart the container after updating the code'")
     parser_update.add_argument("services", nargs='*', default='', help="The name of the service or services to update (or blank to for all applicable services)")
 
     parser_rebuild = subparsers.add_parser('rebuild', help="rebuild fednode services (i.e. remove and refetch/install docker containers)")
     parser_rebuild.add_argument("services", nargs='*', default='', help="The name of the service or services to rebuild (or blank for all services)")
+    parser_rebuild.add_argument("--mongodb-interface", default="127.0.0.1")
 
     parser_docker_clean = subparsers.add_parser('docker_clean', help="remove ALL docker containers and cached images (use with caution!)")
 
@@ -144,11 +150,20 @@ def is_container_running(service, abort_on_not_exist=True):
         container_running = subprocess.check_output('{} docker inspect --format="{{{{ .State.Running }}}}" federatednode_{}_1'.format(SUDO_CMD, service), shell=True).decode("utf-8").strip()
         container_running = container_running == 'true'
     except subprocess.CalledProcessError:
-        container_running == None
+        container_running = None
         if abort_on_not_exist:
             print("Container {} doesn't seem to exist'".format(service))
             sys.exit(1)
     return container_running
+
+
+def get_docker_volume_path(volume_name):
+    try:
+        json_output = subprocess.check_output('{} docker volume inspect {}'.format(SUDO_CMD, volume_name), shell=True).decode("utf-8").strip()
+    except subprocess.CalledProcessError:
+        return None
+    volume_info = json.loads(json_output)
+    return volume_info[0]['Mountpoint']
 
 
 def main():
@@ -194,6 +209,7 @@ def main():
     repo_branch = config.get('Default', 'branch')
     os.environ['FEDNODE_RELEASE_TAG'] = config.get('Default', 'branch')
     os.environ['HOSTNAME_BASE'] = socket.gethostname()
+    os.environ['MONGODB_HOST_INTERFACE'] = getattr(args, 'mongodb_interface', "127.0.0.1")
 
     # perform action for the specified command
     if args.command == 'install':
@@ -232,6 +248,20 @@ def main():
                 if not IS_WINDOWS:
                     os.chown(active_config, default_config_stat.st_uid, default_config_stat.st_gid)
 
+        # create symlinks to the data volumes (for ease of use)
+        if not IS_WINDOWS:
+            data_dir = os.path.join(SCRIPTDIR, "data")
+            if not os.path.exists(data_dir):
+                os.mkdir(data_dir)
+
+            for volume in [ "armory", "bitcoin", "counterparty", "counterblock", "mongodb" ]:
+                symlink_path = os.path.join(data_dir, volume)
+                volume_name = "{}_{}-data".format(PROJECT_NAME, volume)
+                mountpoint_path = get_docker_volume_path(volume_name)
+                if not os.path.lexists(symlink_path):
+                    os.symlink(mountpoint_path, symlink_path)
+                    print("For convenience, symlinking {} to {}".format(mountpoint_path, symlink_path))
+
         # launch
         run_compose_cmd("up -d")
     elif args.command == 'uninstall':
@@ -247,7 +277,7 @@ def main():
         run_compose_cmd("stop {}".format(args.service))
         run_compose_cmd("run -e COMMAND=reparse {}".format(args.service))
     elif args.command == 'tail':
-        run_compose_cmd("logs -f --tail=50 {}".format(' '.join(args.services)))
+        run_compose_cmd("logs -f --tail={} {}".format(args.num_lines, ' '.join(args.services)))
     elif args.command == 'logs':
         run_compose_cmd("logs {}".format(' '.join(args.services)))
     elif args.command == 'ps':
@@ -297,6 +327,15 @@ def main():
                     else:
                         os.system(git_cmd)
 
+                    # delete installed egg (to force egg recreate and deps re-check on next start)
+                    if service_base in ('counterparty', 'counterblock', 'armory-utxsvr'):
+                        for path in glob.glob(os.path.join(service_dir_path, "*.egg-info")):
+                            print("Removing egg path {}".format(path))
+                            if not IS_WINDOWS:  # have to use root
+                                os.system("{} bash -c \"rm -rf {}\"".format(SUDO_CMD, path))
+                            else:
+                                shutil.rmtree(path)
+
                 if service_base == 'counterwallet':  # special case
                     transifex_cfg_path = os.path.join(os.path.expanduser("~"), ".transifex")
                     if os.path.exists(transifex_cfg_path):
@@ -307,7 +346,6 @@ def main():
                         print("NOTE: Did not update locales because there is no .transifex file in your home directory")
                         print("If you want locales compiled, sign up for transifex and create this file to" +
                               " contain 'your_transifex_username:your_transifex_password'")
-
 
             # and restart container
             if not args.no_restart:

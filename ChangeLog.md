@@ -1,4 +1,12 @@
 ## Versions ##
+* v2.2.2 (2016-07-08)
+  * COMPATIBLE WITH: `counterparty-lib` `develop` and `counterblock` 1.4.0
+  * Short options available for things like --version, --debug, --no-restart, etc
+  * fednode tail command - can specify number of lines
+  * allow mongodb to bind to host interface (default to localhost)
+  * delete respective .egg-info dirs when updating a service
+  * limit logfile sizes via docker json-file log rotation
+  * create data dir and symlinks to docker volume paths, for convenience
 * v2.2.1 (2016-06-26)
   * COMPATIBLE WITH: `counterparty-lib` `develop` and `counterblock` 1.4.0
   * Fixes for more graceful shutdown of services
