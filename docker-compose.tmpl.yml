@@ -13,6 +13,11 @@ services:
     volumes:
       - ./config/bitcoin:/root/.bitcoin-config
       - bitcoin-data:/root/.bitcoin/
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "30m"
+        max-file: "30"
 
   bitcoin-base-mainnet:
     hostname: ${HOSTNAME_BASE}-bc
@@ -39,6 +44,11 @@ services:
       - ./src/counterparty-cli:/counterparty-cli
       - ./config/counterparty:/root/.config/counterparty
       - counterparty-data:/root/.local/share/counterparty
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "30m"
+        max-file: "50"
 
   counterparty-base-mainnet:
     hostname: ${HOSTNAME_BASE}-cp
@@ -64,6 +74,11 @@ services:
       - ./src/counterblock:/counterblock
       - ./config/counterblock:/root/.config/counterblock
       - counterblock-data:/root/.local/share/counterblock
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "30m"
+        max-file: "50"
 
   counterblock-base-mainnet:
     hostname: ${HOSTNAME_BASE}-cb
@@ -91,6 +106,11 @@ services:
       - ./src/armory-utxsvr:/armory-utxsvr
       - armory-data:/root/.armory
       - bitcoin-data:/root/.bitcoin/
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "30m"
+        max-file: "30"
 
   armory-utxsvr-base-mainnet:
     hostname: ${HOSTNAME_BASE}-amry
@@ -116,6 +136,11 @@ services:
       - ./src/counterwallet:/counterwallet
       - ./config/counterwallet/ssl:/ssl_config
       - counterblock-data:/counterblock_data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "30m"
+        max-file: "30"
     ports:
       - "80:80"
       - "443:443"
@@ -125,9 +150,19 @@ services:
     image: mongo:3.2
     volumes:
       - mongodb-data:/data/db
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "30m"
+        max-file: "30"
     ports:
       - ${MONGODB_HOST_INTERFACE}:27017:27017
 
   redis-base:
     hostname: ${HOSTNAME_BASE}-redis
     image: redis:3.2
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "30m"
+        max-file: "30"
