@@ -50,8 +50,8 @@ DOCKER_CONFIG_PATH = None
 
 def parse_args():
     parser = argparse.ArgumentParser(prog='fednode', description='fednode utility v{}'.format(VERSION))
-    parser.add_argument('--version', action='version', version='%(prog)s {}'.format(VERSION))
-    parser.add_argument("--debug", action='store_true', default=False, help="increase output verbosity")
+    parser.add_argument("-V", '--version', action='version', version='%(prog)s {}'.format(VERSION))
+    parser.add_argument("-d", "--debug", action='store_true', default=False, help="increase output verbosity")
 
     subparsers = parser.add_subparsers(help='help on modes', dest='command')
     subparsers.required = True
@@ -81,6 +81,7 @@ def parse_args():
 
     parser_tail = subparsers.add_parser('tail', help="tail fednode logs")
     parser_tail.add_argument("services", nargs='*', default='', help="The name of the service or services whose logs to tail (or blank for all services)")
+    parser_tail.add_argument("-n", "--num-lines", type=int, default=50, help="Number of lines to tail")
 
     parser_logs = subparsers.add_parser('logs', help="tail fednode logs")
     parser_logs.add_argument("services", nargs='*', default='', help="The name of the service or services whose logs to view (or blank for all services)")
@@ -93,7 +94,7 @@ def parse_args():
     parser_shell.add_argument("service", choices=SHELL_CHOICES, help="The name of the service to shell into")
 
     parser_update = subparsers.add_parser('update', help="upgrade fednode services (i.e. update source code and restart the container, but don't update the container itself')")
-    parser_update.add_argument("--no-restart", action="store_true", help="Don't restart the container after updating the code'")
+    parser_update.add_argument("-n", "--no-restart", action="store_true", help="Don't restart the container after updating the code'")
     parser_update.add_argument("services", nargs='*', default='', help="The name of the service or services to update (or blank to for all applicable services)")
 
     parser_rebuild = subparsers.add_parser('rebuild', help="rebuild fednode services (i.e. remove and refetch/install docker containers)")
@@ -276,7 +277,7 @@ def main():
         run_compose_cmd("stop {}".format(args.service))
         run_compose_cmd("run -e COMMAND=reparse {}".format(args.service))
     elif args.command == 'tail':
-        run_compose_cmd("logs -f --tail=50 {}".format(' '.join(args.services)))
+        run_compose_cmd("logs -f --tail={} {}".format(args.num_lines, ' '.join(args.services)))
     elif args.command == 'logs':
         run_compose_cmd("logs {}".format(' '.join(args.services)))
     elif args.command == 'ps':
@@ -326,6 +327,15 @@ def main():
                     else:
                         os.system(git_cmd)
 
+                    # delete installed egg (to force egg recreate and deps re-check on next start)
+                    if service_base in ('counterparty', 'counterblock', 'armory-utxsvr'):
+                        for path in glob.glob(os.path.join(service_dir_path, "*.egg-info")):
+                            print("Removing egg path {}".format(path))
+                            if not IS_WINDOWS:  # have to use root
+                                os.system("{} bash -c \"rm -rf {}\"".format(SUDO_CMD, path))
+                            else:
+                                shutil.rmtree(path)
+
                 if service_base == 'counterwallet':  # special case
                     transifex_cfg_path = os.path.join(os.path.expanduser("~"), ".transifex")
                     if os.path.exists(transifex_cfg_path):
@@ -336,7 +346,6 @@ def main():
                         print("NOTE: Did not update locales because there is no .transifex file in your home directory")
                         print("If you want locales compiled, sign up for transifex and create this file to" +
                               " contain 'your_transifex_username:your_transifex_password'")
-
 
             # and restart container
             if not args.no_restart:
