@@ -35,6 +35,11 @@ HOST_PORTS_USED = {
     'counterblock': [8332, 18332, 4000, 14000, 4100, 14100, 27017],
     'full': [8332, 18332, 4000, 14000, 4100, 14100, 80, 443, 27017]
 }
+VOLUMES_USED = {
+    'base': ['bitcoin-data', 'counterparty-data'],
+    'counterblock': ['bitcoin-data', 'counterparty-data', 'counterblock-data', 'mongodb-data'],
+    'full': ['bitcoin-data', 'counterparty-data', 'counterblock-data', 'mongodb-data', 'armory-data']
+}
 UPDATE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock',
                   'counterblock-testnet', 'counterwallet', 'armory-utxsvr', 'armory-utxsvr-testnet']
 REPARSE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock', 'counterblock-testnet']
@@ -58,7 +63,7 @@ def parse_args():
 
     parser_install = subparsers.add_parser('install', help="install fednode services")
     parser_install.add_argument("config", choices=['base', 'counterblock', 'full'], help="The name of the service configuration to utilize")
-    parser_install.add_argument("branch", choices=['master', 'develop'], help="The name of the git branch to utilize for the build")
+    parser_install.add_argument("branch", choices=['master', 'develop'], help="The name of the git branch to utilize for the build (note that 'master' pulls the docker 'latest' tags)")
     parser_install.add_argument("--use-ssh-uris", action="store_true", help="Use SSH URIs for source checkouts from Github, instead of HTTPS URIs")
     parser_install.add_argument("--mongodb-interface", default="127.0.0.1",
         help="Bind mongo to this host interface. Localhost by default, enter 0.0.0.0 for all host interfaces.")
@@ -207,7 +212,7 @@ def main():
     docker_config_file = "docker-compose.{}.yml".format(build_config)
     DOCKER_CONFIG_PATH = os.path.join(SCRIPTDIR, docker_config_file)
     repo_branch = config.get('Default', 'branch')
-    os.environ['FEDNODE_RELEASE_TAG'] = config.get('Default', 'branch')
+    os.environ['FEDNODE_RELEASE_TAG'] = 'latest' if repo_branch == 'master' else repo_branch
     os.environ['HOSTNAME_BASE'] = socket.gethostname()
     os.environ['MONGODB_HOST_INTERFACE'] = getattr(args, 'mongodb_interface', "127.0.0.1")
 
@@ -254,9 +259,9 @@ def main():
             if not os.path.exists(data_dir):
                 os.mkdir(data_dir)
 
-            for volume in [ "armory", "bitcoin", "counterparty", "counterblock", "mongodb" ]:
-                symlink_path = os.path.join(data_dir, volume)
-                volume_name = "{}_{}-data".format(PROJECT_NAME, volume)
+            for volume in VOLUMES_USED[build_config]:
+                symlink_path = os.path.join(data_dir, volume.replace('-data', ''))
+                volume_name = "{}_{}".format(PROJECT_NAME, volume)
                 mountpoint_path = get_docker_volume_path(volume_name)
                 if not os.path.lexists(symlink_path):
                     os.symlink(mountpoint_path, symlink_path)
@@ -317,6 +322,8 @@ def main():
                     service_dirs = [service_base,]
                 for service_dir in service_dirs:
                     service_dir_path = os.path.join(SCRIPTDIR, "src", service_dir)
+                    if not os.path.exists(service_dir_path):
+                        continue
                     service_branch = subprocess.check_output("cd {};git symbolic-ref --short -q HEAD;cd {}".format(service_dir_path, CURDIR), shell=True).decode("utf-8").strip()
                     if not service_branch:
                         print("Unknown service git branch name, or repo in detached state")
@@ -336,7 +343,7 @@ def main():
                             else:
                                 shutil.rmtree(path)
 
-                if service_base == 'counterwallet':  # special case
+                if service_base == 'counterwallet' and os.path.exists(os.path.join(SCRIPTDIR, "src", "counterwallet")):  # special case
                     transifex_cfg_path = os.path.join(os.path.expanduser("~"), ".transifex")
                     if os.path.exists(transifex_cfg_path):
                         os.system("{} docker cp {} federatednode_counterwallet_1:/root/.transifex".format(SUDO_CMD, transifex_cfg_path))
