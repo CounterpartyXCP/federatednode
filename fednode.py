@@ -317,6 +317,8 @@ def main():
                     service_dirs = [service_base,]
                 for service_dir in service_dirs:
                     service_dir_path = os.path.join(SCRIPTDIR, "src", service_dir)
+                    if not os.path.exists(service_dir_path):
+                        continue
                     service_branch = subprocess.check_output("cd {};git symbolic-ref --short -q HEAD;cd {}".format(service_dir_path, CURDIR), shell=True).decode("utf-8").strip()
                     if not service_branch:
                         print("Unknown service git branch name, or repo in detached state")
