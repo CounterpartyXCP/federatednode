@@ -35,6 +35,11 @@ HOST_PORTS_USED = {
     'counterblock': [8332, 18332, 4000, 14000, 4100, 14100, 27017],
     'full': [8332, 18332, 4000, 14000, 4100, 14100, 80, 443, 27017]
 }
+VOLUMES_USED = {
+    'base': ['bitcoin-data', 'counterparty-data'],
+    'counterblock': ['bitcoin-data', 'counterparty-data', 'counterblock-data', 'mongodb-data'],
+    'full': ['bitcoin-data', 'counterparty-data', 'counterblock-data', 'mongodb-data', 'armory-data']
+}
 UPDATE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock',
                   'counterblock-testnet', 'counterwallet', 'armory-utxsvr', 'armory-utxsvr-testnet']
 REPARSE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock', 'counterblock-testnet']
@@ -254,9 +259,9 @@ def main():
             if not os.path.exists(data_dir):
                 os.mkdir(data_dir)
 
-            for volume in [ "armory", "bitcoin", "counterparty", "counterblock", "mongodb" ]:
-                symlink_path = os.path.join(data_dir, volume)
-                volume_name = "{}_{}-data".format(PROJECT_NAME, volume)
+            for volume in VOLUMES_USED[build_config]:
+                symlink_path = os.path.join(data_dir, volume.replace('-data', ''))
+                volume_name = "{}_{}".format(PROJECT_NAME, volume)
                 mountpoint_path = get_docker_volume_path(volume_name)
                 if not os.path.lexists(symlink_path):
                     os.symlink(mountpoint_path, symlink_path)
