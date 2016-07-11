@@ -58,7 +58,7 @@ def parse_args():
 
     parser_install = subparsers.add_parser('install', help="install fednode services")
     parser_install.add_argument("config", choices=['base', 'counterblock', 'full'], help="The name of the service configuration to utilize")
-    parser_install.add_argument("branch", choices=['master', 'develop'], help="The name of the git branch to utilize for the build")
+    parser_install.add_argument("branch", choices=['master', 'develop'], help="The name of the git branch to utilize for the build (note that 'master' pulls the docker 'latest' tags)")
     parser_install.add_argument("--use-ssh-uris", action="store_true", help="Use SSH URIs for source checkouts from Github, instead of HTTPS URIs")
     parser_install.add_argument("--mongodb-interface", default="127.0.0.1",
         help="Bind mongo to this host interface. Localhost by default, enter 0.0.0.0 for all host interfaces.")
@@ -207,7 +207,7 @@ def main():
     docker_config_file = "docker-compose.{}.yml".format(build_config)
     DOCKER_CONFIG_PATH = os.path.join(SCRIPTDIR, docker_config_file)
     repo_branch = config.get('Default', 'branch')
-    os.environ['FEDNODE_RELEASE_TAG'] = config.get('Default', 'branch')
+    os.environ['FEDNODE_RELEASE_TAG'] = 'latest' if repo_branch == 'master' else repo_branch
     os.environ['HOSTNAME_BASE'] = socket.gethostname()
     os.environ['MONGODB_HOST_INTERFACE'] = getattr(args, 'mongodb_interface', "127.0.0.1")
 
