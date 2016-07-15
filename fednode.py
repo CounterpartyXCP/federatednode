@@ -1,6 +1,6 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.5
 '''
-fednode.py: script to manage a Counterparty federated node
+fednode.py: script to set up and manage a Counterparty federated node
 '''
 
 import sys
@@ -263,7 +263,7 @@ def main():
                 symlink_path = os.path.join(data_dir, volume.replace('-data', ''))
                 volume_name = "{}_{}".format(PROJECT_NAME, volume)
                 mountpoint_path = get_docker_volume_path(volume_name)
-                if not os.path.lexists(symlink_path):
+                if mountpoint_path is not None and not os.path.lexists(symlink_path):
                     os.symlink(mountpoint_path, symlink_path)
                     print("For convenience, symlinking {} to {}".format(mountpoint_path, symlink_path))
 
