@@ -145,6 +145,10 @@ def setup_env():
         SUDO_CMD = ''
         IS_SUDO_ACTIVE = True
 
+    if os.name != 'nt' and os.geteuid() == 0:
+        print("Please run this script as a non-root user.")
+        sys.exit(1)
+
     if not IS_SUDO_ACTIVE:
         print("This script requires root access (via sudo) to run. Please enter your sudo password below.")
         os.system("bash -c 'sudo whoami > /dev/null'")
