@@ -1,0 +1,10 @@
+[Default]
+verbose=1
+counterparty-rpc-user=rpc
+counterparty-rpc-password=rpc
+wallet-name=bitcoincore
+wallet-connect=bitcoin-testnet
+wallet-user=rpc
+wallet-password= rpc
+rpc-user=rpc
+rpc-password=rpc
