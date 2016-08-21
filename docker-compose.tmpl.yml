@@ -9,7 +9,7 @@ version: '2'
 
 services:
   bitcoin-base:
-    image: counterparty/bitcoin:${FEDNODE_RELEASE_TAG}
+    image: counterparty/bitcoin:master
     volumes:
       - ./config/bitcoin:/root/.bitcoin-config
       - bitcoin-data:/root/.bitcoin/

@@ -63,7 +63,7 @@ def parse_args():
 
     parser_install = subparsers.add_parser('install', help="install fednode services")
     parser_install.add_argument("config", choices=['base', 'counterblock', 'full'], help="The name of the service configuration to utilize")
-    parser_install.add_argument("branch", choices=['master', 'develop'], help="The name of the git branch to utilize for the build (note that 'master' pulls the docker 'latest' tags)")
+    parser_install.add_argument("branch", choices=['master', 'develop', 'evmparty'], help="The name of the git branch to utilize for the build (note that 'master' pulls the docker 'latest' tags)")
     parser_install.add_argument("--use-ssh-uris", action="store_true", help="Use SSH URIs for source checkouts from Github, instead of HTTPS URIs")
     parser_install.add_argument("--mongodb-interface", default="127.0.0.1",
         help="Bind mongo to this host interface. Localhost by default, enter 0.0.0.0 for all host interfaces.")
@@ -239,6 +239,12 @@ def main():
             repo_dir = os.path.join(SCRIPTDIR, "src", repo)
             if not os.path.exists(repo_dir):
                 git_cmd = "git clone -b {} {} {}".format(repo_branch, repo_url, repo_dir)
+                if not IS_WINDOWS:  # make sure to check out the code as the original user, so the permissions are right
+                    os.system("{} -u {} bash -c \"{}\"".format(SUDO_CMD, SESSION_USER, git_cmd))
+                else:
+                    os.system(git_cmd)
+            else:
+                git_cmd = "cd {}; git fetch; git reset --hard origin/{}".format(repo_dir, repo_branch)
                 if not IS_WINDOWS:  # make sure to check out the code as the original user, so the permissions are right
                     os.system("{} -u {} bash -c \"{}\"".format(SUDO_CMD, SESSION_USER, git_cmd))
                 else:
