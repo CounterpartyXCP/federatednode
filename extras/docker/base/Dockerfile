@@ -6,7 +6,10 @@ MAINTAINER Counterparty Developers <dev@counterparty.io>
 RUN apt-get update && apt-get install -y apt-utils ca-certificates wget curl git mercurial \
     python3 python3-dev python3-pip python3-setuptools python3-appdirs \
     build-essential vim unzip software-properties-common sudo gettext-base \
-    net-tools iputils-ping telnet lynx
+    net-tools iputils-ping telnet lynx nano
+
+RUN wget https://raw.githubusercontent.com/CounterpartyXCP/federatednode/master/extras/jq-linux64
+RUN sudo mv jq-linux64 /usr/bin/jq; sudo chmod +x /usr/bin/jq
 
 # Set locale
 RUN dpkg-reconfigure -f noninteractive locales && \
@@ -16,3 +19,4 @@ ENV LC_ALL en_US.UTF-8
 
 # Set home dir env variable
 ENV HOME /root
+ENV TERM xterm
