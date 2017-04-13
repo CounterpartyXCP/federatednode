@@ -3,7 +3,7 @@ FROM counterparty/base
 MAINTAINER Counterparty Developers <dev@counterparty.io>
 
 # install bitcoin-addrindex
-ENV BITCOIN_VER="0.12.1"
+ENV BITCOIN_VER="0.13.2"
 WORKDIR /tmp
 RUN wget -O bitcoin-addrindex.tar.gz https://github.com/btcdrak/bitcoin/releases/download/v${BITCOIN_VER}-addrindex/bitcoin-${BITCOIN_VER}-addrindex-linux64.tar.gz
 RUN tar -xvzf bitcoin-addrindex.tar.gz
