@@ -8,6 +8,9 @@ RUN apt-get update && apt-get install -y apt-utils ca-certificates wget curl git
     build-essential vim unzip software-properties-common sudo gettext-base \
     net-tools iputils-ping telnet lynx
 
+# Upgrade pip3 to newest
+RUN pip3 install --upgrade pip
+
 # Set locale
 RUN dpkg-reconfigure -f noninteractive locales && \
     locale-gen en_US.UTF-8 && \
