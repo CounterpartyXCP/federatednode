@@ -161,6 +161,9 @@ services:
   redis-base:
     hostname: ${HOSTNAME_BASE}-redis
     image: redis:3.2
+    command: redis-server /usr/local/etc/redis/redis.conf
+    volumes:
+      - ./config/redis/redis.conf:/usr/local/etc/redis/redis.conf
     logging:
       driver: "json-file"
       options:
