@@ -1,5 +1,4 @@
 [Default]
-testnet=1
 counterparty-rpc-password=rpc
 wallet-connect=bitcoin
 wallet-user=rpc
