@@ -16,7 +16,7 @@ import shutil
 import json
 
 
-VERSION="2.2.2"
+VERSION="2.2.3"
 
 PROJECT_NAME = "federatednode"
 CURDIR = os.getcwd()
