@@ -43,6 +43,7 @@ VOLUMES_USED = {
 UPDATE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock',
                   'counterblock-testnet', 'counterwallet', 'armory-utxsvr', 'armory-utxsvr-testnet']
 REPARSE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock', 'counterblock-testnet']
+VACUUM_CHOICES = ['counterparty', 'counterparty-testnet']
 SHELL_CHOICES = UPDATE_CHOICES + ['mongodb', 'redis', 'bitcoin', 'bitcoin-testnet']
 
 # set in setup_env()
@@ -81,6 +82,9 @@ def parse_args():
 
     parser_reparse = subparsers.add_parser('reparse', help="reparse a counterparty-server or counterblock service")
     parser_reparse.add_argument("service", choices=REPARSE_CHOICES, help="The name of the service for which to kick off a reparse")
+
+    parser_vacuum = subparsers.add_parser('vacuum', help="vacuum the counterparty-server database for better runtime performance")
+    parser_vacuum.add_argument("service", choices=VACUUM_CHOICES, help="The name of the service whose database to vacuum")
 
     parser_ps = subparsers.add_parser('ps', help="list installed services")
 
@@ -285,6 +289,9 @@ def main():
     elif args.command == 'reparse':
         run_compose_cmd("stop {}".format(args.service))
         run_compose_cmd("run -e COMMAND=reparse {}".format(args.service))
+    elif args.command == 'vacuum':
+        run_compose_cmd("stop {}".format(args.service))
+        run_compose_cmd("run -e COMMAND=vacuum {}".format(args.service))
     elif args.command == 'tail':
         run_compose_cmd("logs -f --tail={} {}".format(args.num_lines, ' '.join(args.services)))
     elif args.command == 'logs':

@@ -1,1 +1,2 @@
 *.conf
+!redis/redis.conf
