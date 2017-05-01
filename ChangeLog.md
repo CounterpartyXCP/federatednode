@@ -1,4 +1,9 @@
 ## Versions ##
+* v2.2.2 (2016-05-01)
+  * COMPATIBLE WITH: `counterparty-lib` `9.55.2` and `counterblock` 1.4.0+
+  * Update `bitcoind` to `0.13.2-addrindex`
+  * Add `vacuum` command
+  * A few other docker package tweaks
 * v2.2.2 (2016-07-08)
   * COMPATIBLE WITH: `counterparty-lib` `develop` and `counterblock` 1.4.0
   * Short options available for things like --version, --debug, --no-restart, etc
