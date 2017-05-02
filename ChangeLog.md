@@ -1,5 +1,5 @@
 ## Versions ##
-* v2.2.2 (2016-05-01)
+* v2.2.3 (2017-05-01)
   * COMPATIBLE WITH: `counterparty-lib` `9.55.2` and `counterblock` 1.4.0+
   * Update `bitcoind` to `0.13.2-addrindex`
   * Add `vacuum` command
