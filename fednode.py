@@ -43,6 +43,7 @@ VOLUMES_USED = {
 UPDATE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock',
                   'counterblock-testnet', 'counterwallet', 'armory-utxsvr', 'armory-utxsvr-testnet']
 REPARSE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock', 'counterblock-testnet']
+ROLLBACK_CHOICES = ['counterparty', 'counterparty-testnet']
 VACUUM_CHOICES = ['counterparty', 'counterparty-testnet']
 SHELL_CHOICES = UPDATE_CHOICES + ['mongodb', 'redis', 'bitcoin', 'bitcoin-testnet']
 
@@ -82,6 +83,10 @@ def parse_args():
 
     parser_reparse = subparsers.add_parser('reparse', help="reparse a counterparty-server or counterblock service")
     parser_reparse.add_argument("service", choices=REPARSE_CHOICES, help="The name of the service for which to kick off a reparse")
+
+    parser_rollback = subparsers.add_parser('rollback', help="rollback a counterparty-server")
+    parser_rollback.add_argument("block_index", help="the index of the last known good block")
+    parser_rollback.add_argument("service", choices=ROLLBACK_CHOICES, help="The name of the service to rollback")
 
     parser_vacuum = subparsers.add_parser('vacuum', help="vacuum the counterparty-server database for better runtime performance")
     parser_vacuum.add_argument("service", choices=VACUUM_CHOICES, help="The name of the service whose database to vacuum")
@@ -289,6 +294,9 @@ def main():
     elif args.command == 'reparse':
         run_compose_cmd("stop {}".format(args.service))
         run_compose_cmd("run -e COMMAND=reparse {}".format(args.service))
+    elif args.command == 'rollback':
+        run_compose_cmd("stop {}".format(args.service))
+        run_compose_cmd("run -e COMMAND='rollback {}' {}".format(args.block_index, args.service))
     elif args.command == 'vacuum':
         run_compose_cmd("stop {}".format(args.service))
         run_compose_cmd("run -e COMMAND=vacuum {}".format(args.service))
