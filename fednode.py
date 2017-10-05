@@ -144,7 +144,7 @@ def setup_env():
     global SUDO_CMD
     if os.name != 'nt':
         IS_WINDOWS = False
-        SESSION_USER = subprocess.check_output("logname", shell=True).decode("utf-8").strip()
+        SESSION_USER = subprocess.check_output("whoami", shell=True).decode("utf-8").strip()
         assert SESSION_USER
         SUDO_CMD = "sudo -E"
         IS_SUDO_ACTIVE = subprocess.check_output('sudo -n uptime 2>&1|grep "load"|wc -l', shell=True).decode("utf-8").strip() == "1"
