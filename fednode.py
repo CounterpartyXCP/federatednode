@@ -16,7 +16,7 @@ import shutil
 import json
 
 
-VERSION="2.2.3"
+VERSION="2.3.0"
 
 PROJECT_NAME = "federatednode"
 CURDIR = os.getcwd()
@@ -26,26 +26,26 @@ FEDNODE_CONFIG_PATH = os.path.join(SCRIPTDIR, FEDNODE_CONFIG_FILE)
 
 REPO_BASE_HTTPS = "https://github.com/CounterpartyXCP/{}.git"
 REPO_BASE_SSH = "git@github.com:CounterpartyXCP/{}.git"
-REPOS_BASE = ['counterparty-lib', 'counterparty-cli']
+REPOS_BASE = ['counterparty-lib', 'counterparty-cli', 'indexd-server']
 REPOS_COUNTERBLOCK = REPOS_BASE + ['counterblock', ]
 REPOS_FULL = REPOS_COUNTERBLOCK + ['counterwallet', 'armory-utxsvr']
 
 HOST_PORTS_USED = {
-    'base': [8332, 18332, 4000, 14000],
-    'counterblock': [8332, 18332, 4000, 14000, 4100, 14100, 27017],
-    'full': [8332, 18332, 4000, 14000, 4100, 14100, 80, 443, 27017]
+    'base': [8332, 18332, 28332, 38332, 8432, 18432, 4000, 14000],
+    'counterblock': [8332, 18332, 28332, 38332, 8432, 18432, 4000, 14000, 4100, 14100, 27017],
+    'full': [8332, 18332, 28332, 38332, 8432, 18432, 4000, 14000, 4100, 14100, 80, 443, 27017]
 }
 VOLUMES_USED = {
-    'base': ['bitcoin-data', 'counterparty-data'],
-    'counterblock': ['bitcoin-data', 'counterparty-data', 'counterblock-data', 'mongodb-data'],
-    'full': ['bitcoin-data', 'counterparty-data', 'counterblock-data', 'mongodb-data', 'armory-data']
+    'base': ['bitcoin-data', 'indexd-data', 'counterparty-data'],
+    'counterblock': ['bitcoin-data', 'indexd-data', 'counterparty-data', 'counterblock-data', 'mongodb-data'],
+    'full': ['bitcoin-data', 'indexd-data', 'counterparty-data', 'counterblock-data', 'mongodb-data', 'armory-data']
 }
 UPDATE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock',
                   'counterblock-testnet', 'counterwallet', 'armory-utxsvr', 'armory-utxsvr-testnet']
 REPARSE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock', 'counterblock-testnet']
 ROLLBACK_CHOICES = ['counterparty', 'counterparty-testnet']
 VACUUM_CHOICES = ['counterparty', 'counterparty-testnet']
-SHELL_CHOICES = UPDATE_CHOICES + ['mongodb', 'redis', 'bitcoin', 'bitcoin-testnet']
+SHELL_CHOICES = UPDATE_CHOICES + ['mongodb', 'redis', 'bitcoin', 'bitcoin-testnet', 'indexd', 'indexd-testnet']
 
 # set in setup_env()
 IS_WINDOWS = None

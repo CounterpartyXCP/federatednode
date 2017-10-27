@@ -37,6 +37,36 @@ services:
     environment:
       - PARAMS=-conf=/root/.bitcoin-config/bitcoin.testnet.conf
 
+  indexd-base:
+    image: counterparty/indexd:${FEDNODE_RELEASE_TAG}
+    volumes:
+      - ./src/indexd-server:/indexd
+      - ./config/indexd:/root/.config/indexd
+      - indexd-data:/data/indexd/
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "30m"
+        max-file: "30"
+
+  indexd-base-mainnet:
+    hostname: ${HOSTNAME_BASE}-idxd
+    extends:
+      service: indexd-base
+    ports:
+      - "8432:8432"
+    environment:
+      - CONFIG_FILE=/root/.config/indexd/indexd.env
+
+  indexd-base-testnet:
+    hostname: ${HOSTNAME_BASE}-idxd-t
+    extends:
+      service: indexd-base
+    ports:
+      - "18432:18432"
+    environment:
+      - CONFIG_FILE=/root/.config/indexd/indexd.testnet.env
+
   counterparty-base:
     image: counterparty/counterparty-server:${FEDNODE_RELEASE_TAG}
     volumes:
