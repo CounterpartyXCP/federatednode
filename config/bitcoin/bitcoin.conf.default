@@ -6,7 +6,6 @@ rpcallowip=0.0.0.0/0
 rpcthreads=50
 rpctimeout=300
 txindex=1
-addrindex=1
 
 # for indexd
 zmqpubhashtx=tcp://0.0.0.0:28832
