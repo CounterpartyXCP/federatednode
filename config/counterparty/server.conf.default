@@ -4,6 +4,7 @@ backend-name=addrindex
 backend-connect=bitcoin
 backend-user=rpc
 backend-password=rpc
+indexd-connect=indexd
 rpc-host=0.0.0.0
 rpc-user=rpc
 rpc-password=rpc

@@ -38,7 +38,7 @@ services:
       - PARAMS=-conf=/root/.bitcoin-config/bitcoin.testnet.conf
 
   indexd-base:
-    image: counterparty/indexd:${FEDNODE_RELEASE_TAG}
+    image: counterparty/indexd-server:${FEDNODE_RELEASE_TAG}
     volumes:
       - ./src/indexd-server:/indexd
       - ./config/indexd:/root/.config/indexd
