@@ -14,6 +14,8 @@ import socket
 import glob
 import shutil
 import json
+import difflib
+from datetime import datetime, timezone
 
 
 VERSION="2.3.0"
@@ -47,6 +49,25 @@ ROLLBACK_CHOICES = ['counterparty', 'counterparty-testnet']
 VACUUM_CHOICES = ['counterparty', 'counterparty-testnet']
 SHELL_CHOICES = UPDATE_CHOICES + ['mongodb', 'redis', 'bitcoin', 'bitcoin-testnet', 'indexd', 'indexd-testnet']
 
+
+CONFIGCHECK_FILES_BASE = [
+    ['bitcoin', 'bitcoin.conf.default', 'bitcoin.conf'],
+    ['bitcoin', 'bitcoin.testnet.conf.default', 'bitcoin.testnet.conf'],
+    ['counterparty', 'client.conf.default', 'client.conf'],
+    ['counterparty', 'client.testnet.conf.default', 'client.testnet.conf'],
+    ['counterparty', 'server.conf.default', 'server.conf'],
+    ['counterparty', 'server.testnet.conf.default', 'server.testnet.conf'],
+];
+CONFIGCHECK_FILES_COUNTERBLOCK = CONFIGCHECK_FILES_BASE + [
+    ['counterblock', 'server.conf.default', 'server.conf'],
+    ['counterblock', 'server.testnet.conf.default', 'server.testnet.conf'],
+]
+CONFIGCHECK_FILES_FULL = CONFIGCHECK_FILES_COUNTERBLOCK;
+CONFIGCHECK_FILES = {
+    'base': CONFIGCHECK_FILES_BASE,
+    'counterblock': CONFIGCHECK_FILES_COUNTERBLOCK,
+    'full': CONFIGCHECK_FILES_FULL,
+}
 # set in setup_env()
 IS_WINDOWS = None
 SESSION_USER = None
@@ -117,6 +138,8 @@ def parse_args():
 
     parser_docker_clean = subparsers.add_parser('docker_clean', help="remove ALL docker containers and cached images (use with caution!)")
 
+    parser_configcheck = subparsers.add_parser('configcheck', help="check configuration")
+
     return parser.parse_args()
 
 
@@ -183,6 +206,44 @@ def get_docker_volume_path(volume_name):
     volume_info = json.loads(json_output)
     return volume_info[0]['Mountpoint']
 
+def file_mtime(path):
+    t = datetime.fromtimestamp(os.stat(path).st_mtime, timezone.utc)
+    return t.astimezone().isoformat()
+
+def config_check(build_config):
+    for dirname, fromfile, tofile in CONFIGCHECK_FILES[build_config]:
+        # dirname, fromfile, tofile = config_spec
+
+        try:
+            fromfilepath = os.path.join(SCRIPTDIR, 'config', dirname, fromfile)
+            fromdate = file_mtime(fromfilepath)
+        except FileNotFoundError as e:
+            print("Config file not found at {}".format(fromfilepath))
+            continue
+
+        try:
+            tofilepath = os.path.join(SCRIPTDIR, 'config', dirname, tofile)
+            todate = file_mtime(tofilepath)
+        except FileNotFoundError as e:
+            print("Config file not found at {}".format(tofilepath))
+            continue
+    
+
+        linejunk_filter = lambda x: len(x.strip()) > 0 and x.strip()[0:1] != '#'
+        with open(fromfilepath) as ff:
+            fromlines = list(filter(linejunk_filter, ff.readlines()))
+        with open(tofilepath) as tf:
+            tolines = list(filter(linejunk_filter, tf.readlines()))
+
+        diff = difflib.unified_diff(fromlines, tolines, fromfile, tofile, fromdate, todate, n=3)
+        diff_string = "".join(diff)
+        if len(diff_string):
+            print("Found these differences in the file {}:\n".format(os.path.join(dirname, tofile)))
+            print("{}".format(diff_string))
+        else:
+            print("{}: OK".format(os.path.join(dirname, tofile)))
+
+    return
 
 def main():
     global DOCKER_CONFIG_PATH
@@ -376,6 +437,8 @@ def main():
             # and restart container
             if not args.no_restart:
                 run_compose_cmd("restart {}".format(service))
+    elif args.command == 'configcheck':
+        config_check(build_config)
     elif args.command == 'rebuild':
         run_compose_cmd("pull --ignore-pull-failures {}".format(' '.join(args.services)))
         run_compose_cmd("up -d --build --force-recreate --no-deps {}".format(' '.join(args.services)))
