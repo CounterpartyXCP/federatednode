@@ -80,6 +80,7 @@ def parse_args():
     parser = argparse.ArgumentParser(prog='fednode', description='fednode utility v{}'.format(VERSION))
     parser.add_argument("-V", '--version', action='version', version='%(prog)s {}'.format(VERSION))
     parser.add_argument("-d", "--debug", action='store_true', default=False, help="increase output verbosity")
+    parser.add_argument("--no-pull", action='store_true', default=False, help="use only local docker images (for debugging)")
 
     subparsers = parser.add_subparsers(help='help on modes', dest='command')
     subparsers.required = True
@@ -250,6 +251,8 @@ def main():
     setup_env()
     args = parse_args()
 
+    use_docker_pulls = not args.no_pull
+
     # run utility commands (docker_clean) if specified
     if args.command == 'docker_clean':
         docker_containers = subprocess.check_output("{} docker ps -a -q".format(SUDO_CMD), shell=True).decode("utf-8").split('\n')
@@ -315,7 +318,11 @@ def main():
                     os.system(git_cmd)
 
         # make sure we have the newest image for each service
-        run_compose_cmd("pull --ignore-pull-failures")
+        if use_docker_pulls:
+            run_compose_cmd("pull --ignore-pull-failures")
+        else:
+            print("skipping docker pull command")
+
 
         # copy over the configs from .default to active versions, if they don't already exist
         for default_config in glob.iglob(os.path.join(SCRIPTDIR, 'config', '**/*.default'), recursive=True):
@@ -440,7 +447,10 @@ def main():
     elif args.command == 'configcheck':
         config_check(build_config)
     elif args.command == 'rebuild':
-        run_compose_cmd("pull --ignore-pull-failures {}".format(' '.join(args.services)))
+        if use_docker_pulls:
+            run_compose_cmd("pull --ignore-pull-failures {}".format(' '.join(args.services)))
+        else:
+            print("skipping docker pull command")
         run_compose_cmd("up -d --build --force-recreate --no-deps {}".format(' '.join(args.services)))
 
 
