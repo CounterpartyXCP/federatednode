@@ -4,7 +4,6 @@ rpcpassword=rpc
 server=1
 printtoconsole=1
 rpcallowip=0.0.0.0/0
-rpcthreads=50
 rpctimeout=300
 txindex=1
 
