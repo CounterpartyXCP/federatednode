@@ -42,7 +42,8 @@ VOLUMES_USED = {
     'counterblock': ['bitcoin-data', 'indexd-data', 'counterparty-data', 'counterblock-data', 'mongodb-data'],
     'full': ['bitcoin-data', 'indexd-data', 'counterparty-data', 'counterblock-data', 'mongodb-data', 'armory-data']
 }
-UPDATE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock',
+UPDATE_CHOICES = ['indexd', 'indexd-testnet',
+                  'counterparty', 'counterparty-testnet', 'counterblock',
                   'counterblock-testnet', 'counterwallet', 'armory-utxsvr', 'armory-utxsvr-testnet']
 REPARSE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock', 'counterblock-testnet']
 ROLLBACK_CHOICES = ['counterparty', 'counterparty-testnet']
@@ -440,6 +441,9 @@ def main():
                         print("NOTE: Did not update locales because there is no .transifex file in your home directory")
                         print("If you want locales compiled, sign up for transifex and create this file to" +
                               " contain 'your_transifex_username:your_transifex_password'")
+
+                if service_base == 'indexd' and os.path.exists(os.path.join(SCRIPTDIR, "src", "indexd-server")):  # special case for indexd
+                    run_compose_cmd("run --no-deps --rm --entrypoint bash {} -c \"cd /indexd && npm update\"".format(service))
 
             # and restart container
             if not args.no_restart:
