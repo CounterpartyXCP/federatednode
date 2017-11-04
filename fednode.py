@@ -54,6 +54,8 @@ SHELL_CHOICES = UPDATE_CHOICES + ['mongodb', 'redis', 'bitcoin', 'bitcoin-testne
 CONFIGCHECK_FILES_BASE = [
     ['bitcoin', 'bitcoin.conf.default', 'bitcoin.conf'],
     ['bitcoin', 'bitcoin.testnet.conf.default', 'bitcoin.testnet.conf'],
+    ['indexd', 'indexd.env.default', 'indexd.env'],
+    ['indexd', 'indexd.testnet.env.default', 'indexd.testnet.env'],
     ['counterparty', 'client.conf.default', 'client.conf'],
     ['counterparty', 'client.testnet.conf.default', 'client.testnet.conf'],
     ['counterparty', 'server.conf.default', 'server.conf'],
