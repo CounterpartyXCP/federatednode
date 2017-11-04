@@ -238,7 +238,7 @@ def config_check(build_config):
         diff = difflib.unified_diff(fromlines, tolines, fromfile, tofile, fromdate, todate, n=3)
         diff_string = "".join(diff)
         if len(diff_string):
-            print("Found these differences in the file {}:\n".format(os.path.join(dirname, tofile)))
+            print("Found these differences in the file {}:\n".format(tofilepath))
             print("{}".format(diff_string))
         else:
             print("{}: OK".format(os.path.join(dirname, tofile)))
