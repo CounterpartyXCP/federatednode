@@ -1,11 +1,11 @@
 [Default]
 rpc-host=0.0.0.0
-backend-connect=bitcoin
+backend-connect=aspiregas
 backend-user=rpc
 backend-password=rpc
-counterparty-connect=counterparty
-counterparty-user=rpc
-counterparty-password=rpc
+aspire-connect=aspire
+aspire-user=rpc
+aspire-password=rpc
 mongodb-connect=mongodb
 redis-connect=redis
 tx-log-file

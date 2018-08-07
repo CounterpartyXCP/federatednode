@@ -1,111 +1,111 @@
 version: '2'
 
 # Data volumes defined in these services (which must be defined in child templates):
-# bitcoin-data
-# counterparty-data
-# counterblock-data
+# aspiregas-data
+# aspire-data
+# aspireblock-data
 # armory-data
 # mongodb-data
 
 services:
-  bitcoin-base:
-    image: counterparty/bitcoin:${FEDNODE_RELEASE_TAG}
+  aspiregas-base:
+    image: aspire/aspiregas:${FEDNODE_RELEASE_TAG}
     volumes:
-      - ./config/bitcoin:/root/.bitcoin-config
-      - bitcoin-data:/root/.bitcoin/
+      - ./config/aspiregas:/root/.aspiregas-config
+      - aspiregas-data:/root/.aspiregas/
     logging:
       driver: "json-file"
       options:
         max-size: "30m"
         max-file: "30"
 
-  bitcoin-base-mainnet:
+  aspiregas-base-mainnet:
     hostname: ${HOSTNAME_BASE}-bc
     extends:
-      service: bitcoin-base
+      service: aspiregas-base
     ports:
       - "8332:8332"
     environment:
-      - PARAMS=-conf=/root/.bitcoin-config/bitcoin.conf
+      - PARAMS=-conf=/root/.aspiregas-config/aspiregas.conf
 
-  bitcoin-base-testnet:
+  aspiregas-base-testnet:
     hostname: ${HOSTNAME_BASE}-bc-t
     extends:
-      service: bitcoin-base
+      service: aspiregas-base
     ports:
       - "18332:18332"
     environment:
-      - PARAMS=-conf=/root/.bitcoin-config/bitcoin.testnet.conf
+      - PARAMS=-conf=/root/.aspiregas-config/aspiregas.testnet.conf
 
-  counterparty-base:
-    image: counterparty/counterparty-server:${FEDNODE_RELEASE_TAG}
+  aspire-base:
+    image: aspire/aspire-server:${FEDNODE_RELEASE_TAG}
     volumes:
-      - ./src/counterparty-lib:/counterparty-lib
-      - ./src/counterparty-cli:/counterparty-cli
-      - ./config/counterparty:/root/.config/counterparty
-      - counterparty-data:/root/.local/share/counterparty
+      - ./src/aspire-lib:/aspire-lib
+      - ./src/aspire-cli:/aspire-cli
+      - ./config/aspire:/root/.config/aspire
+      - aspire-data:/root/.local/share/aspire
     logging:
       driver: "json-file"
       options:
         max-size: "30m"
         max-file: "50"
 
-  counterparty-base-mainnet:
+  aspire-base-mainnet:
     hostname: ${HOSTNAME_BASE}-cp
     extends:
-      service: counterparty-base
+      service: aspire-base
     ports:
       - "4000:4000"
     environment:
-      - PARAMS=--config-file=/root/.config/counterparty/server.conf
+      - PARAMS=--config-file=/root/.config/aspire/server.conf
 
-  counterparty-base-testnet:
+  aspire-base-testnet:
     hostname: ${HOSTNAME_BASE}-cp-t
     extends:
-      service: counterparty-base
+      service: aspire-base
     ports:
       - "14000:14000"
     environment:
-      - PARAMS=--config-file=/root/.config/counterparty/server.testnet.conf
+      - PARAMS=--config-file=/root/.config/aspire/server.testnet.conf
 
-  counterblock-base:
-    image: counterparty/counterblock:${FEDNODE_RELEASE_TAG}
+  aspireblock-base:
+    image: aspire/aspireblock:${FEDNODE_RELEASE_TAG}
     volumes:
-      - ./src/counterblock:/counterblock
-      - ./config/counterblock:/root/.config/counterblock
-      - counterblock-data:/root/.local/share/counterblock
+      - ./src/aspireblock:/aspireblock
+      - ./config/aspireblock:/root/.config/aspireblock
+      - aspireblock-data:/root/.local/share/aspireblock
     logging:
       driver: "json-file"
       options:
         max-size: "30m"
         max-file: "50"
 
-  counterblock-base-mainnet:
+  aspireblock-base-mainnet:
     hostname: ${HOSTNAME_BASE}-cb
     extends:
-      service: counterblock-base
+      service: aspireblock-base
     ports:
       - "4100:4100"
     environment:
-      - PARAMS=--config-file=/root/.config/counterblock/server.conf
+      - PARAMS=--config-file=/root/.config/aspireblock/server.conf
 
-  counterblock-base-testnet:
+  aspireblock-base-testnet:
     hostname: ${HOSTNAME_BASE}-cb-t
     extends:
-      service: counterblock-base
+      service: aspireblock-base
     ports:
       - "14100:14100"
       - "14101:14101"
       - "14102:14102"
     environment:
-      - PARAMS=--config-file=/root/.config/counterblock/server.testnet.conf
+      - PARAMS=--config-file=/root/.config/aspireblock/server.testnet.conf
 
   armory-utxsvr-base:
-    image: counterparty/armory-utxsvr:${FEDNODE_RELEASE_TAG}
+    image: aspire/armory-utxsvr:${FEDNODE_RELEASE_TAG}
     volumes:
       - ./src/armory-utxsvr:/armory-utxsvr
       - armory-data:/root/.armory
-      - bitcoin-data:/root/.bitcoin/
+      - aspiregas-data:/root/.aspiregas/
     logging:
       driver: "json-file"
       options:
@@ -117,7 +117,7 @@ services:
     extends:
       service: armory-utxsvr-base
     environment:
-      - BITCOIND_URL=http://rpc:rpc@bitcoin:8332
+      - ASPIREGASD_URL=http://rpc:rpc@aspiregas:8332
       - RPC_HOST=0.0.0.0
 
   armory-utxsvr-base-testnet:
@@ -125,17 +125,17 @@ services:
     extends:
       service: armory-utxsvr-base
     environment:
-      - BITCOIND_URL=http://rpc:rpc@bitcoin-testnet:18332
+      - ASPIREGASD_URL=http://rpc:rpc@aspiregas-testnet:18332
       - RPC_HOST=0.0.0.0
       - PARAMS=--testnet
 
-  counterwallet-base:
+  aspirewallet-base:
     hostname: ${HOSTNAME_BASE}-cw
-    image: counterparty/counterwallet:${FEDNODE_RELEASE_TAG}
+    image: aspire/aspirewallet:${FEDNODE_RELEASE_TAG}
     volumes:
-      - ./src/counterwallet:/counterwallet
-      - ./config/counterwallet/ssl:/ssl_config
-      - counterblock-data:/counterblock_data
+      - ./src/aspirewallet:/aspirewallet
+      - ./config/aspirewallet/ssl:/ssl_config
+      - aspireblock-data:/aspireblock_data
     logging:
       driver: "json-file"
       options:

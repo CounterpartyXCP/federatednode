@@ -1,29 +1,29 @@
 version: '2'
 
 services:
-  bitcoin:
+  aspiregas:
     extends:
       file: docker-compose.tmpl.yml
-      service: bitcoin-base-mainnet
+      service: aspiregas-base-mainnet
 
-  bitcoin-testnet:
+  aspiregas-testnet:
     extends:
       file: docker-compose.tmpl.yml
-      service: bitcoin-base-testnet
+      service: aspiregas-base-testnet
 
-  counterparty:
+  aspire:
     extends:
       file: docker-compose.tmpl.yml
-      service: counterparty-base-mainnet
+      service: aspire-base-mainnet
     links:
-      - bitcoin
+      - aspiregas
 
-  counterparty-testnet:
+  aspire-testnet:
     extends:
       file: docker-compose.tmpl.yml
-      service: counterparty-base-testnet
+      service: aspire-base-testnet
     links:
-      - bitcoin-testnet
+      - aspiregas-testnet
 
   mongodb:
     extends:
@@ -40,49 +40,49 @@ services:
       file: docker-compose.tmpl.yml
       service: armory-utxsvr-base-mainnet
     links:
-      - bitcoin
+      - aspiregas
 
   armory-utxsvr-testnet:
     extends:
       file: docker-compose.tmpl.yml
       service: armory-utxsvr-base-testnet
     links:
-      - bitcoin-testnet
+      - aspiregas-testnet
 
-  counterblock:
+  aspireblock:
     extends:
       file: docker-compose.tmpl.yml
-      service: counterblock-base-mainnet
+      service: aspireblock-base-mainnet
     links:
-      - bitcoin
-      - counterparty
+      - aspiregas
+      - aspire
       - mongodb
       - redis
       - armory-utxsvr
 
-  counterblock-testnet:
+  aspireblock-testnet:
     extends:
       file: docker-compose.tmpl.yml
-      service: counterblock-base-testnet
+      service: aspireblock-base-testnet
     links:
-      - bitcoin-testnet
-      - counterparty-testnet
+      - aspiregas-testnet
+      - aspire-testnet
       - mongodb
       - redis
       - armory-utxsvr-testnet
 
-  counterwallet:
+  aspirewallet:
     extends:
       file: docker-compose.tmpl.yml
-      service: counterwallet-base
+      service: aspirewallet-base
     links:
       - redis
-      - counterblock
-      - counterblock-testnet
+      - aspireblock
+      - aspireblock-testnet
 
 volumes:
-  bitcoin-data:
-  counterparty-data:
-  counterblock-data:
+  aspiregas-data:
+  aspire-data:
+  aspireblock-data:
   mongodb-data:
   armory-data:

@@ -1,0 +1,5 @@
+[Default]
+aspire-rpc-password=rpc
+wallet-connect=aspiregas
+wallet-user=rpc
+wallet-password=rpc

@@ -20,11 +20,11 @@
   </watchlist>
 
   <!-- <watchlist>
-  <title>Counterblock-Related</title>
+  <title>Aspireblock-Related</title>
   <contactpoint email="root@localhost" name="Administrator"/>
     <path type="recursive" events="modify">/etc/nginx</path>
-    <path type="recursive" events="modify">/home/xcp/counterpartyd_build</path>
-    <path type="recursive" events="modify">/home/xcp/counterwallet</path>
+    <path type="recursive" events="modify">/home/asp/aspired_build</path>
+    <path type="recursive" events="modify">/home/asp/aspirewallet</path>
     <path type="regexception">\.git</path>
     <path type="regexception">.*?\.swp</path>
     <path type="regexception">.*?\.swx</path>

@@ -1,8 +1,7 @@
 [Default]
-testnet=1
 backend-ssl-no-verify=True
 backend-name=addrindex
-backend-connect=bitcoin-testnet
+backend-connect=aspiregas
 backend-user=rpc
 backend-password=rpc
 rpc-host=0.0.0.0
