@@ -1,6 +1,6 @@
 #!/usr/bin/env python3.5
 '''
-fednode.py: script to set up and manage a Counterparty federated node
+fednode.py: script to set up and manage an Aspire federated node
 '''
 
 import sys
@@ -16,7 +16,7 @@ import shutil
 import json
 
 
-VERSION="2.2.3"
+VERSION = "2.2.3"
 
 PROJECT_NAME = "federatednode"
 CURDIR = os.getcwd()
@@ -24,27 +24,29 @@ SCRIPTDIR = os.path.dirname(os.path.realpath(__file__))
 FEDNODE_CONFIG_FILE = ".fednode.config"
 FEDNODE_CONFIG_PATH = os.path.join(SCRIPTDIR, FEDNODE_CONFIG_FILE)
 
-REPO_BASE_HTTPS = "https://github.com/CounterpartyXCP/{}.git"
-REPO_BASE_SSH = "git@github.com:CounterpartyXCP/{}.git"
-REPOS_BASE = ['counterparty-lib', 'counterparty-cli']
-REPOS_COUNTERBLOCK = REPOS_BASE + ['counterblock', ]
-REPOS_FULL = REPOS_COUNTERBLOCK + ['counterwallet', 'armory-utxsvr']
+REPO_BASE_HTTPS = "https://github.com/AspireOrg/{}.git"
+REPO_BASE_SSH = "git@github.com:AspireOrg/{}.git"
+REPOS_BASE = ['aspire-lib', 'aspire-cli']
+REPOS_ASPIREBLOCK = REPOS_BASE + ['aspireblock', ]
+REPOS_FULL = REPOS_ASPIREBLOCK + ['aspirewallet', 'armory-utxsvr']
 
 HOST_PORTS_USED = {
-    'base': [8332, 18332, 4000, 14000],
-    'counterblock': [8332, 18332, 4000, 14000, 4100, 14100, 27017],
-    'full': [8332, 18332, 4000, 14000, 4100, 14100, 80, 443, 27017]
+    'base': [9874, 19874, 4000, 14000],
+    'aspireblock': [9874, 19874, 4000, 14000, 4100, 14100, 27017],
+    'full': [9874, 19874, 4000, 14000, 4100, 14100, 80, 443, 27017]
 }
+
 VOLUMES_USED = {
-    'base': ['bitcoin-data', 'counterparty-data'],
-    'counterblock': ['bitcoin-data', 'counterparty-data', 'counterblock-data', 'mongodb-data'],
-    'full': ['bitcoin-data', 'counterparty-data', 'counterblock-data', 'mongodb-data', 'armory-data']
+    'base': ['aspiregas-data', 'aspire-data'],
+    'aspireblock': ['aspiregas-data', 'aspire-data', 'aspireblock-data', 'mongodb-data'],
+    'full': ['aspiregas-data', 'aspire-data', 'aspireblock-data', 'mongodb-data', 'armory-data']
 }
-UPDATE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock',
-                  'counterblock-testnet', 'counterwallet', 'armory-utxsvr', 'armory-utxsvr-testnet']
-REPARSE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock', 'counterblock-testnet']
-VACUUM_CHOICES = ['counterparty', 'counterparty-testnet']
-SHELL_CHOICES = UPDATE_CHOICES + ['mongodb', 'redis', 'bitcoin', 'bitcoin-testnet']
+
+UPDATE_CHOICES = ['aspire', 'aspire-testnet', 'aspireblock',
+                  'aspireblock-testnet', 'aspirewallet', 'armory-utxsvr', 'armory-utxsvr-testnet']
+REPARSE_CHOICES = ['aspire', 'aspire-testnet', 'aspireblock', 'aspireblock-testnet']
+VACUUM_CHOICES = ['aspire', 'aspire-testnet']
+SHELL_CHOICES = UPDATE_CHOICES + ['mongodb', 'redis', 'aspiregas', 'aspiregas-testnet']
 
 # set in setup_env()
 IS_WINDOWS = None
@@ -63,11 +65,10 @@ def parse_args():
     subparsers.required = True
 
     parser_install = subparsers.add_parser('install', help="install fednode services")
-    parser_install.add_argument("config", choices=['base', 'counterblock', 'full'], help="The name of the service configuration to utilize")
+    parser_install.add_argument("config", choices=['base', 'aspireblock', 'full'], help="The name of the service configuration to utilize")
     parser_install.add_argument("branch", choices=['master', 'develop'], help="The name of the git branch to utilize for the build (note that 'master' pulls the docker 'latest' tags)")
     parser_install.add_argument("--use-ssh-uris", action="store_true", help="Use SSH URIs for source checkouts from Github, instead of HTTPS URIs")
-    parser_install.add_argument("--mongodb-interface", default="127.0.0.1",
-        help="Bind mongo to this host interface. Localhost by default, enter 0.0.0.0 for all host interfaces.")
+    parser_install.add_argument("--mongodb-interface", default="127.0.0.1", help="Bind mongo to this host interface. Localhost by default, enter 0.0.0.0 for all host interfaces.")
 
     parser_uninstall = subparsers.add_parser('uninstall', help="uninstall fednode services")
 
@@ -80,10 +81,10 @@ def parse_args():
     parser_restart = subparsers.add_parser('restart', help="restart fednode services")
     parser_restart.add_argument("services", nargs='*', default='', help="The service or services to restart (or blank for all services)")
 
-    parser_reparse = subparsers.add_parser('reparse', help="reparse a counterparty-server or counterblock service")
+    parser_reparse = subparsers.add_parser('reparse', help="reparse a aspire-server or aspireblock service")
     parser_reparse.add_argument("service", choices=REPARSE_CHOICES, help="The name of the service for which to kick off a reparse")
 
-    parser_vacuum = subparsers.add_parser('vacuum', help="vacuum the counterparty-server database for better runtime performance")
+    parser_vacuum = subparsers.add_parser('vacuum', help="vacuum the aspire-server database for better runtime performance")
     parser_vacuum.add_argument("service", choices=VACUUM_CHOICES, help="The name of the service whose database to vacuum")
 
     parser_ps = subparsers.add_parser('ps', help="list installed services")
@@ -237,7 +238,7 @@ def main():
                 sys.exit(1)
 
         # check out the necessary source trees (don't use submodules due to detached HEAD and other problems)
-        REPOS = REPOS_BASE if build_config == 'base' else (REPOS_COUNTERBLOCK if build_config == 'counterblock' else REPOS_FULL)
+        REPOS = REPOS_BASE if build_config == 'base' else (REPOS_ASPIREBLOCK if build_config == 'aspireblock' else REPOS_FULL)
         for repo in REPOS:
             repo_url = REPO_BASE_SSH.format(repo) if args.use_ssh_uris else REPO_BASE_HTTPS.format(repo)
             repo_dir = os.path.join(SCRIPTDIR, "src", repo)
@@ -321,24 +322,31 @@ def main():
 
         services_to_update = copy.copy(UPDATE_CHOICES) if not len(args.services) else args.services
         git_has_updated = []
+
         while services_to_update:
             # update source code
             service = services_to_update.pop(0)
             service_base = service.replace('-testnet', '')
+
             if service_base not in git_has_updated:
                 git_has_updated.append(service_base)
-                if service_base == 'counterparty':  # special case
-                    service_dirs = [os.path.join(SCRIPTDIR, "src", "counterparty-lib"), os.path.join(SCRIPTDIR, "src", "counterparty-cli")]
+
+                if service_base == 'aspire':  # special case
+                    service_dirs = [os.path.join(SCRIPTDIR, "src", "aspire-lib"), os.path.join(SCRIPTDIR, "src", "aspire-cli")]
                 else:
-                    service_dirs = [service_base,]
+                    service_dirs = [service_base]
+
                 for service_dir in service_dirs:
                     service_dir_path = os.path.join(SCRIPTDIR, "src", service_dir)
+
                     if not os.path.exists(service_dir_path):
                         continue
+
                     service_branch = subprocess.check_output("cd {};git symbolic-ref --short -q HEAD;cd {}".format(service_dir_path, CURDIR), shell=True).decode("utf-8").strip()
                     if not service_branch:
                         print("Unknown service git branch name, or repo in detached state")
                         sys.exit(1)
+
                     git_cmd = "cd {}; git pull origin {}; cd {}".format(service_dir_path, service_branch, CURDIR)
                     if not IS_WINDOWS:  # make sure to update the code as the original user, so the permissions are right
                         os.system("{} -u {} bash -c \"{}\"".format(SUDO_CMD, SESSION_USER, git_cmd))
@@ -346,7 +354,7 @@ def main():
                         os.system(git_cmd)
 
                     # delete installed egg (to force egg recreate and deps re-check on next start)
-                    if service_base in ('counterparty', 'counterblock', 'armory-utxsvr'):
+                    if service_base in ('aspireparty', 'aspireblock', 'armory-utxsvr'):
                         for path in glob.glob(os.path.join(service_dir_path, "*.egg-info")):
                             print("Removing egg path {}".format(path))
                             if not IS_WINDOWS:  # have to use root
@@ -354,12 +362,12 @@ def main():
                             else:
                                 shutil.rmtree(path)
 
-                if service_base == 'counterwallet' and os.path.exists(os.path.join(SCRIPTDIR, "src", "counterwallet")):  # special case
+                if service_base == 'aspirewallet' and os.path.exists(os.path.join(SCRIPTDIR, "src", "aspirewallet")):  # special case
                     transifex_cfg_path = os.path.join(os.path.expanduser("~"), ".transifex")
                     if os.path.exists(transifex_cfg_path):
-                        os.system("{} docker cp {} federatednode_counterwallet_1:/root/.transifex".format(SUDO_CMD, transifex_cfg_path))
-                    os.system("{} docker exec -i -t federatednode_counterwallet_1 bash -c \"cd /counterwallet/src ".format(SUDO_CMD) +
-                              "&& bower --allow-root update && cd /counterwallet && npm update && grunt build\"")
+                        os.system("{} docker cp {} aspirewallet_1:/root/.transifex".format(SUDO_CMD, transifex_cfg_path))
+                    os.system("{} docker exec -i -t aspirewallet_1 bash -c \"cd /aspirewallet/src ".format(SUDO_CMD) +
+                              "&& bower --allow-root update && cd /aspirewallet && npm update && grunt build\"")
                     if not os.path.exists(transifex_cfg_path):
                         print("NOTE: Did not update locales because there is no .transifex file in your home directory")
                         print("If you want locales compiled, sign up for transifex and create this file to" +
@@ -368,6 +376,7 @@ def main():
             # and restart container
             if not args.no_restart:
                 run_compose_cmd("restart {}".format(service))
+
     elif args.command == 'rebuild':
         run_compose_cmd("pull --ignore-pull-failures {}".format(' '.join(args.services)))
         run_compose_cmd("up -d --build --force-recreate --no-deps {}".format(' '.join(args.services)))

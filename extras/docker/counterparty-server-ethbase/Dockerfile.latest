@@ -1,6 +1,6 @@
-FROM counterparty/base
+FROM aspireorg/base
 
-MAINTAINER Counterparty Developers <dev@counterparty.io>
+MAINTAINER Aspire Developers <admin@aspirecrypto.com>
 
 # Install ethereum dependencies
 # NEW PACKAGES TO BUILD `solc`
@@ -15,9 +15,9 @@ RUN apt-get -y update && apt-get -y install build-essential cmake libboost-all-d
     libargtable2-dev libedit-dev mesa-common-dev ocl-icd-libopencl1 opencl-headers \
     libgoogle-perftools-dev ocl-icd-dev libv8-dev libz-dev libjsonrpccpp-dev
 
-# Install counterparty-lib
-RUN git clone -b evmparty https://github.com/CounterpartyXCP/counterparty-lib.git /counterparty-lib
-COPY . /counterparty-lib
-WORKDIR /counterparty-lib
+# Install aspire-lib
+RUN git clone -b evmparty https://github.com/AspireOrg/aspire-lib.git /aspire-lib
+COPY . /aspire-lib
+WORKDIR /aspire-lib
 RUN python3 setup.py install_serpent
 RUN python3 setup.py install_solc

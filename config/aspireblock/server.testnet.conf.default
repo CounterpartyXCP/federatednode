@@ -1,12 +1,12 @@
 [Default]
 testnet=1
 rpc-host=0.0.0.0
-backend-connect=bitcoin-testnet
+backend-connect=aspiregas-testnet
 backend-user=rpc
 backend-password=rpc
-counterparty-connect=counterparty-testnet
-counterparty-user=rpc
-counterparty-password=rpc
+aspire-connect=aspire-testnet
+aspire-user=rpc
+aspire-password=rpc
 mongodb-connect=mongodb
 redis-connect=redis
 tx-log-file

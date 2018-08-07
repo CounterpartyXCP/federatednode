@@ -23,7 +23,7 @@ def runcmd(command, abort_on_failure=True):
 
 def modify_config(param_re, content_to_add, filenames, replace_if_exists=True, dotall=False):
     if not isinstance(filenames, (list, tuple)):
-        filenames = [filenames,]
+        filenames = [filenames]
 
     re_flags = re.MULTILINE | re.DOTALL if dotall else re.MULTILINE
 
@@ -31,11 +31,14 @@ def modify_config(param_re, content_to_add, filenames, replace_if_exists=True, d
         f = open(filename, 'r')
         content = f.read()
         f.close()
-        if not re.search(param_re, content, re_flags): #missing; add to config 
-            if content[-1] != '\n': content += '\n'
-            content += content_to_add 
-        elif replace_if_exists: #replace in config
+
+        if not re.search(param_re, content, re_flags):  # missing; add to config
+            if content[-1] != '\n':
+                content += '\n'
+            content += content_to_add
+        elif replace_if_exists:  # replace in config
             content = re.sub(param_re, content_to_add, content, flags=re_flags)
+
         f = open(filename, 'w')
         f.write(content)
         f.close()
@@ -57,7 +60,7 @@ def do_security_setup():
 
     # set up fail2ban
     runcmd("apt-get -y install fail2ban")
-    runcmd("install -m 0644 -o root -g root -D %s/fail2ban.jail.conf /etc/fail2ban/jail.d/counterblock.conf" % DIST_PATH)
+    runcmd("install -m 0644 -o root -g root -D %s/fail2ban.jail.conf /etc/fail2ban/jail.d/aspireblock.conf" % DIST_PATH)
     runcmd("service fail2ban restart")
 
     # set up psad (this will install postfix, which will prompt the user)
@@ -89,7 +92,7 @@ def do_security_setup():
     # auditd
     # note that auditd will need a reboot to fully apply the rules, due to it operating in "immutable mode" by default
     runcmd("apt-get -y install auditd audispd-plugins")
-    runcmd("install -m 0640 -o root -g root -D %s/audit.rules /etc/audit/rules.d/counterblock.rules" % DIST_PATH)
+    runcmd("install -m 0640 -o root -g root -D %s/audit.rules /etc/audit/rules.d/aspireblock.rules" % DIST_PATH)
     modify_config(r'^USE_AUGENRULES=.*?$', 'USE_AUGENRULES="yes"', '/etc/default/auditd')
     runcmd("service auditd restart")
 
@@ -99,6 +102,7 @@ def do_security_setup():
     runcmd("install -m 0644 -o root -g root -D %s/iwatch.xml /etc/iwatch/iwatch.xml" % DIST_PATH)
     modify_config(r'guard email="root@localhost"', 'guard email="noreply@%s"' % socket.gethostname(), '/etc/iwatch/iwatch.xml')
     runcmd("service iwatch restart")
+
 
 if __name__ == "__main__":
     if platform.dist()[0] != "Ubuntu":
