@@ -5,6 +5,7 @@ backend-name=addrindex
 backend-connect=bitcoin-testnet
 backend-user=rpc
 backend-password=rpc
+indexd-connect=indexd-testnet
 rpc-host=0.0.0.0
 rpc-user=rpc
 rpc-password=rpc

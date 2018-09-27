@@ -11,6 +11,16 @@ services:
       file: docker-compose.tmpl.yml
       service: bitcoin-base-testnet
 
+  indexd:
+    extends:
+      file: docker-compose.tmpl.yml
+      service: indexd-base-mainnet
+
+  indexd-testnet:
+    extends:
+      file: docker-compose.tmpl.yml
+      service: indexd-base-testnet
+
   counterparty:
     extends:
       file: docker-compose.tmpl.yml
@@ -82,6 +92,7 @@ services:
 
 volumes:
   bitcoin-data:
+  indexd-data:
   counterparty-data:
   counterblock-data:
   mongodb-data:
