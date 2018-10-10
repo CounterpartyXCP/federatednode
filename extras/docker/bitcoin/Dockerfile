@@ -3,9 +3,9 @@ FROM counterparty/base
 MAINTAINER Counterparty Developers <dev@counterparty.io>
 
 # install bitcoin core
-ENV BITCOIN_VER="0.15.1"
-ENV BITCOIN_FOLDER_VER="0.15.1"
-ENV BITCOIN_SHASUM="387c2e12c67250892b0814f26a5a38f837ca8ab68c86af517f975a2a2710225b"
+ENV BITCOIN_VER="0.16.3"
+ENV BITCOIN_FOLDER_VER="0.16.3"
+ENV BITCOIN_SHASUM="5d422a9d544742bc0df12427383f9c2517433ce7b58cf672b9a9b17c2ef51e4f"
 WORKDIR /tmp
 
 RUN wget -O bitcoin-${BITCOIN_VER}-x86_64-linux-gnu.tar.gz https://bitcoin.org/bin/bitcoin-core-${BITCOIN_VER}/bitcoin-${BITCOIN_VER}-x86_64-linux-gnu.tar.gz
@@ -25,7 +25,7 @@ COPY bitcoin.conf /root/.bitcoin/
 COPY start.sh /usr/local/bin/start.sh
 RUN chmod a+x /usr/local/bin/start.sh
 
-EXPOSE 8332 8333 18332 18333 28332 38332
+EXPOSE 8332 8333 18332 18333
 
 # NOTE: Defaults to running on mainnet, specify -e TESTNET=1 to start up on testnet
 ENTRYPOINT ["start.sh"]

@@ -33,9 +33,9 @@ REPOS_COUNTERBLOCK = REPOS_BASE + ['counterblock', ]
 REPOS_FULL = REPOS_COUNTERBLOCK + ['counterwallet', 'armory-utxsvr']
 
 HOST_PORTS_USED = {
-    'base': [8332, 18332, 28332, 38332, 8432, 18432, 4000, 14000],
-    'counterblock': [8332, 18332, 28332, 38332, 8432, 18432, 4000, 14000, 4100, 14100, 27017],
-    'full': [8332, 18332, 28332, 38332, 8432, 18432, 4000, 14000, 4100, 14100, 80, 443, 27017]
+    'base': [8332, 18332, 8432, 18432, 4000, 14000],
+    'counterblock': [8332, 18332, 8432, 18432, 4000, 14000, 4100, 14100, 27017],
+    'full': [8332, 18332, 8432, 18432, 4000, 14000, 4100, 14100, 80, 443, 27017]
 }
 VOLUMES_USED = {
     'base': ['bitcoin-data', 'indexd-data', 'counterparty-data'],
@@ -231,7 +231,7 @@ def config_check(build_config):
         except FileNotFoundError as e:
             print("Config file not found at {}".format(tofilepath))
             continue
-    
+
 
         linejunk_filter = lambda x: len(x.strip()) > 0 and x.strip()[0:1] != '#'
         with open(fromfilepath) as ff:
