@@ -40,7 +40,6 @@ services:
   indexd-base:
     image: counterparty/indexd-server:${FEDNODE_RELEASE_TAG}
     volumes:
-      - ./src/indexd-server:/indexd
       - ./config/indexd:/root/.config/indexd
       - indexd-data:/data/indexd/
     logging:
