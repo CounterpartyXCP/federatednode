@@ -9,7 +9,8 @@ version: '2'
 
 services:
   bitcoin-base:
-    image: counterparty/bitcoin:${FEDNODE_RELEASE_TAG}
+    build:
+      context: ./extras/docker/bitcoin
     volumes:
       - ./config/bitcoin:/root/.bitcoin-config
       - bitcoin-data:/root/.bitcoin/
@@ -38,7 +39,9 @@ services:
       - PARAMS=-conf=/root/.bitcoin-config/bitcoin.testnet.conf
 
   indexd-base:
-    image: counterparty/indexd-server:${FEDNODE_RELEASE_TAG}
+    build:
+      context: ./src/indexd-server
+      dockerfile: ./docker/Dockerfile
     volumes:
       - ./config/indexd:/root/.config/indexd
       - indexd-data:/data/indexd/
@@ -162,7 +165,6 @@ services:
     hostname: ${HOSTNAME_BASE}-cw
     image: counterparty/counterwallet:${FEDNODE_RELEASE_TAG}
     volumes:
-      - ./src/counterwallet:/counterwallet
       - ./config/counterwallet/ssl:/ssl_config
       - counterblock-data:/counterblock_data
     logging:
