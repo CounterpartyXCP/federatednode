@@ -70,10 +70,9 @@ services:
       - CONFIG_FILE=/root/.config/indexd/indexd.testnet.env
 
   counterparty-base:
-    image: counterparty/counterparty-server:${FEDNODE_RELEASE_TAG}
+    build:
+      context: ./src/counterparty-lib
     volumes:
-      - ./src/counterparty-lib:/counterparty-lib
-      - ./src/counterparty-cli:/counterparty-cli
       - ./config/counterparty:/root/.config/counterparty
       - counterparty-data:/root/.local/share/counterparty
     logging:
@@ -101,9 +100,9 @@ services:
       - PARAMS=--config-file=/root/.config/counterparty/server.testnet.conf
 
   counterblock-base:
-    image: counterparty/counterblock:${FEDNODE_RELEASE_TAG}
+    build:
+      context: ./src/counterblock
     volumes:
-      - ./src/counterblock:/counterblock
       - ./config/counterblock:/root/.config/counterblock
       - counterblock-data:/root/.local/share/counterblock
     logging:
@@ -163,7 +162,8 @@ services:
 
   counterwallet-base:
     hostname: ${HOSTNAME_BASE}-cw
-    image: counterparty/counterwallet:${FEDNODE_RELEASE_TAG}
+    build:
+      context: ./src/counterwallet
     volumes:
       - ./config/counterwallet/ssl:/ssl_config
       - counterblock-data:/counterblock_data
