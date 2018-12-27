@@ -14,9 +14,11 @@ import socket
 import glob
 import shutil
 import json
+import difflib
+from datetime import datetime, timezone
 
 
-VERSION="2.2.3"
+VERSION="2.3.0"
 
 PROJECT_NAME = "federatednode"
 CURDIR = os.getcwd()
@@ -26,26 +28,49 @@ FEDNODE_CONFIG_PATH = os.path.join(SCRIPTDIR, FEDNODE_CONFIG_FILE)
 
 REPO_BASE_HTTPS = "https://github.com/CounterpartyXCP/{}.git"
 REPO_BASE_SSH = "git@github.com:CounterpartyXCP/{}.git"
-REPOS_BASE = ['counterparty-lib', 'counterparty-cli']
+REPOS_BASE = ['counterparty-lib', 'counterparty-cli', 'indexd-server']
 REPOS_COUNTERBLOCK = REPOS_BASE + ['counterblock', ]
 REPOS_FULL = REPOS_COUNTERBLOCK + ['counterwallet', 'armory-utxsvr']
 
 HOST_PORTS_USED = {
-    'base': [8332, 18332, 4000, 14000],
-    'counterblock': [8332, 18332, 4000, 14000, 4100, 14100, 27017],
-    'full': [8332, 18332, 4000, 14000, 4100, 14100, 80, 443, 27017]
+    'base': [8332, 18332, 28332, 38332, 8432, 18432, 4000, 14000],
+    'counterblock': [8332, 18332, 28332, 38332, 8432, 18432, 4000, 14000, 4100, 14100, 27017],
+    'full': [8332, 18332, 28332, 38332, 8432, 18432, 4000, 14000, 4100, 14100, 80, 443, 27017]
 }
 VOLUMES_USED = {
-    'base': ['bitcoin-data', 'counterparty-data'],
-    'counterblock': ['bitcoin-data', 'counterparty-data', 'counterblock-data', 'mongodb-data'],
-    'full': ['bitcoin-data', 'counterparty-data', 'counterblock-data', 'mongodb-data', 'armory-data']
+    'base': ['bitcoin-data', 'indexd-data', 'counterparty-data'],
+    'counterblock': ['bitcoin-data', 'indexd-data', 'counterparty-data', 'counterblock-data', 'mongodb-data'],
+    'full': ['bitcoin-data', 'indexd-data', 'counterparty-data', 'counterblock-data', 'mongodb-data', 'armory-data']
 }
-UPDATE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock',
+UPDATE_CHOICES = ['indexd', 'indexd-testnet',
+                  'counterparty', 'counterparty-testnet', 'counterblock',
                   'counterblock-testnet', 'counterwallet', 'armory-utxsvr', 'armory-utxsvr-testnet']
 REPARSE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock', 'counterblock-testnet']
+ROLLBACK_CHOICES = ['counterparty', 'counterparty-testnet']
 VACUUM_CHOICES = ['counterparty', 'counterparty-testnet']
-SHELL_CHOICES = UPDATE_CHOICES + ['mongodb', 'redis', 'bitcoin', 'bitcoin-testnet']
+SHELL_CHOICES = UPDATE_CHOICES + ['mongodb', 'redis', 'bitcoin', 'bitcoin-testnet', 'indexd', 'indexd-testnet']
 
+
+CONFIGCHECK_FILES_BASE = [
+    ['bitcoin', 'bitcoin.conf.default', 'bitcoin.conf'],
+    ['bitcoin', 'bitcoin.testnet.conf.default', 'bitcoin.testnet.conf'],
+    ['indexd', 'indexd.env.default', 'indexd.env'],
+    ['indexd', 'indexd.testnet.env.default', 'indexd.testnet.env'],
+    ['counterparty', 'client.conf.default', 'client.conf'],
+    ['counterparty', 'client.testnet.conf.default', 'client.testnet.conf'],
+    ['counterparty', 'server.conf.default', 'server.conf'],
+    ['counterparty', 'server.testnet.conf.default', 'server.testnet.conf'],
+];
+CONFIGCHECK_FILES_COUNTERBLOCK = CONFIGCHECK_FILES_BASE + [
+    ['counterblock', 'server.conf.default', 'server.conf'],
+    ['counterblock', 'server.testnet.conf.default', 'server.testnet.conf'],
+]
+CONFIGCHECK_FILES_FULL = CONFIGCHECK_FILES_COUNTERBLOCK;
+CONFIGCHECK_FILES = {
+    'base': CONFIGCHECK_FILES_BASE,
+    'counterblock': CONFIGCHECK_FILES_COUNTERBLOCK,
+    'full': CONFIGCHECK_FILES_FULL,
+}
 # set in setup_env()
 IS_WINDOWS = None
 SESSION_USER = None
@@ -58,6 +83,7 @@ def parse_args():
     parser = argparse.ArgumentParser(prog='fednode', description='fednode utility v{}'.format(VERSION))
     parser.add_argument("-V", '--version', action='version', version='%(prog)s {}'.format(VERSION))
     parser.add_argument("-d", "--debug", action='store_true', default=False, help="increase output verbosity")
+    parser.add_argument("--no-pull", action='store_true', default=False, help="use only local docker images (for debugging)")
 
     subparsers = parser.add_subparsers(help='help on modes', dest='command')
     subparsers.required = True
@@ -82,6 +108,10 @@ def parse_args():
 
     parser_reparse = subparsers.add_parser('reparse', help="reparse a counterparty-server or counterblock service")
     parser_reparse.add_argument("service", choices=REPARSE_CHOICES, help="The name of the service for which to kick off a reparse")
+
+    parser_rollback = subparsers.add_parser('rollback', help="rollback a counterparty-server")
+    parser_rollback.add_argument("block_index", help="the index of the last known good block")
+    parser_rollback.add_argument("service", choices=ROLLBACK_CHOICES, help="The name of the service to rollback")
 
     parser_vacuum = subparsers.add_parser('vacuum', help="vacuum the counterparty-server database for better runtime performance")
     parser_vacuum.add_argument("service", choices=VACUUM_CHOICES, help="The name of the service whose database to vacuum")
@@ -111,6 +141,8 @@ def parse_args():
     parser_rebuild.add_argument("--mongodb-interface", default="127.0.0.1")
 
     parser_docker_clean = subparsers.add_parser('docker_clean', help="remove ALL docker containers and cached images (use with caution!)")
+
+    parser_configcheck = subparsers.add_parser('configcheck', help="check configuration")
 
     return parser.parse_args()
 
@@ -178,11 +210,51 @@ def get_docker_volume_path(volume_name):
     volume_info = json.loads(json_output)
     return volume_info[0]['Mountpoint']
 
+def file_mtime(path):
+    t = datetime.fromtimestamp(os.stat(path).st_mtime, timezone.utc)
+    return t.astimezone().isoformat()
+
+def config_check(build_config):
+    for dirname, fromfile, tofile in CONFIGCHECK_FILES[build_config]:
+        # dirname, fromfile, tofile = config_spec
+
+        try:
+            fromfilepath = os.path.join(SCRIPTDIR, 'config', dirname, fromfile)
+            fromdate = file_mtime(fromfilepath)
+        except FileNotFoundError as e:
+            print("Config file not found at {}".format(fromfilepath))
+            continue
+
+        try:
+            tofilepath = os.path.join(SCRIPTDIR, 'config', dirname, tofile)
+            todate = file_mtime(tofilepath)
+        except FileNotFoundError as e:
+            print("Config file not found at {}".format(tofilepath))
+            continue
+    
+
+        linejunk_filter = lambda x: len(x.strip()) > 0 and x.strip()[0:1] != '#'
+        with open(fromfilepath) as ff:
+            fromlines = list(filter(linejunk_filter, ff.readlines()))
+        with open(tofilepath) as tf:
+            tolines = list(filter(linejunk_filter, tf.readlines()))
+
+        diff = difflib.unified_diff(fromlines, tolines, fromfile, tofile, fromdate, todate, n=3)
+        diff_string = "".join(diff)
+        if len(diff_string):
+            print("Found these differences in the file {}:\n".format(tofilepath))
+            print("{}".format(diff_string))
+        else:
+            print("{}: OK".format(os.path.join(dirname, tofile)))
+
+    return
 
 def main():
     global DOCKER_CONFIG_PATH
     setup_env()
     args = parse_args()
+
+    use_docker_pulls = not args.no_pull
 
     # run utility commands (docker_clean) if specified
     if args.command == 'docker_clean':
@@ -249,7 +321,11 @@ def main():
                     os.system(git_cmd)
 
         # make sure we have the newest image for each service
-        run_compose_cmd("pull --ignore-pull-failures")
+        if use_docker_pulls:
+            run_compose_cmd("pull --ignore-pull-failures")
+        else:
+            print("skipping docker pull command")
+
 
         # copy over the configs from .default to active versions, if they don't already exist
         for default_config in glob.iglob(os.path.join(SCRIPTDIR, 'config', '**/*.default'), recursive=True):
@@ -289,6 +365,9 @@ def main():
     elif args.command == 'reparse':
         run_compose_cmd("stop {}".format(args.service))
         run_compose_cmd("run -e COMMAND=reparse {}".format(args.service))
+    elif args.command == 'rollback':
+        run_compose_cmd("stop {}".format(args.service))
+        run_compose_cmd("run -e COMMAND='rollback {}' {}".format(args.block_index, args.service))
     elif args.command == 'vacuum':
         run_compose_cmd("stop {}".format(args.service))
         run_compose_cmd("run -e COMMAND=vacuum {}".format(args.service))
@@ -365,11 +444,19 @@ def main():
                         print("If you want locales compiled, sign up for transifex and create this file to" +
                               " contain 'your_transifex_username:your_transifex_password'")
 
+                if service_base == 'indexd' and os.path.exists(os.path.join(SCRIPTDIR, "src", "indexd-server")):  # special case for indexd
+                    run_compose_cmd("run --no-deps --rm --entrypoint bash {} -c \"cd /indexd && npm update\"".format(service))
+
             # and restart container
             if not args.no_restart:
                 run_compose_cmd("restart {}".format(service))
+    elif args.command == 'configcheck':
+        config_check(build_config)
     elif args.command == 'rebuild':
-        run_compose_cmd("pull --ignore-pull-failures {}".format(' '.join(args.services)))
+        if use_docker_pulls:
+            run_compose_cmd("pull --ignore-pull-failures {}".format(' '.join(args.services)))
+        else:
+            print("skipping docker pull command")
         run_compose_cmd("up -d --build --force-recreate --no-deps {}".format(' '.join(args.services)))
 
 
