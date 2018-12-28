@@ -1,11 +1,13 @@
 [Default]
 backend-ssl-no-verify=True
-backend-name=addrindex
+backend-name=indexd
 backend-connect=bitcoin
 backend-user=rpc
 backend-password=rpc
 indexd-connect=indexd
+indexd-port=8432
 rpc-host=0.0.0.0
 rpc-user=rpc
 rpc-password=rpc
 api-log-file
+request-timeout=120

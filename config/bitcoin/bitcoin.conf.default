@@ -11,3 +11,4 @@ txindex=1
 # for indexd
 zmqpubhashtx=tcp://0.0.0.0:28832
 zmqpubhashblock=tcp://0.0.0.0:28832
+addresstype=legacy

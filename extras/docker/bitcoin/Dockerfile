@@ -25,7 +25,7 @@ COPY bitcoin.conf /root/.bitcoin/
 COPY start.sh /usr/local/bin/start.sh
 RUN chmod a+x /usr/local/bin/start.sh
 
-EXPOSE 8332 8333 18332 18333 28332 38332
+EXPOSE 8332 8333 18332 18333
 
 # NOTE: Defaults to running on mainnet, specify -e TESTNET=1 to start up on testnet
 ENTRYPOINT ["start.sh"]
