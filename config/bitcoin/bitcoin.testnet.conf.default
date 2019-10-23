@@ -13,3 +13,8 @@ txindex=1
 zmqpubhashtx=tcp://0.0.0.0:38832
 zmqpubhashblock=tcp://0.0.0.0:38832
 addresstype=legacy
+
+[test]
+rpcallowip=0.0.0.0/0
+rpcbind=0.0.0.0
+rpcport=18332
