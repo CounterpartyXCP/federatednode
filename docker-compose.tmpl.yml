@@ -26,6 +26,7 @@ services:
       service: bitcoin-base
     ports:
       - "8332:8332"
+      - "28832:28832"
     environment:
       - PARAMS=-conf=/root/.bitcoin-config/bitcoin.conf
 
@@ -35,39 +36,49 @@ services:
       service: bitcoin-base
     ports:
       - "18332:18332"
+      - "38832:38832"
     environment:
       - PARAMS=-conf=/root/.bitcoin-config/bitcoin.testnet.conf
 
-  indexd-base:
+  addrindexrs-base:
     build:
-      context: ./src/indexd-server
-      dockerfile: ./docker/Dockerfile
+      context: ./src/addrindexrs
+      dockerfile: ./Dockerfile
+    command: cargo run --release -- -vvvv
     volumes:
-      - ./config/indexd:/root/.config/indexd
-      - indexd-data:/data/indexd/
+      - ./config/addrindexrs:/root/.config/addrindexrs
+      - addrindexrs-data:/data/
     logging:
       driver: "json-file"
       options:
         max-size: "30m"
         max-file: "30"
+    environment:
+      - ADDRINDEXRS_JSONRPC_IMPORT=1
+      - ADDRINDEXRS_TXID_LIMIT=15000
+      - "ADDRINDEXRS_COOKIE=rpc:rpc"
 
-  indexd-base-mainnet:
+  addrindexrs-base-mainnet:
     hostname: ${HOSTNAME_BASE}-idxd
     extends:
-      service: indexd-base
+      service: addrindexrs-base
     ports:
       - "8432:8432"
     environment:
-      - CONFIG_FILE=/root/.config/indexd/indexd.env
+      - "ADDRINDEXRS_INDEXER_RPC_ADDR=0.0.0.0:8432"
+      - ADDRINDEXRS_DAEMON_DIR=/data/mainnet
+      - "ADDRINDEXRS_DAEMON_RPC_ADDR=bitcoin:8332"
 
-  indexd-base-testnet:
+  addrindexrs-base-testnet:
     hostname: ${HOSTNAME_BASE}-idxd-t
     extends:
-      service: indexd-base
+      service: addrindexrs-base
     ports:
       - "18432:18432"
     environment:
-      - CONFIG_FILE=/root/.config/indexd/indexd.testnet.env
+      - "ADDRINDEXRS_INDEXER_RPC_ADDR=0.0.0.0:18432"
+      - ADDRINDEXRS_DAEMON_DIR=/data/testnet
+      - "ADDRINDEXRS_DAEMON_RPC_ADDR=bitcoin-testnet:18332"
 
   counterparty-base:
     build:

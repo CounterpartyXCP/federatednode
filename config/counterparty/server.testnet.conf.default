@@ -1,11 +1,11 @@
 [Default]
 testnet=1
 backend-ssl-no-verify=True
-backend-name=indexd
+backend-name=addrindexrs
 backend-connect=bitcoin-testnet
 backend-user=rpc
 backend-password=rpc
-indexd-connect=indexd-testnet
+indexd-connect=addrindexrs-testnet
 indexd-port=18432
 rpc-host=0.0.0.0
 rpc-user=rpc

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.5
+#!/usr/bin/env python3
 '''
 fednode.py: script to set up and manage a Counterparty federated node
 '''
@@ -28,34 +28,43 @@ FEDNODE_CONFIG_PATH = os.path.join(SCRIPTDIR, FEDNODE_CONFIG_FILE)
 
 REPO_BASE_HTTPS = "https://github.com/CounterpartyXCP/{}.git"
 REPO_BASE_SSH = "git@github.com:CounterpartyXCP/{}.git"
-REPOS_BASE = ['counterparty-lib', 'counterparty-cli', 'indexd-server']
+REPOS_BASE = ['counterparty-lib', 'counterparty-cli', 'addrindexrs']
 REPOS_COUNTERBLOCK = REPOS_BASE + ['counterblock', ]
 REPOS_FULL = REPOS_COUNTERBLOCK + ['counterwallet', 'armory-utxsvr']
 
 HOST_PORTS_USED = {
     'base': [8332, 18332, 8432, 18432, 4000, 14000],
+    'base_extbtc': [8432, 18432, 4000, 14000],
     'counterblock': [8332, 18332, 8432, 18432, 4000, 14000, 4100, 14100, 27017],
     'full': [8332, 18332, 8432, 18432, 4000, 14000, 4100, 14100, 80, 443, 27017]
 }
 VOLUMES_USED = {
-    'base': ['bitcoin-data', 'indexd-data', 'counterparty-data'],
-    'counterblock': ['bitcoin-data', 'indexd-data', 'counterparty-data', 'counterblock-data', 'mongodb-data'],
-    'full': ['bitcoin-data', 'indexd-data', 'counterparty-data', 'counterblock-data', 'mongodb-data', 'armory-data']
+    'base': ['bitcoin-data', 'addrindexrs-data', 'counterparty-data'],
+    'base_extbtc': ['addrindexrs-data', 'counterparty-data'],
+    'counterblock': ['bitcoin-data', 'addrindexrs-data', 'counterparty-data', 'counterblock-data', 'mongodb-data'],
+    'full': ['bitcoin-data', 'addrindexrs-data', 'counterparty-data', 'counterblock-data', 'mongodb-data', 'armory-data']
 }
-UPDATE_CHOICES = ['indexd', 'indexd-testnet',
+UPDATE_CHOICES = ['addrindexrs', 'addrindexrs-testnet',
                   'counterparty', 'counterparty-testnet', 'counterblock',
                   'counterblock-testnet', 'counterwallet', 'armory-utxsvr', 'armory-utxsvr-testnet']
 REPARSE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock', 'counterblock-testnet']
 ROLLBACK_CHOICES = ['counterparty', 'counterparty-testnet']
 VACUUM_CHOICES = ['counterparty', 'counterparty-testnet']
-SHELL_CHOICES = UPDATE_CHOICES + ['mongodb', 'redis', 'bitcoin', 'bitcoin-testnet', 'indexd', 'indexd-testnet']
+SHELL_CHOICES = UPDATE_CHOICES + ['mongodb', 'redis', 'bitcoin', 'bitcoin-testnet', 'addrindexrs', 'addrindexrs-testnet']
 
-
+CONFIGCHECK_FILES_BASE_EXTERNAL_BITCOIN = [
+    ['addrindexrs', 'addrindexrs.env.default', 'addrindexrs.env'],
+    ['addrindexrs', 'addrindexrs.testnet.env.default', 'addrindexrs.testnet.env'],
+    ['counterparty', 'client.conf.default', 'client.conf'],
+    ['counterparty', 'client.testnet.conf.default', 'client.testnet.conf'],
+    ['counterparty', 'server.conf.default', 'server.conf'],
+    ['counterparty', 'server.testnet.conf.default', 'server.testnet.conf'],
+];
 CONFIGCHECK_FILES_BASE = [
     ['bitcoin', 'bitcoin.conf.default', 'bitcoin.conf'],
     ['bitcoin', 'bitcoin.testnet.conf.default', 'bitcoin.testnet.conf'],
-    ['indexd', 'indexd.env.default', 'indexd.env'],
-    ['indexd', 'indexd.testnet.env.default', 'indexd.testnet.env'],
+    ['addrindexrs', 'addrindexrs.env.default', 'addrindexrs.env'],
+    ['addrindexrs', 'addrindexrs.testnet.env.default', 'addrindexrs.testnet.env'],
     ['counterparty', 'client.conf.default', 'client.conf'],
     ['counterparty', 'client.testnet.conf.default', 'client.testnet.conf'],
     ['counterparty', 'server.conf.default', 'server.conf'],
@@ -67,6 +76,7 @@ CONFIGCHECK_FILES_COUNTERBLOCK = CONFIGCHECK_FILES_BASE + [
 ]
 CONFIGCHECK_FILES_FULL = CONFIGCHECK_FILES_COUNTERBLOCK;
 CONFIGCHECK_FILES = {
+    'base_extbtc': CONFIGCHECK_FILES_BASE_EXTERNAL_BITCOIN,
     'base': CONFIGCHECK_FILES_BASE,
     'counterblock': CONFIGCHECK_FILES_COUNTERBLOCK,
     'full': CONFIGCHECK_FILES_FULL,
@@ -89,7 +99,7 @@ def parse_args():
     subparsers.required = True
 
     parser_install = subparsers.add_parser('install', help="install fednode services")
-    parser_install.add_argument("config", choices=['base', 'counterblock', 'full'], help="The name of the service configuration to utilize")
+    parser_install.add_argument("config", choices=['base', 'base_extbtc', 'counterblock', 'full'], help="The name of the service configuration to utilize")
     parser_install.add_argument("branch", choices=['master', 'develop'], help="The name of the git branch to utilize for the build (note that 'master' pulls the docker 'latest' tags)")
     parser_install.add_argument("--use-ssh-uris", action="store_true", help="Use SSH URIs for source checkouts from Github, instead of HTTPS URIs")
     parser_install.add_argument("--mongodb-interface", default="127.0.0.1",
@@ -444,8 +454,8 @@ def main():
                         print("If you want locales compiled, sign up for transifex and create this file to" +
                               " contain 'your_transifex_username:your_transifex_password'")
 
-                if service_base == 'indexd' and os.path.exists(os.path.join(SCRIPTDIR, "src", "indexd-server")):  # special case for indexd
-                    run_compose_cmd("run --no-deps --rm --entrypoint bash {} -c \"cd /indexd && npm update\"".format(service))
+                #if service_base == 'indexd' and os.path.exists(os.path.join(SCRIPTDIR, "src", "indexd-server")):  # special case for indexd
+                #    run_compose_cmd("run --no-deps --rm --entrypoint bash {} -c \"cd /indexd && npm update\"".format(service))
 
             # and restart container
             if not args.no_restart:
