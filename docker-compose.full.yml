@@ -27,6 +27,7 @@ services:
       service: counterparty-base-mainnet
     links:
       - bitcoin
+      - addrindexrs
 
   counterparty-testnet:
     extends:
@@ -34,6 +35,7 @@ services:
       service: counterparty-base-testnet
     links:
       - bitcoin-testnet
+      - addrindexrs-testnet
 
   mongodb:
     extends:
