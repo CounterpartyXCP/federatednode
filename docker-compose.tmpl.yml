@@ -47,7 +47,7 @@ services:
     command: cargo run --release -- -vvvv
     volumes:
       - ./config/addrindexrs:/root/.config/addrindexrs
-      - addrindexrs-data:/data/
+      - addrindexrs-data:/home/user/db/
     logging:
       driver: "json-file"
       options:
@@ -66,7 +66,6 @@ services:
       - "8432:8432"
     environment:
       - "ADDRINDEXRS_INDEXER_RPC_ADDR=0.0.0.0:8432"
-      - ADDRINDEXRS_DAEMON_DIR=/data/mainnet
       - "ADDRINDEXRS_DAEMON_RPC_ADDR=bitcoin:8332"
 
   addrindexrs-base-testnet:
@@ -77,7 +76,6 @@ services:
       - "18432:18432"
     environment:
       - "ADDRINDEXRS_INDEXER_RPC_ADDR=0.0.0.0:18432"
-      - ADDRINDEXRS_DAEMON_DIR=/data/testnet
       - "ADDRINDEXRS_DAEMON_RPC_ADDR=bitcoin-testnet:18332"
 
   counterparty-base:
