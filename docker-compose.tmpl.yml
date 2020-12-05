@@ -76,6 +76,7 @@ services:
       - "18432:18432"
     environment:
       - "ADDRINDEXRS_INDEXER_RPC_ADDR=0.0.0.0:18432"
+      - ADDRINDEXRS_NETWORK=testnet
       - "ADDRINDEXRS_DAEMON_RPC_ADDR=bitcoin-testnet:18332"
 
   counterparty-base:
