@@ -30,7 +30,7 @@ REPO_BASE_HTTPS = "https://github.com/CounterpartyXCP/{}.git"
 REPO_BASE_SSH = "git@github.com:CounterpartyXCP/{}.git"
 REPOS_BASE = ['counterparty-lib', 'counterparty-cli', 'addrindexrs']
 REPOS_COUNTERBLOCK = REPOS_BASE + ['counterblock', ]
-REPOS_FULL = REPOS_COUNTERBLOCK + ['counterwallet', 'armory-utxsvr']
+REPOS_FULL = REPOS_COUNTERBLOCK + ['counterwallet', 'armory-utxsvr', 'xcp-proxy']
 
 HOST_PORTS_USED = {
     'base': [8332, 18332, 8432, 18432, 4000, 14000],
@@ -42,11 +42,12 @@ VOLUMES_USED = {
     'base': ['bitcoin-data', 'addrindexrs-data', 'counterparty-data'],
     'base_extbtc': ['addrindexrs-data', 'counterparty-data'],
     'counterblock': ['bitcoin-data', 'addrindexrs-data', 'counterparty-data', 'counterblock-data', 'mongodb-data'],
-    'full': ['bitcoin-data', 'addrindexrs-data', 'counterparty-data', 'counterblock-data', 'mongodb-data', 'armory-data']
+    'full': ['bitcoin-data', 'addrindexrs-data', 'counterparty-data', 'counterblock-data', 'mongodb-data', 'armory-data', 'xcp-proxy']
 }
 UPDATE_CHOICES = ['addrindexrs', 'addrindexrs-testnet',
                   'counterparty', 'counterparty-testnet', 'counterblock',
-                  'counterblock-testnet', 'counterwallet', 'armory-utxsvr', 'armory-utxsvr-testnet']
+                  'counterblock-testnet', 'counterwallet', 'armory-utxsvr',
+                  'armory-utxsvr-testnet', 'xcp-proxy', 'xcp-proxy-testnet']
 REPARSE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock', 'counterblock-testnet']
 ROLLBACK_CHOICES = ['counterparty', 'counterparty-testnet']
 VACUUM_CHOICES = ['counterparty', 'counterparty-testnet']

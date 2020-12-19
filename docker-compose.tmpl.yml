@@ -210,3 +210,43 @@ services:
       options:
         max-size: "30m"
         max-file: "30"
+
+  xcp-proxy-base:
+    build:
+      context: ./src/xcp-proxy
+      dockerfile: ./Dockerfile
+    volumes:
+      - ./config/xcp-proxy:/root/.config/xcp-proxy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "30m"
+        max-file: "30"
+    environment:
+      - INTERVAL_CHECK_COUNTERPARTY_PARSED=1000
+
+  xcp-proxy-base-mainnet:
+    hostname: ${HOSTNAME_BASE}-prx
+    extends:
+      service: xcp-proxy-base
+    ports:
+      - "8097:8097"
+    environment:
+      - HTTP_PORT=8097
+      - ADDRINDEXRS_URL=tcp://addrindexrs:8432
+      - BITCOIN_ZMQ_URL=tcp://bitcoin:28832
+      - REDIS_URL=redis://redis:6379/8
+      - SECRETS_PATH=/root/.config/xcp-proxy/secrets
+
+  xcp-proxy-base-testnet:
+    hostname: ${HOSTNAME_BASE}-prx-t
+    extends:
+      service: xcp-proxy-base
+    ports:
+      - "18097:18097"
+    environment:
+      - HTTP_PORT=18097
+      - ADDRINDEXRS_URL=tcp://addrindexrs-testnet:8432
+      - BITCOIN_ZMQ_URL=tcp://bitcoin-testnet:38832
+      - REDIS_URL=redis://redis:6379/9
+      - SECRETS_PATH=/root/.config/xcp-proxy/secrets-testnet

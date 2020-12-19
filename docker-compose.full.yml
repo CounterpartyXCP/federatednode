@@ -92,6 +92,24 @@ services:
       - counterblock
       - counterblock-testnet
 
+  xcp-proxy:
+    extends:
+      file: docker-compose.tmpl.yml
+      service: xcp-proxy-base-mainnet
+    links:
+      - redis
+      - bitcoin
+      - counterparty
+
+  xcp-proxy-testnet:
+    extends:
+      file: docker-compose.tmpl.yml
+      service: xcp-proxy-base-testnet
+    links:
+      - redis
+      - bitcoin-testnet
+      - counterparty-testnet
+
 volumes:
   bitcoin-data:
   addrindexrs-data:
