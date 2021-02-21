@@ -284,7 +284,7 @@ def main():
     # for all other commands
     # if config doesn't exist, only the 'install' command may be run
     config_existed = os.path.exists(FEDNODE_CONFIG_PATH)
-    config = configparser.SafeConfigParser()
+    config = configparser.ConfigParser()
     if not config_existed:
         if args.command != 'install':
             print("config file {} does not exist. Please run the 'install' command first".format(FEDNODE_CONFIG_FILE))
