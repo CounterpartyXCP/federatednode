@@ -455,9 +455,6 @@ def main():
                         print("If you want locales compiled, sign up for transifex and create this file to" +
                               " contain 'your_transifex_username:your_transifex_password'")
 
-                #if service_base == 'indexd' and os.path.exists(os.path.join(SCRIPTDIR, "src", "indexd-server")):  # special case for indexd
-                #    run_compose_cmd("run --no-deps --rm --entrypoint bash {} -c \"cd /indexd && npm update\"".format(service))
-
             # and restart container
             if not args.no_restart:
                 run_compose_cmd("restart {}".format(service))
