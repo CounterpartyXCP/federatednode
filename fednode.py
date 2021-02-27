@@ -284,7 +284,7 @@ def main():
     # for all other commands
     # if config doesn't exist, only the 'install' command may be run
     config_existed = os.path.exists(FEDNODE_CONFIG_PATH)
-    config = configparser.SafeConfigParser()
+    config = configparser.ConfigParser()
     if not config_existed:
         if args.command != 'install':
             print("config file {} does not exist. Please run the 'install' command first".format(FEDNODE_CONFIG_FILE))
@@ -454,9 +454,6 @@ def main():
                         print("NOTE: Did not update locales because there is no .transifex file in your home directory")
                         print("If you want locales compiled, sign up for transifex and create this file to" +
                               " contain 'your_transifex_username:your_transifex_password'")
-
-                #if service_base == 'indexd' and os.path.exists(os.path.join(SCRIPTDIR, "src", "indexd-server")):  # special case for indexd
-                #    run_compose_cmd("run --no-deps --rm --entrypoint bash {} -c \"cd /indexd && npm update\"".format(service))
 
             # and restart container
             if not args.no_restart:
