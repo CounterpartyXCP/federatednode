@@ -3,9 +3,9 @@ FROM counterparty/base
 MAINTAINER Counterparty Developers <dev@counterparty.io>
 
 # install bitcoin core
-ENV BITCOIN_VER="0.21.0"
-ENV BITCOIN_FOLDER_VER="0.21.0"
-ENV BITCOIN_SHASUM="da7766775e3f9c98d7a9145429f2be8297c2672fe5b118fd3dc2411fb48e0032"
+ENV BITCOIN_VER="0.21.1"
+ENV BITCOIN_FOLDER_VER="0.21.1"
+ENV BITCOIN_SHASUM="366eb44a7a0aa5bd342deea215ec19a184a11f2ca22220304ebb20b9c8917e2b"
 WORKDIR /tmp
 
 RUN wget -O bitcoin-${BITCOIN_VER}-x86_64-linux-gnu.tar.gz https://bitcoin.org/bin/bitcoin-core-${BITCOIN_VER}/bitcoin-${BITCOIN_VER}-x86_64-linux-gnu.tar.gz
