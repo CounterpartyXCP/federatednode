@@ -19,6 +19,7 @@ services:
       options:
         max-size: "30m"
         max-file: "30"
+    restart: "unless-stopped"
 
   bitcoin-base-mainnet:
     hostname: ${HOSTNAME_BASE}-bc
@@ -57,6 +58,7 @@ services:
       - ADDRINDEXRS_JSONRPC_IMPORT=1
       - ADDRINDEXRS_TXID_LIMIT=15000
       - "ADDRINDEXRS_COOKIE=rpc:rpc"
+    restart: "unless-stopped"  
 
   addrindexrs-base-mainnet:
     hostname: ${HOSTNAME_BASE}-idxd
@@ -90,6 +92,7 @@ services:
       options:
         max-size: "30m"
         max-file: "50"
+    restart: "unless-stopped"    
 
   counterparty-base-mainnet:
     hostname: ${HOSTNAME_BASE}-cp
@@ -120,6 +123,7 @@ services:
       options:
         max-size: "30m"
         max-file: "50"
+    restart: "unless-stopped"    
 
   counterblock-base-mainnet:
     hostname: ${HOSTNAME_BASE}-cb
