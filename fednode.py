@@ -50,6 +50,7 @@ UPDATE_CHOICES = ['addrindexrs', 'addrindexrs-testnet',
                   'armory-utxsvr-testnet', 'xcp-proxy', 'xcp-proxy-testnet']
 REPARSE_CHOICES = ['counterparty', 'counterparty-testnet', 'counterblock', 'counterblock-testnet']
 ROLLBACK_CHOICES = ['counterparty', 'counterparty-testnet']
+VALIDATE_CHOICES = ['counterparty', 'counterparty-testnet']
 VACUUM_CHOICES = ['counterparty', 'counterparty-testnet']
 SHELL_CHOICES = UPDATE_CHOICES + ['mongodb', 'redis', 'bitcoin', 'bitcoin-testnet', 'addrindexrs', 'addrindexrs-testnet']
 
@@ -123,6 +124,9 @@ def parse_args():
     parser_rollback = subparsers.add_parser('rollback', help="rollback a counterparty-server")
     parser_rollback.add_argument("block_index", help="the index of the last known good block")
     parser_rollback.add_argument("service", choices=ROLLBACK_CHOICES, help="The name of the service to rollback")
+
+    parser_validate = subparsers.add_parser('validate', help="makes a database integrity check in counterparty-server")
+    parser_validate.add_argument("service", choices=VALIDATE_CHOICES, help="The name of the service to make the integrity check")
 
     parser_vacuum = subparsers.add_parser('vacuum', help="vacuum the counterparty-server database for better runtime performance")
     parser_vacuum.add_argument("service", choices=VACUUM_CHOICES, help="The name of the service whose database to vacuum")
@@ -370,7 +374,7 @@ def main():
     elif args.command == 'start':
         run_compose_cmd("start {}".format(' '.join(args.services)))
     elif args.command == 'stop':
-        run_compose_cmd("stop {}".format(' '.join(args.services)))
+        run_compose_cmd("stop {}".format(' '.join(args.services)))A
     elif args.command == 'restart':
         run_compose_cmd("restart {}".format(' '.join(args.services)))
     elif args.command == 'reparse':
@@ -379,6 +383,9 @@ def main():
     elif args.command == 'rollback':
         run_compose_cmd("stop {}".format(args.service))
         run_compose_cmd("run -e COMMAND='rollback {}' {}".format(args.block_index, args.service))
+    elif args.command == 'validate':
+        run_compose_cmd("stop {}".format(args.service))
+        run_compose_cmd("run -e COMMAND=checkdb {}".format(args.service))
     elif args.command == 'vacuum':
         run_compose_cmd("stop {}".format(args.service))
         run_compose_cmd("run -e COMMAND=vacuum {}".format(args.service))
