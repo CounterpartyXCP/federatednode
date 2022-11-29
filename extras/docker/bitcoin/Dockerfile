@@ -3,12 +3,12 @@ FROM counterparty/base
 MAINTAINER Counterparty Developers <dev@counterparty.io>
 
 # install bitcoin core
-ENV BITCOIN_VER="0.21.1"
-ENV BITCOIN_FOLDER_VER="0.21.1"
-ENV BITCOIN_SHASUM="366eb44a7a0aa5bd342deea215ec19a184a11f2ca22220304ebb20b9c8917e2b"
+ENV BITCOIN_VER="23.0"
+ENV BITCOIN_FOLDER_VER="23.0"
+ENV BITCOIN_SHASUM="2cca490c1f2842884a3c5b0606f179f9f937177da4eadd628e3f7fd7e25d26d0"
 WORKDIR /tmp
 
-RUN wget -O bitcoin-${BITCOIN_VER}-x86_64-linux-gnu.tar.gz https://bitcoin.org/bin/bitcoin-core-${BITCOIN_VER}/bitcoin-${BITCOIN_VER}-x86_64-linux-gnu.tar.gz
+RUN wget --no-check-certificate -O bitcoin-${BITCOIN_VER}-x86_64-linux-gnu.tar.gz https://bitcoincore.org/bin/bitcoin-core-${BITCOIN_VER}/bitcoin-${BITCOIN_VER}-x86_64-linux-gnu.tar.gz
 
 RUN myhash=$(sha256sum "bitcoin-${BITCOIN_VER}-x86_64-linux-gnu.tar.gz" | cut -d' ' -f1); \
     if [ "$myhash" = "$BITCOIN_SHASUM" ] ; \
