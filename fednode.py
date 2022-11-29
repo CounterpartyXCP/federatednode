@@ -374,7 +374,7 @@ def main():
     elif args.command == 'start':
         run_compose_cmd("start {}".format(' '.join(args.services)))
     elif args.command == 'stop':
-        run_compose_cmd("stop {}".format(' '.join(args.services)))A
+        run_compose_cmd("stop {}".format(' '.join(args.services)))
     elif args.command == 'restart':
         run_compose_cmd("restart {}".format(' '.join(args.services)))
     elif args.command == 'reparse':
