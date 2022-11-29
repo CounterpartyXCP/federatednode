@@ -154,6 +154,7 @@ def parse_args():
     parser_rebuild = subparsers.add_parser('rebuild', help="rebuild fednode services (i.e. remove and refetch/install docker containers)")
     parser_rebuild.add_argument("services", nargs='*', default='', help="The name of the service or services to rebuild (or blank for all services)")
     parser_rebuild.add_argument("--mongodb-interface", default="127.0.0.1")
+    parser_rebuild.add_argument("--no-cache", action="store_true", help="Rebuilds service or services images from scratch before installing containers")
 
     parser_docker_clean = subparsers.add_parser('docker_clean', help="remove ALL docker containers and cached images (use with caution!)")
 
@@ -472,6 +473,10 @@ def main():
             run_compose_cmd("pull --ignore-pull-failures {}".format(' '.join(args.services)))
         else:
             print("skipping docker pull command")
+        
+        if args.no_cache:
+            run_compose_cmd("build --no-cache {}".format(' '.join(args.services)))
+            
         run_compose_cmd("up -d --build --force-recreate --no-deps {}".format(' '.join(args.services)))
 
 
