@@ -106,6 +106,8 @@ def parse_args():
     parser_install.add_argument("--use-ssh-uris", action="store_true", help="Use SSH URIs for source checkouts from Github, instead of HTTPS URIs")
     parser_install.add_argument("--mongodb-interface", default="127.0.0.1",
         help="Bind mongo to this host interface. Localhost by default, enter 0.0.0.0 for all host interfaces.")
+    parser_install.add_argument("--no-bootstrap", action="store_true", help="It doesn't download any bootstrap, so the parse will begin from scratch")
+    
 
     parser_uninstall = subparsers.add_parser('uninstall', help="uninstall fednode services")
 
@@ -311,6 +313,7 @@ def main():
     os.environ['FEDNODE_RELEASE_TAG'] = 'latest' if repo_branch == 'master' else repo_branch
     os.environ['HOSTNAME_BASE'] = socket.gethostname()
     os.environ['MONGODB_HOST_INTERFACE'] = getattr(args, 'mongodb_interface', "127.0.0.1")
+    os.environ["NO_BOOTSTRAP"] = "true" if hasattr(args, "no_bootstrap") and args.no_bootstrap else "false"
 
     # perform action for the specified command
     if args.command == 'install':
