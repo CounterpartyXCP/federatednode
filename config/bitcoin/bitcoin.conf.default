@@ -9,3 +9,7 @@ rpcthreads=8
 rpcworkqueue=16
 rpctimeout=300
 txindex=1
+
+# ZMQ Notifications
+zmqpubhashtx=tcp://0.0.0.0:28832
+zmqpubhashblock=tcp://0.0.0.0:28832
