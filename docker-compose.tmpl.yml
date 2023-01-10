@@ -102,7 +102,9 @@ services:
       - "4000:4000"
     environment:
       - PARAMS=--config-file=/root/.config/counterparty/server.conf
-
+      - BTC_NETWORK=mainnet
+      - NO_BOOTSTRAP=${NO_BOOTSTRAP}
+      
   counterparty-base-testnet:
     hostname: ${HOSTNAME_BASE}-cp-t
     extends:
@@ -111,7 +113,9 @@ services:
       - "14000:14000"
     environment:
       - PARAMS=--config-file=/root/.config/counterparty/server.testnet.conf
-
+      - BTC_NETWORK=testnet
+      - NO_BOOTSTRAP=${NO_BOOTSTRAP}
+      
   counterblock-base:
     build:
       context: ./src/counterblock
