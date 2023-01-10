@@ -28,12 +28,12 @@ FEDNODE_CONFIG_PATH = os.path.join(SCRIPTDIR, FEDNODE_CONFIG_FILE)
 
 REPO_BASE_HTTPS = "https://github.com/CounterpartyXCP/{}.git"
 REPO_BASE_SSH = "git@github.com:CounterpartyXCP/{}.git"
-REPOS_BASE = ['counterparty-lib', 'counterparty-cli', 'addrindexrs']
-REPOS_COUNTERBLOCK = REPOS_BASE + ['counterblock', ]
-REPOS_FULL = REPOS_COUNTERBLOCK + ['counterwallet', 'armory-utxsvr', 'xcp-proxy']
+REPOS_BASE = ['counterparty-lib', 'counterparty-cli', 'addrindexrs', 'xcp-proxy']
+REPOS_COUNTERBLOCK = REPOS_BASE + ['counterblock']
+REPOS_FULL = REPOS_COUNTERBLOCK + ['counterwallet', 'armory-utxsvr']
 
 HOST_PORTS_USED = {
-    'base': [8332, 18332, 8432, 18432, 4000, 14000],
+    'base': [8332, 18332, 8432, 18432, 4000, 14000, 8097, 18097],
     'base_extbtc': [8432, 18432, 4000, 14000],
     'counterblock': [8332, 18332, 8432, 18432, 4000, 14000, 4100, 14100, 27017],
     'full': [8332, 18332, 8432, 18432, 4000, 14000, 4100, 14100, 80, 443, 27017]
@@ -42,7 +42,7 @@ VOLUMES_USED = {
     'base': ['bitcoin-data', 'addrindexrs-data', 'counterparty-data'],
     'base_extbtc': ['addrindexrs-data', 'counterparty-data'],
     'counterblock': ['bitcoin-data', 'addrindexrs-data', 'counterparty-data', 'counterblock-data', 'mongodb-data'],
-    'full': ['bitcoin-data', 'addrindexrs-data', 'counterparty-data', 'counterblock-data', 'mongodb-data', 'armory-data', 'xcp-proxy']
+    'full': ['bitcoin-data', 'addrindexrs-data', 'counterparty-data', 'counterblock-data', 'mongodb-data', 'armory-data']
 }
 UPDATE_CHOICES = ['addrindexrs', 'addrindexrs-testnet',
                   'counterparty', 'counterparty-testnet', 'counterblock',
