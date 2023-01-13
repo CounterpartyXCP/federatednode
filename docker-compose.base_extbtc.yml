@@ -24,6 +24,22 @@ services:
       service: counterparty-base-testnet
     links:
       - addrindexrs-testnet
+      
+  http-addrindexrs:
+    extends:
+      file: docker-compose.tmpl.yml
+      service: http-addrindexrs-base-mainnet
+    links:
+      - bitcoin
+      - addrindexrs
+      
+  http-addrindexrs-testnet:
+    extends:
+      file: docker-compose.tmpl.yml
+      service: http-addrindexrs-base-testnet
+    links:
+      - bitcoin-testnet
+      - addrindexrs-testnet      
 
 volumes:
   addrindexrs-data:
