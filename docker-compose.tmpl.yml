@@ -275,7 +275,7 @@ services:
     extends:
       service: http-addrindexrs-base
     ports:
-      - "8335:8335"
+      - "8098:8098"
     environment:
       - DOTENV_CONFIG_PATH=/root/.config/http-addrindexrs/server.conf
       
@@ -284,6 +284,6 @@ services:
     extends:
       service: http-addrindexrs-base
     ports:
-      - "18335:18335"
+      - "18098:18098"
     environment:
       - DOTENV_CONFIG_PATH=/root/.config/http-addrindexrs/server.testnet.conf    
