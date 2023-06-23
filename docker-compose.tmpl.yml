@@ -224,7 +224,6 @@ services:
       context: ./src/xcp-proxy
       dockerfile: ./Dockerfile
     volumes:
-      - ./config/counterwallet/ssl:/ssl_config
       - ./config/xcp-proxy:/root/.config/xcp-proxy
     logging:
       driver: "json-file"
