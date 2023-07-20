@@ -239,8 +239,10 @@ services:
       service: xcp-proxy-base
     ports:
       - "8097:8097"
+      - "8098:8098"
     environment:
       - HTTP_PORT=8097
+      - HTTPS_PORT=8098
       - ADDRINDEXRS_URL=tcp://addrindexrs:8432
       - BITCOIN_ZMQ_URL=tcp://bitcoin:28832
       - REDIS_URL=redis://redis:6379/8
@@ -252,8 +254,10 @@ services:
       service: xcp-proxy-base
     ports:
       - "18097:18097"
+      - "18098:18098"
     environment:
       - HTTP_PORT=18097
+      - HTTPS_PORT=18098
       - ADDRINDEXRS_URL=tcp://addrindexrs-testnet:8432
       - BITCOIN_ZMQ_URL=tcp://bitcoin-testnet:38832
       - REDIS_URL=redis://redis:6379/9
@@ -275,7 +279,8 @@ services:
     extends:
       service: http-addrindexrs-base
     ports:
-      - "8098:8098"
+      - "9000:8335"
+      - "9001:9001"
     environment:
       - DOTENV_CONFIG_PATH=/root/.config/http-addrindexrs/server.conf
       
@@ -284,6 +289,7 @@ services:
     extends:
       service: http-addrindexrs-base
     ports:
-      - "18098:18098"
+      - "19000:18335"
+      - "19001:19001"
     environment:
       - DOTENV_CONFIG_PATH=/root/.config/http-addrindexrs/server.testnet.conf    
