@@ -45,7 +45,7 @@ services:
     build:
       context: ./src/addrindexrs
       dockerfile: ./Dockerfile
-    command: cargo run --release -- -vvvv
+    command: [ 'cargo', 'run', '--release', '--', '-vvvv' ]
     volumes:
       - ./config/addrindexrs:/root/.config/addrindexrs
       - addrindexrs-data:/home/user/db/
@@ -210,7 +210,7 @@ services:
   redis-base:
     hostname: ${HOSTNAME_BASE}-redis
     image: redis:3.2
-    command: redis-server /usr/local/etc/redis/redis.conf
+    command: [ 'redis-server', '/usr/local/etc/redis/redis.conf' ]
     volumes:
       - ./config/redis/redis.conf:/usr/local/etc/redis/redis.conf
     logging:
