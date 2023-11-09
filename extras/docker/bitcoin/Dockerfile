@@ -1,11 +1,14 @@
-FROM counterparty/base
+FROM ubuntu:18.04
 
 MAINTAINER Counterparty Developers <dev@counterparty.io>
 
+# Install common dependencies
+RUN apt-get update && apt-get install -y wget
+
 # install bitcoin core
-ENV BITCOIN_VER="24.1"
-ENV BITCOIN_FOLDER_VER="24.1"
-ENV BITCOIN_SHASUM="c112af3d19cca7f5b5f942708ca4d522110d8e1dc1c0f8d3077f531c94e5f00f"
+ENV BITCOIN_VER="25.1"
+ENV BITCOIN_FOLDER_VER="25.1"
+ENV BITCOIN_SHASUM="a978c407b497a727f0444156e397b50491ce862d1f906fef9b521415b3611c8b"
 WORKDIR /tmp
 
 RUN wget --no-check-certificate -O bitcoin-${BITCOIN_VER}-x86_64-linux-gnu.tar.gz https://bitcoincore.org/bin/bitcoin-core-${BITCOIN_VER}/bitcoin-${BITCOIN_VER}-x86_64-linux-gnu.tar.gz
